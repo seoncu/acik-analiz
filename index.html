@@ -414,7 +414,9 @@
     <span class="step-nav-arrow">›</span>
     <div class="step-nav-item" data-nav="Processing" onclick="navStepClick(this)"><span class="step-num">6</span> İşlem</div>
     <span class="step-nav-arrow">›</span>
-    <div class="step-nav-item" data-nav="Analysis" onclick="navStepClick(this)"><span class="step-num">7</span> Analiz</div>
+    <div class="step-nav-item" data-nav="Done" onclick="navStepClick(this)"><span class="step-num">7</span> Analiz Ayarları</div>
+    <span class="step-nav-arrow">›</span>
+    <div class="step-nav-item" data-nav="Analysis" onclick="navStepClick(this)"><span class="step-num">8</span> Analiz Dashboard</div>
   </div>
   <div id="stepDescBar" style="padding:6px 20px 2px;font-size:11px;color:#94a3b8;margin-bottom:4px"></div>
 
@@ -798,42 +800,54 @@
 
   <!-- STEP 4: Done -->
   <div id="stepDone" class="hidden">
+    <!-- Üst sabit araç çubuğu -->
+    <div style="position:sticky;top:0;z-index:50;background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-radius:8px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-sm" style="background:#dc2626;color:#fff" onclick="undoProcessing()" title="Maskeleme işlemini geri al">⟲ İşlemi Geri Al</button>
+        <button class="btn btn-sm" style="background:#2563eb;color:#fff" onclick="rerunProcessing()" title="Aynı ayarlarla yeniden çalıştır">🔄 İşlemi Yenile</button>
+        <span style="color:#cbd5e1">|</span>
+        <button class="btn btn-sm btn-success" onclick="downloadCSV()">📄 CSV</button>
+        <button class="btn btn-sm" style="background:#217346;color:#fff" onclick="downloadXLSX()">📊 Excel</button>
+        <button class="btn btn-sm btn-purple" onclick="saveSession()">💾 Kaydet</button>
+        <button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="exportSession()">📤 Dışa</button>
+        <button class="btn btn-sm" style="background:#8b5cf6;color:#fff" onclick="document.getElementById('importSessionInput').click()">📥 İçe</button>
+        <input type="file" id="importSessionInput" accept=".json,.vma" style="display:none" onchange="importSession(event)">
+        <button class="btn btn-sm" style="background:#059669;color:#fff" onclick="addDataToExisting()">➕ Veri Ekle</button>
+        <button class="btn btn-sm btn-outline" onclick="resetAll()">Yeni Dosya</button>
+      </div>
+    </div>
+
+    <!-- 1. İşlem Tamamlandı başlığı + Sonraki Adım notu -->
     <div class="card">
       <div class="text-center" style="padding:20px 0">
         <div style="font-size:48px">✅</div>
         <h2 class="mt-12">İşlem Tamamlandı!</h2>
         <p class="text-muted mt-8" id="doneText"></p>
-        <!-- Kullanıcı bilgilendirme notu -->
         <div style="margin:16px auto;max-width:640px;padding:12px 16px;background:linear-gradient(135deg,#eff6ff,#f0fdf4);border:1px solid #93c5fd;border-radius:10px;text-align:left;font-size:12px;color:#1e40af;line-height:1.6">
-          <b>📌 Sonraki Adım:</b> Analiz ve raporlama ekranına geçmek için aşağıdaki <b>"Analiz & Rapor"</b> butonuna tıklayın.<br>
-          Ancak önce aşağıda yer alan <b>Sütun Tipi Onay</b> panelinden sütunlarınızın <span style="background:#eff6ff;padding:1px 5px;border-radius:4px;font-weight:600">S (Sayısal)</span> ve <span style="background:#f0fdf4;padding:1px 5px;border-radius:4px;font-weight:600">K (Kategorik)</span> tiplerini kontrol edin. Yanlış algılanan tipler varsa etikete tıklayarak değiştirin, ardından <b>"Sütun tiplerini onaylıyorum"</b> kutusunu işaretleyin.
-        </div>
-        <!-- Analiz & Rapor - öne çıkan büyük buton -->
-        <div style="margin-top:20px;text-align:center">
-          <button class="btn btn-analysis-locked" id="btnAnalysis" onclick="showStep('Analysis')" title="Veri analizi ve raporlama ekranına geç"
-            style="display:inline-flex;align-items:center;gap:14px;padding:22px 52px;font-size:24px;font-weight:900;letter-spacing:1px;border-radius:16px;background:#fbbf24;color:#dc2626;box-shadow:0 6px 24px rgba(251,191,36,.55);border:3px solid #f59e0b;transition:all .3s;text-transform:uppercase;text-shadow:0 1px 2px rgba(0,0,0,.1)">
-            📊 ANALİZ & RAPOR
-            <span style="font-size:14px;font-weight:700;margin-left:6px;text-transform:none;color:#b91c1c">— Dashboard, İstatistik, LLM</span>
-          </button>
-        </div>
-        <!-- Diğer butonlar -->
-        <div class="flex gap-12 mt-12" style="justify-content:center;flex-wrap:wrap">
-          <button class="btn btn-success" onclick="downloadCSV()" title="İşlenmiş veriyi CSV olarak indir">📄 CSV İndir</button>
-          <button class="btn" style="background:#217346;color:#fff" onclick="downloadXLSX()" title="İşlenmiş veriyi Excel olarak indir">📊 Excel İndir</button>
-          <button class="btn btn-purple" onclick="saveSession()" title="Mevcut çalışmayı tarayıcıya kaydet">💾 Oturumu Kaydet</button>
-          <button class="btn" style="background:#6366f1;color:#fff" onclick="exportSession()" title="Oturumu dosyaya dışa aktar (farklı cihazda devam etmek için)">📤 Dışa Aktar</button>
-          <button class="btn" style="background:#8b5cf6;color:#fff" onclick="document.getElementById('importSessionInput').click()" title="Dışa aktarılmış oturum dosyasını içe aktar">📥 İçe Aktar</button>
-          <input type="file" id="importSessionInput" accept=".json,.vma" style="display:none" onchange="importSession(event)">
-          <button class="btn" style="background:#0ea5e9;color:#fff" onclick="saveAs()" title="Mevcut veriyi farklı isim/formatta kaydet">💾 Farklı Kaydet</button>
-          <button class="btn" style="background:#059669;color:#fff" onclick="addDataToExisting()" title="Mevcut veriye yeni satır/sütun ekle (merge/join)">➕ Veri Ekle</button>
-          <button class="btn btn-outline" onclick="backToColumns()" title="Maskeleme ayarlarına geri dön">Ayarları Değiştir</button>
-          <button class="btn btn-outline" onclick="resetAll()" title="Tüm verileri temizle ve yeni dosya yükle">Yeni Dosya</button>
+          <b>📌 Sonraki Adım:</b> Aşağıdaki özet istatistikleri ve sütun tiplerini kontrol edin, ardından <b>"Analiz & Rapor"</b> butonuyla dashboard'a geçin.
         </div>
         <p class="text-xs text-muted mt-12" id="xlsxNote"></p>
       </div>
     </div>
 
-    <!-- Sütun Tipi Onay Paneli -->
+    <!-- 2. Özet İstatistikler -->
+    <div class="card">
+      <h3 style="font-size:15px" class="mb-12">📊 Özet İstatistikler</h3>
+      <div class="stat-grid" id="summaryStats"></div>
+    </div>
+
+    <!-- 3. Sütun İstatistikleri -->
+    <div class="card">
+      <h3 style="font-size:15px" class="mb-12">📋 Sütun İstatistikleri <span class="text-xs text-muted" style="font-weight:400">— Tip etiketine tıklayarak Sayısal ↔ Kategorik değiştirebilirsiniz</span></h3>
+      <div class="overflow-x">
+        <table>
+          <thead><tr><th>Sütun</th><th>Tip</th><th>Dolu</th><th>Boş</th><th>Benzersiz</th><th>Min</th><th>Maks</th><th>Ortalama</th><th>En Sık Değer</th></tr></thead>
+          <tbody id="colStatsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 4. Sütun Tipi Onay -->
     <div class="card" id="colTypePanel" style="border:2px solid #2563eb;background:#f0f9ff">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <h3 style="font-size:15px;color:#1e40af;margin:0">🏷️ Sütun Tipi Onay</h3>
@@ -850,34 +864,15 @@
       </div>
     </div>
 
-    <!-- Özet İstatistikler -->
-    <div class="card">
-      <h3 style="font-size:15px" class="mb-12">📊 Özet İstatistikler</h3>
-      <div class="stat-grid" id="summaryStats"></div>
+    <!-- 5. Analiz & Rapor butonu -->
+    <div style="text-align:center;margin:20px 0">
+      <button class="btn btn-analysis-locked" id="btnAnalysis" onclick="showStep('Analysis')" title="Veri analizi ve raporlama ekranına geç"
+        style="display:inline-flex;align-items:center;gap:14px;padding:22px 52px;font-size:24px;font-weight:900;letter-spacing:1px;border-radius:16px;background:#fbbf24;color:#dc2626;box-shadow:0 6px 24px rgba(251,191,36,.55);border:3px solid #f59e0b;transition:all .3s;text-transform:uppercase;text-shadow:0 1px 2px rgba(0,0,0,.1)">
+        📊 ANALİZ & RAPOR
+        <span style="font-size:14px;font-weight:700;margin-left:6px;text-transform:none;color:#b91c1c">— Dashboard, İstatistik, LLM</span>
+      </button>
     </div>
 
-    <!-- Sütun Detaylari -->
-    <div class="card">
-      <h3 style="font-size:15px" class="mb-12">📋 Sütun İstatistikleri <span class="text-xs text-muted" style="font-weight:400">— Tip etiketine tıklayarak Sayısal ↔ Kategorik değiştirebilirsiniz</span></h3>
-      <div class="overflow-x">
-        <table>
-          <thead><tr><th>Sütun</th><th>Tip</th><th>Dolu</th><th>Boş</th><th>Benzersiz</th><th>Min</th><th>Maks</th><th>Ortalama</th><th>En Sık Değer</th></tr></thead>
-          <tbody id="colStatsBody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="step-tip">
-      <div class="tip-title">💡 İpucu</div>
-      <strong>İndirme:</strong> CSV veya Excel formatında işlenmiş veriyi indirebilirsiniz.<br>
-      <strong>Farklı Kaydet:</strong> Farklı isim ve formatta (CSV/XLSX/TSV) kaydetmek için "💾 Farklı Kaydet" butonunu kullanın.<br>
-      <strong>Veri Ekle:</strong> Analiz edilmiş verinize yeni satır (Merge) veya sütun (Join) eklemek için "➕ Veri Ekle" butonunu kullanın.<br>
-      <strong>Analiz & Rapor:</strong> Dashboard'da grafik oluşturun, Hızlı Bakış, Kritik Listeler, Özet İstatistik, Frekans Dağılımı, Korelasyon Matrisi, Çapraz Tablo ve Harita Grafiği sekmelerini kullanın.<br>
-      <strong>İleri İstatistik:</strong> 5 kategoride 16 test: Parametrik (t-Testi, Eşleştirilmiş t, ANOVA), Non-Parametrik (Mann-Whitney U, Wilcoxon, Kruskal-Wallis), İlişki & Tahmin (Ki-Kare, Korelasyon, Regresyon), Dağılım (Normallik, Dağılım Analizi, Box Plot, Z-Skoru), İleri Modeller (AFA, DFA, YEM). Her testten sonra akıllı yönlendirme paneli çıkar.<br>
-      <strong>PDF Rapor:</strong> Dashboard PDF, Grup Bazlı Analiz PDF ve AI Metin Raporu seçenekleriyle akademik raporlar oluşturabilirsiniz.<br>
-      <strong>LLM Sorgu:</strong> Chatbot ile doğal dilde veriniz hakkında soru sorabilirsiniz (sağ alt köşedeki 🤖 butonu).<br>
-      <strong>Oturum kaydı:</strong> "Oturumu Kaydet" ile tarayıcıya, "Dışa Aktar" ile dosyaya kaydedin. Farklı cihazda "İçe Aktar" ile devam edin.
-    </div>
   </div>
 
   <!-- STEP 5: Dashboard & Analiz -->
@@ -896,7 +891,7 @@
           <button class="btn btn-purple btn-sm" onclick="saveSession()" title="Mevcut çalışmayı tarayıcıya kaydet">💾 Oturum</button>
           <button class="btn btn-sm" style="background:#059669;color:#fff" onclick="addDataToExisting()" title="Mevcut veriye yeni satır/sütun ekle">➕ Veri Ekle</button>
           <button class="btn btn-sm" style="background:#d97706;color:#fff" onclick="askClaude()" title="Ekrandaki analiz özetini Claude'a sorun (veri gönderilmez, sadece istatistikler)">🧠 Claude'a Sor</button>
-          <button class="btn btn-outline btn-sm" onclick="showStep('Done')" title="İşlem sonuçları sayfasına geri dön">← Geri</button>
+          <button class="btn btn-outline btn-sm" onclick="showStep('Done')" title="Analiz ayarları sayfasına geri dön">← Geri</button>
         </div>
       </div>
 
@@ -1684,7 +1679,7 @@ function showStep(name){
   // Update step nav bar
   const stepOrder=['Upload','ModeSelect','Join','Delimiter','Columns','Processing','Done','Analysis'];
   const activeIdx=stepOrder.indexOf(name);
-  const navName=(name==='Done')?'Analysis':name;
+  const navName=name;
   document.querySelectorAll('.step-nav-item').forEach(el=>{
     const nav=el.dataset.nav;
     const navIdx=stepOrder.indexOf(nav);
@@ -1700,7 +1695,7 @@ function showStep(name){
     Delimiter:'Dosyadaki sütunları ayıran karakteri seçin ve doğrulayın.',
     Columns:'Her sütun için maskeleme yöntemi belirleyin. Otomatik algılama TCKN, ad gibi hassas alanları tespit eder.',
     Processing:'Veriler maskeleniyor ve işleniyor...',
-    Done:'Maskeleme tamamlandı! Veriyi indirin veya analiz aracına geçin.',
+    Done:'Sütun tiplerini kontrol edin, özet istatistikleri inceleyin ve analiz dashboard\'a geçin.',
     Analysis:'Grafik dashboard, istatistik, çapraz tablo ve daha fazlası.'
   };
   const descBar=document.getElementById('stepDescBar');
@@ -1716,6 +1711,10 @@ function navStepClick(el){
   const stepName=navMap[nav];if(!stepName)return;
   if(stepName==='Processing')return;
   if(stepName==='Analysis'){
+    if(totalRows>0){showStep('Analysis')}
+    return;
+  }
+  if(stepName==='Done'){
     if(totalRows>0){showStep('Done')}
     return;
   }
@@ -5158,8 +5157,8 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
       // Single sub-group pivot: X rows, Color columns
       const yCol=yCols[0]||'';
       const result=computeColorGroupAgg(xCol,colorCol,yCol,agg);
-      let html='<div style="overflow-x:auto;max-height:500px;overflow-y:auto"><table class="corr-matrix" style="font-size:12px"><thead><tr><th style="position:sticky;top:0;left:0;background:#f1f5f9;z-index:3">'+escHtml(xCol)+'</th>';
-      result.datasets.forEach(ds=>{html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2">'+escHtml(ds.label)+'</th>'});
+      let html='<div style="overflow:auto;max-height:75vh;border:1px solid #e2e8f0;border-radius:8px;contain:layout style;will-change:scroll-position"><table class="corr-matrix" style="font-size:12px;content-visibility:auto"><thead><tr><th style="position:sticky;top:0;left:0;background:#f1f5f9;z-index:3;white-space:normal;word-break:break-word;min-width:120px;max-width:220px;padding:4px 8px">'+escHtml(xCol)+'</th>';
+      result.datasets.forEach(ds=>{html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2;white-space:normal;word-break:break-word;min-width:60px;max-width:160px;padding:4px 8px">'+escHtml(ds.label)+'</th>'});
       html+='<th style="position:sticky;top:0;right:0;background:#dbeafe;z-index:3;font-weight:700">Toplam</th></tr></thead><tbody>';
       const maxVals=result.datasets.map(ds=>Math.max(...ds.data.filter(v=>!isNaN(v)&&v>0)));
       // Determine if marginals should use weighted avg vs simple sum
@@ -5172,7 +5171,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
       result.labels.forEach((label,i)=>{
         const fLabel=result.fullLabels?result.fullLabels[i]:label;
         html+='<tr style="cursor:pointer" onclick="drillDown(\''+escHtml(xCol)+'\',\''+escHtml(fLabel)+'\')">';
-        html+='<td style="font-weight:500;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;position:sticky;left:0;background:#f8fafc;z-index:1" title="'+escHtml(label)+'">'+escHtml(label)+'</td>';
+        html+='<td style="font-weight:500;white-space:normal;word-break:break-word;min-width:100px;max-width:220px;position:sticky;left:0;background:#f8fafc;z-index:1;padding:4px 8px" title="'+escHtml(label)+'">'+escHtml(label)+'</td>';
         let rowSum=0,rowCount=0,rowVals=[];
         result.datasets.forEach((ds,di)=>{
           const val=ds.data[i]||0;
@@ -5229,15 +5228,15 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
     }else{
       // No sub-groups: standard X-row, Y-columns pivot
       const result=computeMultiAgg(xCol,yCols,agg);
-      let html='<div style="overflow-x:auto;max-height:500px;overflow-y:auto"><table class="corr-matrix" style="font-size:12px"><thead><tr><th style="position:sticky;top:0;left:0;background:#f1f5f9;z-index:3">'+escHtml(xCol)+'</th>';
-      result.datasets.forEach(ds=>{html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2">'+escHtml(ds.label)+'</th>'});
+      let html='<div style="overflow:auto;max-height:75vh;border:1px solid #e2e8f0;border-radius:8px;contain:layout style;will-change:scroll-position"><table class="corr-matrix" style="font-size:12px;content-visibility:auto"><thead><tr><th style="position:sticky;top:0;left:0;background:#f1f5f9;z-index:3;white-space:normal;word-break:break-word;min-width:120px;max-width:220px;padding:4px 8px">'+escHtml(xCol)+'</th>';
+      result.datasets.forEach(ds=>{html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2;white-space:normal;word-break:break-word;min-width:60px;max-width:160px;padding:4px 8px">'+escHtml(ds.label)+'</th>'});
       html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2">N</th><th style="position:sticky;top:0;background:#f1f5f9;z-index:2">%</th></tr></thead><tbody>';
       const totalCount=result.groups.reduce((s,e)=>s+e[1].count,0);
       const maxVals=result.datasets.map(ds=>Math.max(...ds.data.filter(v=>!isNaN(v)&&v>0)));
       result.groups.forEach(([label,g],i)=>{
         const pct=(g.count/totalCount*100).toFixed(1);
         html+='<tr style="cursor:pointer" onclick="drillDown(\''+escHtml(xCol)+'\',\''+escHtml(label)+'\')">';
-        html+='<td style="font-weight:500;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;position:sticky;left:0;background:#f8fafc;z-index:1" title="'+escHtml(label)+'">'+escHtml(label.length>30?label.substring(0,28)+'..':label)+'</td>';
+        html+='<td style="font-weight:500;white-space:normal;word-break:break-word;min-width:100px;max-width:220px;position:sticky;left:0;background:#f8fafc;z-index:1;padding:4px 8px" title="'+escHtml(label)+'">'+escHtml(label)+'</td>';
         result.datasets.forEach((ds,di)=>{
           const val=ds.data[i];
           const intensity=maxVals[di]>0?val/maxVals[di]:0;
@@ -6963,13 +6962,7 @@ function computeCrossTab(){
     // Sort rows and columns — limit for performance
     let rArr=[...rowMap.keys()].sort((a,b)=>a.localeCompare(b,'tr'));
     let cArr=[...colValsSet].sort((a,b)=>a.localeCompare(b,'tr'));
-    const CT_ROW_LIMIT=200,CT_COL_LIMIT=100;
-    let ctTruncated=false;
-    if(!window._ctShowAll){
-      if(rArr.length>CT_ROW_LIMIT){rArr=rArr.slice(0,CT_ROW_LIMIT);ctTruncated=true}
-      if(cArr.length>CT_COL_LIMIT){cArr=cArr.slice(0,CT_COL_LIMIT);ctTruncated=true}
-    }
-    window._ctShowAll=false; // reset after use
+    // Limitsiz — tüm satır ve sütunlar gösterilir (1000×100+ stabil)
 
     // Cell value function
     function cellVal(rMap,cv){
@@ -7007,9 +7000,10 @@ function computeCrossTab(){
       if(v===null||range===0)return '#fff';
       const ratio=Math.max(0,Math.min(1,(v-globalMin)/range));
       let r,g,b;
-      if(ratio<0.5){const t=ratio/0.5;r=220;g=Math.round(60+160*t);b=Math.round(60*t)}
-      else{const t=(ratio-0.5)/0.5;r=Math.round(220-180*t);g=Math.round(220-40*t);b=Math.round(60-20*t)}
-      return 'rgba('+r+','+g+','+b+',0.25)';
+      // Kırmızı → Sarı → Yeşil gradyan (ısı haritası)
+      if(ratio<0.5){const t=ratio/0.5;r=220;g=Math.round(60+160*t);b=Math.round(30+20*t)}
+      else{const t=(ratio-0.5)/0.5;r=Math.round(220-180*t);g=Math.round(220-40*t);b=Math.round(50-20*t)}
+      return 'rgba('+r+','+g+','+b+',0.35)';
     }
 
     const elapsed=((performance.now()-t0)/1000).toFixed(1);
@@ -7024,23 +7018,13 @@ function computeCrossTab(){
     parts.push('<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:14px;height:10px;background:rgba(40,180,40,0.25);border-radius:2px"></span> Yüksek</span>');
     parts.push('</div></div>');
 
-    parts.push('<div style="overflow:auto;max-height:600px;border:1px solid #e2e8f0;border-radius:8px">');
-    parts.push('<table class="corr-matrix" style="font-size:11px;border-collapse:collapse;width:max-content">');
-    // Header
-    parts.push('<thead><tr><th style="position:sticky;left:0;top:0;z-index:3;background:#f1f5f9;min-width:120px;max-width:200px">'+escHtml(rowCol)+' \\ '+escHtml(colCol)+'</th>');
-    for(let c=0;c<cArr.length;c++){
-      const cv=cArr[c];
-      parts.push('<th style="position:sticky;top:0;z-index:2;background:#f1f5f9;white-space:nowrap;padding:4px 8px;font-size:10px" title="'+escHtml(cv)+'">'+escHtml(cv.length>18?cv.substring(0,16)+'..':cv)+'</th>');
-    }
-    // Marginal label based on aggregation type
-    const margLabel=aggType==='count'?'TOPLAM':aggType==='sum'?'TOPLAM':(aggType==='avg'||aggType==='mean')?'ORT.':'TOPLAM';
-    parts.push('<th style="position:sticky;top:0;right:0;z-index:3;background:#dbeafe;font-weight:700;min-width:70px">'+margLabel+'</th></tr></thead>');
-
-    // Pre-compute raw sums for proper weighted averages
-    // rowRaw[r] = {sum, n, count} across all columns
-    // colRaw[c] = {sum, n, count} across all rows
+    parts.push('<div style="overflow:auto;max-height:75vh;border:1px solid #e2e8f0;border-radius:8px;contain:layout style;will-change:scroll-position">');
+    parts.push('<table class="corr-matrix" style="font-size:11px;border-collapse:collapse;width:max-content;content-visibility:auto">');
+    // Pre-compute raw sums + header counts (kaç karşı değerle eşleşiyor)
     const rowRaw=new Array(rArr.length);
     const colRaw=new Array(cArr.length);
+    const rowNonNull=new Array(rArr.length).fill(0); // satır başlığı: kaç sütunda veri var
+    const colNonNull=new Array(cArr.length).fill(0); // sütun başlığı: kaç satırda veri var
     for(let c=0;c<cArr.length;c++)colRaw[c]={sum:0,n:0,count:0};
     let grandRaw={sum:0,n:0,count:0};
     for(let r=0;r<rArr.length;r++){
@@ -7052,9 +7036,21 @@ function computeCrossTab(){
           rowRaw[r].sum+=d.sum;rowRaw[r].n+=d.n;rowRaw[r].count+=d.count;
           colRaw[c].sum+=d.sum;colRaw[c].n+=d.n;colRaw[c].count+=d.count;
           grandRaw.sum+=d.sum;grandRaw.n+=d.n;grandRaw.count+=d.count;
+          rowNonNull[r]++;colNonNull[c]++;
         }
       }
     }
+
+    // Header — sütun başlıklarında (kaç satırda var)
+    parts.push('<thead><tr><th style="position:sticky;left:0;top:0;z-index:3;background:#f1f5f9;min-width:120px;max-width:220px;white-space:normal;word-break:break-word;padding:4px 8px">'+escHtml(rowCol)+' \\ '+escHtml(colCol)+'</th>');
+    for(let c=0;c<cArr.length;c++){
+      const cv=cArr[c];
+      const cCnt=colNonNull[c];
+      parts.push('<th style="position:sticky;top:0;z-index:2;background:#f1f5f9;white-space:normal;word-break:break-word;min-width:60px;max-width:140px;padding:4px 8px;font-size:10px" title="'+escHtml(cv)+' ('+cCnt+' satırda)">'+escHtml(cv)+' <span style="color:#6366f1;font-size:9px;font-weight:400">('+cCnt+')</span></th>');
+    }
+    // Marginal label based on aggregation type
+    const margLabel=aggType==='count'?'TOPLAM':aggType==='sum'?'TOPLAM':(aggType==='avg'||aggType==='mean')?'ORT.':'TOPLAM';
+    parts.push('<th style="position:sticky;top:0;right:0;z-index:3;background:#dbeafe;font-weight:700;min-width:70px">'+margLabel+'</th></tr></thead>');
 
     function marginalVal(raw){
       if(aggType==='count')return raw.count;
@@ -7067,7 +7063,8 @@ function computeCrossTab(){
     parts.push('<tbody>');
     for(let r=0;r<rArr.length;r++){
       const rv=rArr[r];
-      parts.push('<tr><th style="position:sticky;left:0;z-index:1;background:#f8fafc;text-align:left;font-weight:600;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;padding:4px 8px;font-size:11px" title="'+escHtml(rv)+'">'+escHtml(rv.length>25?rv.substring(0,23)+'..':rv)+'</th>');
+      const rCnt=rowNonNull[r];
+      parts.push('<tr><th style="position:sticky;left:0;z-index:1;background:#f8fafc;text-align:left;font-weight:600;white-space:normal;word-break:break-word;min-width:100px;max-width:220px;padding:4px 8px;font-size:11px" title="'+escHtml(rv)+' ('+rCnt+' sütunda)">'+escHtml(rv)+' <span style="color:#6366f1;font-size:9px;font-weight:400">('+rCnt+')</span></th>');
       for(let c=0;c<cArr.length;c++){
         const v=grid[r][c];
         parts.push('<td style="background:'+heatColor(v)+';text-align:right;padding:3px 6px;white-space:nowrap;font-variant-numeric:tabular-nums">'+cellDisplay(v)+'</td>');
@@ -7085,13 +7082,8 @@ function computeCrossTab(){
     const grandMarg=marginalVal(grandRaw);
     parts.push('<td style="text-align:right;padding:3px 6px;background:#bfdbfe;font-weight:700;white-space:nowrap;position:sticky;right:0;z-index:4">'+cellDisplay(grandMarg)+'</td></tr></tbody></table></div>');
 
-    if(ctTruncated){
-      const totalR=[...rowMap.keys()].length,totalC=[...colValsSet].length;
-      parts.push('<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:8px 12px;font-size:11px;color:#92400e;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">'+
-        '<span>⚠️ Performans için tablo '+CT_ROW_LIMIT+' satır ve '+CT_COL_LIMIT+' sütunla sınırlandırıldı. Toplam: '+totalR+' satır × '+totalC+' sütun</span>'+
-        '<button onclick="window._ctShowAll=true;buildCrossTab()" style="background:#d97706;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">📋 Tümünü Göster ('+totalR+'×'+totalC+')</button>'+
-      '</div>');
-    }
+    // Boyut bilgisi
+    parts.push('<div style="font-size:11px;color:#64748b;margin-bottom:6px">📊 '+rArr.length+' satır × '+cArr.length+' sütun</div>');
     parts.push('<button class="btn mt-8" onclick="llmInterpretSection(\'crossTab\')" title="Bu tabloyu yapay zeka ile yorumlat" style="width:100%;background:#7c3aed;color:#fff;border:none;font-size:12px;padding:8px">\uD83E\uDD16 LLM ile Yorumlat</button>');
     parts.push('<div id="llmInterpretCrossTab" style="margin-top:8px"></div>');
     area.innerHTML=parts.join('');
@@ -8772,6 +8764,17 @@ function downloadXLSX(){
 }
 
 function backToColumns(){outputChunks=[];parseOutputRows._caches={};window._outputBlob=null;window._outputBlobReady=false;_cleanupOPFS();showStep('Columns')}
+function undoProcessing(){
+  if(!confirm('⚠️ İşlemi Geri Al\n\nMaskeleme işlemi geri alınacak ve maskeleme ayarları ekranına döneceksiniz.\nMevcut ayarlarınız korunacak.\n\nDevam etmek istiyor musunuz?'))return;
+  backToColumns();
+}
+function rerunProcessing(){
+  if(!confirm('🔄 İşlemi Yenile\n\nMaskeleme işlemi mevcut ayarlarla yeniden çalıştırılacak.\n\nDevam etmek istiyor musunuz?'))return;
+  outputChunks=[];parseOutputRows._caches={};window._outputBlob=null;window._outputBlobReady=false;_cleanupOPFS();
+  totalRows=0;chartInstances.forEach(c=>{if(c.instance)c.instance.destroy()});chartInstances=[];
+  colFilters={};_aggCache={};
+  startProcessing();
+}
 function resetAll(){
   currentFile=null;headers=[];rawText='';rawLines=[];previewRows=[];maskConfig={};outputChunks=[];
   colStats={};totalRows=0;chartInstances.forEach(c=>{if(c.instance)c.instance.destroy()});chartInstances=[];
@@ -13718,7 +13721,8 @@ function _generateRuleBasedInterpretation(r){
       <div class="glossary-item"><span class="gl-tag">4</span> <b>Ayırıcı:</b> Sütun ayırıcı karakter seçilir (virgül, TAB, noktalı virgül vb.). Otomatik algılama desteği vardır.</div>
       <div class="glossary-item"><span class="gl-tag">5</span> <b>Maskeleme:</b> Her sütun için maskeleme yöntemi seçilir: Yok, Hash, Kısmi veya Kaldır.</div>
       <div class="glossary-item"><span class="gl-tag">6</span> <b>İşlem:</b> Veri işleniyor (maskeleme, birleştirme). İlerleme çubuğu gösterilir.</div>
-      <div class="glossary-item"><span class="gl-tag">7</span> <b>Analiz:</b> Dashboard, Hızlı Bakış, Kritik Listeler (bireysel & kırılım), Özet İstatistik, Frekans Dağılımı, Korelasyon, Çapraz Tablo, Harita Grafiği ve İleri İstatistik (5 kategoride 16 test: Parametrik karşılaştırma, Non-Parametrik karşılaştırma, İlişki & Tahmin, Dağılım & Tanımlayıcı, İleri Modeller). LLM destekli doğal dil sorgusu, AI test önerisi, hipotez önerici ve akıllı yönlendirme sistemi.</div>
+      <div class="glossary-item"><span class="gl-tag">7</span> <b>Analiz Ayarları:</b> İşlem sonuçları, özet istatistikler ve sütun istatistikleri incelenir. Sütun tipleri onaylanır. "İşlemi Geri Al" ile maskeleme adımına dönülebilir, "İşlemi Yenile" ile aynı ayarlarla yeniden çalıştırılabilir.</div>
+      <div class="glossary-item"><span class="gl-tag">8</span> <b>Analiz Dashboard:</b> Dashboard, Hızlı Bakış, Kritik Listeler (bireysel & kırılım), Özet İstatistik, Frekans Dağılımı, Korelasyon, Çapraz Tablo, Harita Grafiği ve İleri İstatistik (5 kategoride 16 test). LLM destekli doğal dil sorgusu, AI test önerisi, hipotez önerici ve akıllı yönlendirme sistemi.</div>
       <div class="glossary-item"><b>⚠ Adım Gezinme:</b> Üst bardaki tamamlanan adımlara tıklayarak geri dönebilirsiniz. Geri adıma dönerken onay penceresi çıkar. Merge sonrası Join, Join sonrası Merge de yapılabilir.</div>
     </div>
 
@@ -13780,7 +13784,8 @@ function _generateRuleBasedInterpretation(r){
       <div class="glossary-item"><b>Oturumu Kaydet:</b> Mevcut yapılandırmayı (ayarlar, istatistikler) tarayıcıya kaydeder, sonra devam edilebilir.</div>
       <div class="glossary-item"><b>📤 Dışa Aktar:</b> Mevcut oturumu (veri, ayarlar, istatistikler) bir JSON dosyasına kaydeder. Bu dosyayı farklı bir cihaza taşıyıp "İçe Aktar" ile yükleyerek analize kaldığınız yerden devam edebilirsiniz.</div>
       <div class="glossary-item"><b>📥 İçe Aktar:</b> Daha önce "Dışa Aktar" ile oluşturulmuş bir oturum dosyasını (.json) yükler. Tüm veri, sütun istatistikleri ve ayarlar geri yüklenir.</div>
-      <div class="glossary-item"><b>Ayarları Değiştir:</b> Maskeleme adımına geri döner, ayarlar değiştirilebilir.</div>
+      <div class="glossary-item"><b>⟲ İşlemi Geri Al:</b> Maskeleme işlemini geri alır ve maskeleme ayarları ekranına döner. Mevcut ayarlar korunur.</div>
+      <div class="glossary-item"><b>🔄 İşlemi Yenile:</b> Aynı maskeleme ayarlarıyla işlemi yeniden çalıştırır. Veri değiştiğinde veya ayar güncellemesi sonrası kullanılır.</div>
       <div class="glossary-item"><b>💾 Farklı Kaydet:</b> Mevcut veriyi farklı isim ve formatta (CSV/XLSX/TSV) kaydeder. İşlem Tamamlandı veya Dashboard üst barında bulunur.</div>
       <div class="glossary-item"><b>➕ Veri Ekle:</b> Analiz edilmiş veriye yeni satır (Merge) veya sütun (Join) ekler. Mevcut veri korunur.</div>
       <div class="glossary-item"><b>↩ Grafik Geri Al:</b> Dashboard'da silinen son grafiği geri yükler.</div>
