@@ -1471,10 +1471,10 @@ function filterHash(){const s=JSON.stringify(colFilters);if(s===_filterHashCache
 let _dashUpdateTimer=null; // debounce timer
 let DASH_SAMPLE_LIMIT=50000; // sample limit for dashboard performance (let: configurable via settings)
 const LARGE_DATA_THRESHOLD=500000; // 500K+ rows → large data mode
-const MAX_CELL_LIMIT=100_000_000; // 100M hücre güvenli üst limit (ör: 10M satır × 10 sütun veya 2M satır × 50 sütun)
-const WARN_CELL_LIMIT=50_000_000; // 50M hücre → uyarı göster
-const MAX_JOIN_LEFT_ROWS=20_000_000; // JOIN sol tablo üst limit (bellekte tutulur)
-const WARN_JOIN_LEFT_ROWS=10_000_000; // JOIN sol tablo uyarı eşiği
+const MAX_CELL_LIMIT=5_000_000_000; // 5B hücre güvenli üst limit
+const WARN_CELL_LIMIT=2_000_000_000; // 2B hücre → uyarı göster
+const MAX_JOIN_LEFT_ROWS=100_000_000; // JOIN sol tablo üst limit (bellekte tutulur)
+const WARN_JOIN_LEFT_ROWS=50_000_000; // JOIN sol tablo uyarı eşiği
 function _formatCells(n){if(n>=1e9)return (n/1e9).toFixed(1)+'B';if(n>=1e6)return (n/1e6).toFixed(1)+'M';if(n>=1e3)return (n/1e3).toFixed(0)+'K';return n.toString()}
 function _cellLimitCheck(rows,cols,context){
   const cells=rows*cols;
@@ -13674,8 +13674,8 @@ function _generateRuleBasedInterpretation(r){
       </div>
       <div style="margin-top:8px;padding:8px 10px;background:#1e293b;border-radius:6px;font-size:11px;color:#94a3b8;line-height:1.6">
         <div style="color:#f8fafc;font-weight:600;margin-bottom:4px">🛡️ Hücre & JOIN Güvenlik Limitleri</div>
-        <div>Toplam hücre limiti: <span style="color:#fbbf24;font-weight:600">100M</span> (uyarı: <span style="color:#fb923c">50M</span>)</div>
-        <div>JOIN sol tablo: <span style="color:#fbbf24;font-weight:600">20M satır</span> üst limit (uyarı: <span style="color:#fb923c">10M</span>)</div>
+        <div>Toplam hücre limiti: <span style="color:#fbbf24;font-weight:600">5B</span> (uyarı: <span style="color:#fb923c">2B</span>)</div>
+        <div>JOIN sol tablo: <span style="color:#fbbf24;font-weight:600">100M satır</span> üst limit (uyarı: <span style="color:#fb923c">50M</span>)</div>
         <div style="margin-top:4px;font-size:10px;color:#64748b">Hücre = satır × sütun. Limitler büyük veri işlemlerinde tarayıcı çökmesini önler.</div>
       </div>
     </div>
