@@ -98,17 +98,18 @@
   .dashboard-controls{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px}
   .dash-section{margin-bottom:16px}
   .dash-section-title{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
-  .dash-select{width:100%;padding:8px 12px;border-radius:6px;border:1px solid #d1d5db;font-size:14px;background:#fff}
+  .dash-select{width:100%;padding:8px 12px;border-radius:6px;border:1px solid #d1d5db;font-size:13px;background:#fff;min-height:38px;box-sizing:border-box;appearance:auto}
   /* Searchable select wrapper */
-  .ss-wrap{position:relative;display:inline-block;min-width:140px}
-  .ss-input{width:100%;padding:6px 28px 6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' fill='none' stroke='%2394a3b8' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 8px center;outline:none;cursor:pointer}
-  .ss-input:focus{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.15)}
-  .ss-list{position:absolute;z-index:999;top:100%;left:0;right:0;max-height:220px;overflow-y:auto;background:#fff;border:1px solid #d1d5db;border-radius:6px;margin-top:2px;box-shadow:0 4px 12px rgba(0,0,0,.12);display:none}
+  .ss-wrap{position:relative;display:block;min-width:0;width:100%;box-sizing:border-box;flex:1 1 0;overflow:visible}
+  .ss-input{width:100% !important;padding:9px 30px 9px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;line-height:1.4;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' fill='none' stroke='%2394a3b8' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 8px center;outline:none;cursor:pointer;box-sizing:border-box;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;display:block;font-family:inherit}
+  .ss-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.18)}
+  .ss-list{position:absolute;z-index:999;top:100%;left:0;right:0;max-height:280px;overflow-y:auto;background:#fff;border:1px solid #c7d2fe;border-radius:8px;margin-top:3px;box-shadow:0 6px 20px rgba(0,0,0,.15);display:none}
   .ss-list.open{display:block}
-  .ss-item{padding:6px 10px;font-size:12px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ss-item{padding:10px 14px;font-size:14px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid #f1f5f9}
+  .ss-item:last-child{border-bottom:none}
   .ss-item:hover,.ss-item.highlighted{background:#eff6ff;color:#1e40af}
   .ss-item.selected{background:#dbeafe;font-weight:600}
-  .ss-empty{padding:8px 10px;font-size:11px;color:#94a3b8;text-align:center;font-style:italic}
+  .ss-empty{padding:12px 14px;font-size:13px;color:#94a3b8;text-align:center;font-style:italic}
   .agg-chips{display:flex;flex-wrap:wrap;gap:4px}
   .agg-chip{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid #d1d5db;background:#fff;color:#64748b;transition:.15s}
   .agg-chip:hover{border-color:#93c5fd}.agg-chip.active{background:#8b5cf6;color:#fff;border-color:#8b5cf6}
@@ -445,6 +446,57 @@
       <div class="flex gap-8">
         <button class="btn btn-purple" onclick="restoreSession()" title="Kaydedilmiş oturumu geri yükle">Devam Et</button>
         <button class="btn btn-outline btn-sm" onclick="clearSavedSession()" title="Kaydedilmiş oturumu sil">Sil</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO BANNER -->
+  <div id="heroBanner" style="position:relative;overflow:hidden;border-radius:18px;margin-bottom:22px;padding:36px 32px 30px;background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 35%,#1d4ed8 70%,#7c3aed 100%);color:#fff;box-shadow:0 10px 40px rgba(37,99,235,0.35)">
+    <!-- Animated background elements -->
+    <svg style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.07;pointer-events:none" viewBox="0 0 900 280">
+      <circle cx="80" cy="40" r="50" fill="#60a5fa"><animate attributeName="cy" values="40;60;40" dur="6s" repeatCount="indefinite"/></circle>
+      <circle cx="280" cy="140" r="70" fill="#818cf8"><animate attributeName="cx" values="280;310;280" dur="8s" repeatCount="indefinite"/></circle>
+      <circle cx="520" cy="50" r="55" fill="#34d399"><animate attributeName="r" values="55;65;55" dur="5s" repeatCount="indefinite"/></circle>
+      <circle cx="730" cy="160" r="40" fill="#fbbf24"><animate attributeName="cy" values="160;130;160" dur="7s" repeatCount="indefinite"/></circle>
+      <circle cx="180" cy="200" r="30" fill="#f472b6"><animate attributeName="cx" values="180;210;180" dur="9s" repeatCount="indefinite"/></circle>
+      <circle cx="430" cy="110" r="50" fill="#60a5fa"><animate attributeName="r" values="50;60;50" dur="6s" repeatCount="indefinite"/></circle>
+      <circle cx="640" cy="80" r="35" fill="#a78bfa"><animate attributeName="cy" values="80;100;80" dur="5s" repeatCount="indefinite"/></circle>
+      <rect x="0" y="220" width="900" height="2" fill="url(#heroline)" opacity="0.5"/>
+      <defs><linearGradient id="heroline" x1="0" y1="0" x2="900" y2="0"><stop offset="0%" stop-color="#60a5fa" stop-opacity="0"/><stop offset="50%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/></linearGradient></defs>
+    </svg>
+    <div style="position:relative;z-index:1">
+      <!-- Slogan -->
+      <div style="text-align:center;margin-bottom:18px">
+        <h2 style="margin:0;font-size:26px;font-weight:900;letter-spacing:-0.5px;background:linear-gradient(90deg,#fff 0%,#93c5fd 50%,#c4b5fd 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.3">Verinin Gücünü Keşfedin — Tamamen Lokalde, Sıfır Veri Kaybıyla</h2>
+        <p style="margin:10px auto 0;font-size:14px;color:#f1f5f9;font-weight:400;max-width:700px;line-height:1.6">Milyarlarca hücreyi tarayıcınızda güvenle işleyin. Maskeleme, analiz, birleştirme, ileri istatistik ve yapay zeka destekli raporlamayı tek bir araçta deneyimleyin.</p>
+      </div>
+      <!-- Feature cards -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px">
+        <div style="background:rgba(255,255,255,0.1);backdrop-filter:blur(8px);border-radius:12px;padding:14px 14px 12px;border:1px solid rgba(255,255,255,0.15);transition:transform 0.2s" onmouseover="this.style.transform='translateY(-2px)';this.style.background='rgba(255,255,255,0.16)'" onmouseout="this.style.transform='';this.style.background='rgba(255,255,255,0.1)'">
+          <div style="font-size:20px;margin-bottom:5px">📊</div>
+          <p style="margin:0;font-size:12px;font-weight:700;color:#e0f2fe">Analiz & Dashboard</p>
+          <p style="margin:4px 0 0;font-size:10.5px;color:#e2e8f0;line-height:1.5">Pivot tablo, dinamik grafikler, KPI kartları ve anlık filtreler ile verilerinizi görselleştirin.</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.1);backdrop-filter:blur(8px);border-radius:12px;padding:14px 14px 12px;border:1px solid rgba(255,255,255,0.15);transition:transform 0.2s" onmouseover="this.style.transform='translateY(-2px)';this.style.background='rgba(255,255,255,0.16)'" onmouseout="this.style.transform='';this.style.background='rgba(255,255,255,0.1)'">
+          <div style="font-size:20px;margin-bottom:5px">🔗</div>
+          <p style="margin:0;font-size:12px;font-weight:700;color:#e0f2fe">Birleştirme & Join</p>
+          <p style="margin:4px 0 0;font-size:10.5px;color:#e2e8f0;line-height:1.5">Birden fazla dosyayı dikey/yatay birleştirin veya SQL tarzı JOIN (INNER, LEFT, FULL) ile eşleştirin.</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.1);backdrop-filter:blur(8px);border-radius:12px;padding:14px 14px 12px;border:1px solid rgba(255,255,255,0.15);transition:transform 0.2s" onmouseover="this.style.transform='translateY(-2px)';this.style.background='rgba(255,255,255,0.16)'" onmouseout="this.style.transform='';this.style.background='rgba(255,255,255,0.1)'">
+          <div style="font-size:20px;margin-bottom:5px">🔬</div>
+          <p style="margin:0;font-size:12px;font-weight:700;color:#e0f2fe">İleri İstatistik</p>
+          <p style="margin:4px 0 0;font-size:10.5px;color:#e2e8f0;line-height:1.5">ANOVA, Ki-Kare, Regresyon, Korelasyon, EFA/CFA, SEM ve 10+ akademik test.</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.1);backdrop-filter:blur(8px);border-radius:12px;padding:14px 14px 12px;border:1px solid rgba(255,255,255,0.15);transition:transform 0.2s" onmouseover="this.style.transform='translateY(-2px)';this.style.background='rgba(255,255,255,0.16)'" onmouseout="this.style.transform='';this.style.background='rgba(255,255,255,0.1)'">
+          <div style="font-size:20px;margin-bottom:5px">🤖</div>
+          <p style="margin:0;font-size:12px;font-weight:700;color:#e0f2fe">AI Raporlama</p>
+          <p style="margin:4px 0 0;font-size:10.5px;color:#e2e8f0;line-height:1.5">Lokal LLM chatbot ile soru sorun, APA7 akademik rapor ve PDF oluşturun.</p>
+        </div>
+      </div>
+      <!-- Bottom info line + signature -->
+      <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <p style="margin:0;font-size:10.5px;color:#e2e8f0">🔒 Verileriniz tamamen tarayıcınızda işlenir — hiçbir veri sunucuya gönderilmez. Sıfır veri kaybı garantisi.</p>
+        <p style="margin:0;font-size:9.5px;color:#cbd5e1;font-style:italic">İnsan + AI Agent (Claude) iş birliğiyle geliştirilmiştir &bull; v1.5</p>
       </div>
     </div>
   </div>
@@ -851,7 +903,7 @@
       <h3 style="font-size:15px" class="mb-12">📋 Sütun İstatistikleri <span class="text-xs text-muted" style="font-weight:400">— Tip etiketine tıklayarak Sayısal ↔ Kategorik değiştirebilirsiniz</span></h3>
       <div class="overflow-x">
         <table>
-          <thead><tr><th>Sütun</th><th>Tip</th><th>Dolu</th><th>Boş</th><th>Benzersiz</th><th>Min</th><th>Maks</th><th>Ortalama</th><th>En Sık Değer</th></tr></thead>
+          <thead><tr><th>Sütun</th><th>Tip</th><th>Dolu (Satır)</th><th>Boş</th><th>Benzersiz</th><th>Min</th><th>Maks</th><th>Ortalama</th><th>En Sık Değer</th></tr></thead>
           <tbody id="colStatsBody"></tbody>
         </table>
       </div>
@@ -948,9 +1000,9 @@
           <button class="btn btn-sm" style="background:#217346;color:#fff" onclick="exportHTMLTableToExcel('topBottomResultArea','kritik_listeler')" title="Tabloyu Excel olarak indir">📊 Excel</button>
         </div>
         <!-- Görünüm Modu Seçimi -->
-        <div style="display:flex;gap:4px;margin-bottom:12px">
-          <button class="btn btn-sm" id="tbModeIndiv" onclick="setTbMode('individual')" style="background:#3b82f6;color:#fff;font-weight:600;font-size:12px;padding:6px 16px;border-radius:6px">📋 Bireysel Kayıtlar</button>
-          <button class="btn btn-sm" id="tbModeGroup" onclick="setTbMode('group')" style="background:#e2e8f0;color:#475569;font-weight:600;font-size:12px;padding:6px 16px;border-radius:6px">📊 Kırılım (Grup Bazlı)</button>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button class="btn" id="tbModeIndiv" onclick="setTbMode('individual')" style="background:#3b82f6;color:#fff;font-weight:700;font-size:14px;padding:10px 24px;border-radius:8px;border:2px solid #2563eb;flex:1;max-width:280px">📋 Bireysel Kayıtlar</button>
+          <button class="btn" id="tbModeGroup" onclick="setTbMode('group')" style="background:#e2e8f0;color:#475569;font-weight:700;font-size:14px;padding:10px 24px;border-radius:8px;border:2px solid #cbd5e1;flex:1;max-width:280px">📊 Kırılım (Grup Bazlı)</button>
         </div>
         <div class="dash-section" style="margin-bottom:16px">
           <!-- Bireysel mod kontrolleri -->
@@ -968,7 +1020,7 @@
               </select>
             </div>
             <div>
-              <label class="text-xs" style="font-weight:600;display:block;margin-bottom:4px">Kayıt Sayısı (Frekans)</label>
+              <label class="text-xs" style="font-weight:600;display:block;margin-bottom:4px">Kayıt Sayısı (n)</label>
               <select id="tbCount" class="dash-select searchable-select" style="min-width:80px" onchange="renderTopBottomData()">
                 <option value="10" selected>10</option>
                 <option value="20">20</option>
@@ -989,6 +1041,9 @@
                 <select id="tbCatVar2" class="dash-select searchable-select" style="min-width:140px" onchange="onTbCatVar2Change()"><option value="">Yok</option></select>
                 <select id="tbCatVal2" class="dash-select searchable-select" style="min-width:140px;display:none" onchange="renderTopBottomData()"><option value="">Tümü</option></select>
               </div>
+            </div>
+            <div style="align-self:flex-end">
+              <button class="btn" onclick="renderTopBottomData()" title="Seçilen kriterlere göre hesapla" style="background:#3b82f6;color:#fff;font-weight:700;font-size:14px;padding:10px 28px;border-radius:8px;border:2px solid #2563eb;white-space:nowrap">🔍 Hesapla</button>
             </div>
           </div>
           <!-- Kırılım mod kontrolleri -->
@@ -1021,7 +1076,7 @@
                 <option value="min">Minimum</option>
                 <option value="median">Medyan</option>
                 <option value="sum">Toplam</option>
-                <option value="count">Frekans</option>
+                <option value="count">Sayı (n)</option>
               </select>
             </div>
             <div>
@@ -1029,6 +1084,9 @@
               <select id="tbGrpFreqCriterion" class="dash-select searchable-select" style="min-width:160px" onchange="renderTopBottomGroupData()">
                 <option value="">Satır Sayısı</option>
               </select>
+            </div>
+            <div style="align-self:flex-end">
+              <button class="btn" onclick="renderTopBottomGroupData()" title="Kırılım hesapla" style="background:#059669;color:#fff;font-weight:700;font-size:14px;padding:10px 28px;border-radius:8px;border:2px solid #047857;white-space:nowrap">🔍 Hesapla</button>
             </div>
           </div>
           <!-- Ek sütunlar (sadece bireysel modda) -->
@@ -1054,7 +1112,7 @@
 
       <!-- TAB: Dashboard -->
       <div id="tabDashboard">
-        <div style="display:grid;grid-template-columns:320px 1fr;gap:20px">
+        <div style="display:grid;grid-template-columns:420px 1fr;gap:20px">
           <div style="min-width:0">
             <div class="dashboard-controls">
               <div class="dash-section">
@@ -1066,7 +1124,7 @@
                 <div class="dash-section-title">Alt Gruplar (Pivot Boyutları) <span style="font-size:9px;color:#94a3b8;font-weight:400">sıralı — çoklu seçim</span></div>
                 <p style="font-size:10px;color:#94a3b8;margin-bottom:4px">Ekleme sırası pivot hiyerarşisini belirler. Yukarı/aşağı ile değiştirin.</p>
                 <div class="flex gap-4" style="margin-bottom:6px">
-                  <select id="subGroupAdd" class="dash-select searchable-select" style="flex:1;font-size:11px"><option value="">-- Alt grup ekle --</option></select>
+                  <select id="subGroupAdd" class="dash-select searchable-select" style="flex:1"><option value="">-- Alt grup ekle --</option></select>
                   <button class="btn btn-sm btn-outline" onclick="addSubGroup()" title="Ekle">+</button>
                 </div>
                 <div id="subGroupList" class="sub-group-list"></div>
@@ -1077,16 +1135,16 @@
               </div>
               <div class="dash-section">
                 <div class="dash-section-title">Hesaplanmış Alan <span style="font-size:9px;color:#94a3b8;font-weight:400">opsiyonel</span></div>
-                <div style="display:flex;flex-direction:column;gap:4px">
-                  <div style="display:flex;gap:4px;align-items:center">
-                    <select id="calcCol1" class="dash-select searchable-select" style="flex:1;font-size:11px"><option value="">Alan 1</option></select>
-                    <select id="calcOp" class="dash-select searchable-select" style="width:50px;font-size:13px;text-align:center">
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <div style="display:grid;grid-template-columns:1fr 50px 1fr;gap:6px;align-items:center">
+                    <select id="calcCol1" class="dash-select searchable-select"><option value="">Alan 1</option></select>
+                    <select id="calcOp" class="dash-select" style="text-align:center;font-size:14px;padding:9px 4px">
                       <option value="/">÷</option><option value="*">×</option><option value="+">+</option><option value="-">−</option>
                     </select>
-                    <select id="calcCol2" class="dash-select searchable-select" style="flex:1;font-size:11px"><option value="">Alan 2</option></select>
+                    <select id="calcCol2" class="dash-select searchable-select"><option value="">Alan 2</option></select>
                   </div>
-                  <div style="display:flex;gap:4px;align-items:center">
-                    <select id="calcTemplate" class="dash-select searchable-select" style="flex:1;font-size:10px" onchange="applyCalcTemplate()">
+                  <div style="display:flex;gap:6px;align-items:center">
+                    <select id="calcTemplate" class="dash-select searchable-select" style="flex:1" onchange="applyCalcTemplate()">
                       <option value="">Hazır Şablon...</option>
                       <option value="ratio">Oran (A/B)</option>
                       <option value="pct">Yüzde (A/B×100)</option>
@@ -1105,7 +1163,7 @@
                 <div class="dash-section-title">Değer Gruplama <span style="font-size:9px;color:#94a3b8;font-weight:400">sayısal aralık & kategorik birleştirme</span></div>
                 <p style="font-size:10px;color:#94a3b8;margin-bottom:4px">Sütun seçip sayısal aralıkları veya kategorik değerleri gruplandırın</p>
                 <div class="flex gap-4" style="margin-bottom:6px">
-                  <select id="groupColSelect" class="dash-select searchable-select" style="flex:1;font-size:11px"><option value="">-- Sütun Seç --</option></select>
+                  <select id="groupColSelect" class="dash-select searchable-select" style="flex:1"><option value="">-- Sütun Seç --</option></select>
                   <button class="btn btn-sm btn-outline" onclick="openGroupingModal()" title="Gruplama tanımla" style="font-size:11px">Grupla</button>
                 </div>
                 <div id="groupedColList" class="grouped-col-list"></div>
@@ -1342,7 +1400,7 @@
           </div>
           <div style="flex:1;min-width:180px">
             <label style="font-size:11px;font-weight:600;color:#334155;display:block;margin-bottom:4px">METRİK DEĞİŞKENİ (Sayısal — opsiyonel)</label>
-            <select id="mapMetricVar" class="form-select searchable-select" style="width:100%;font-size:13px" onchange="onMapVarChange()"><option value="">Sayı (Frekans)</option></select>
+            <select id="mapMetricVar" class="form-select searchable-select" style="width:100%;font-size:13px" onchange="onMapVarChange()"><option value="">Sayı (n)</option></select>
           </div>
           <div style="flex:1;min-width:140px">
             <label style="font-size:11px;font-weight:600;color:#334155;display:block;margin-bottom:4px">HESAPLAMA</label>
@@ -1370,6 +1428,7 @@
             <div>
               <h3 style="margin:0 0 4px 0;font-size:16px;color:#4c1d95">🔬 İleri İstatistik Testleri</h3>
               <p style="margin:0;font-size:12px;color:#6b21a8">JASP benzeri akademik istatistik analizleri. Filtreler otomatik uygulanır.</p>
+              <p style="margin:4px 0 0 0;font-size:10px;color:#7c3aed;line-height:1.5"><b>Not:</b> İstatistiksel sonuçlarda <b>n</b> (küçük harf) = alt grup gözlem sayısı, <b>N</b> (büyük harf) = toplam popülasyon büyüklüğü anlamındadır (APA7 standardı). UI tablolarında gözlem sayısı <b>n</b> (alt grup) veya <b>N</b> (toplam) olarak gösterilir. Büyük veri setlerinde (1M+ satır) testler biraz zaman alabilir — tüm veriler eksiksiz işlenir.</p>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <button class="btn btn-sm" onclick="advStatsSuggestTests()" style="background:#7c3aed;color:#fff;border:none;font-size:11px" title="Verinizdeki değişkenlere göre hangi testlerin yapılabileceğini öner">🤖 Hangi Test Yapılabilir?</button>
@@ -1489,27 +1548,34 @@ let _aggCache={}; // cache for grouped aggregation results
 let _filterHashCache='';let _filterHashVal='';
 function filterHash(){const s=JSON.stringify(colFilters);if(s===_filterHashCache)return _filterHashVal;_filterHashCache=s;_filterHashVal=s;return s}
 let _dashUpdateTimer=null; // debounce timer
-let DASH_SAMPLE_LIMIT=200000; // sample limit for dashboard performance (let: configurable via settings)
+let DASH_SAMPLE_LIMIT=2000000; // 2M sample for dashboard charts (reservoir sampled, configurable via settings)
 const LARGE_DATA_THRESHOLD=500000; // 500K+ rows → large data mode
-const MAX_CELL_LIMIT=5_000_000_000; // 5B hücre güvenli üst limit
-const WARN_CELL_LIMIT=2_000_000_000; // 2B hücre → uyarı göster
+const MAX_CELL_LIMIT=5_000_000_000; // 5B hücre mutlak üst limit (blok)
+const HARD_WARN_CELL_LIMIT=2_000_000_000; // 2B hücre → ciddi uyarı (confirm)
+const SOFT_WARN_CELL_LIMIT=1_000_000_000; // 1B hücre → ön bilgilendirme uyarısı
 const MAX_JOIN_LEFT_ROWS=100_000_000; // JOIN sol tablo üst limit (bellekte tutulur)
 const WARN_JOIN_LEFT_ROWS=50_000_000; // JOIN sol tablo uyarı eşiği
-function _formatCells(n){if(n>=1e9)return (n/1e9).toFixed(1)+'B';if(n>=1e6)return (n/1e6).toFixed(1)+'M';if(n>=1e3)return (n/1e3).toFixed(0)+'K';return n.toString()}
+const _FREQ_SOFT_CAP=50000000; // 50M: bu eşikten sonra sütun bazında uyarı loglanır (veri kaybı yok)
+function _formatCells(n){if(n>=1e9)return (n/1e9).toFixed(1)+'B';if(n>=1e6)return (n/1e6).toFixed(1)+'M';if(n>=1e3)return (n/1e3).toFixed(0)+'K';return n.toLocaleString('tr-TR')}
 function _cellLimitCheck(rows,cols,context){
   const cells=rows*cols;
   if(cells>MAX_CELL_LIMIT){
-    showError('⚠️ '+context+': Tahmini '+_formatCells(cells)+' hücre ('+rows.toLocaleString('tr-TR')+' satır × '+cols+' sütun) güvenli limiti ('+_formatCells(MAX_CELL_LIMIT)+') aşıyor. Tarayıcı belleği yetersiz kalabilir ve uygulama çökebilir. İşlemi küçük parçalara bölmeniz önerilir.');
+    showError('⛔ '+context+': Tahmini '+_formatCells(cells)+' hücre ('+rows.toLocaleString('tr-TR')+' satır × '+cols+' sütun) mutlak üst limiti ('+_formatCells(MAX_CELL_LIMIT)+') aşıyor. Tarayıcı belleği yetersiz kalabilir. İşlemi küçük parçalara bölmeniz önerilir.');
     return 'block';
   }
-  if(cells>WARN_CELL_LIMIT){
-    const ok=confirm('⚠️ '+context+'\n\nTahmini '+_formatCells(cells)+' hücre ('+rows.toLocaleString('tr-TR')+' satır × '+cols+' sütun)\nUyarı limiti: '+_formatCells(WARN_CELL_LIMIT)+'\n\nBu işlem yüksek bellek kullanabilir. Devam etmek istiyor musunuz?');
+  if(cells>HARD_WARN_CELL_LIMIT){
+    const ok=confirm('⚠️ '+context+' — CİDDİ UYARI\n\nTahmini '+_formatCells(cells)+' hücre ('+rows.toLocaleString('tr-TR')+' satır × '+cols+' sütun)\nCiddi uyarı limiti: '+_formatCells(HARD_WARN_CELL_LIMIT)+'\n\nBu işlem çok yüksek bellek kullanabilir. Tüm veriler işlenecektir ancak performans yavaşlayabilir.\nDevam etmek istiyor musunuz?');
     return ok?'ok':'cancel';
+  }
+  if(cells>SOFT_WARN_CELL_LIMIT){
+    console.info('ℹ️ '+context+': '+_formatCells(cells)+' hücre — 1B ön uyarı eşiği aşıldı. Tüm veriler tam olarak işlenmektedir.');
+    showInfo&&typeof showInfo==='function'?showInfo('ℹ️ Bilgi: '+_formatCells(cells)+' hücre yüklendi. 1 milyar hücre ön uyarı eşiği aşıldı. Tüm veriler eksiksiz işlenmektedir.'):console.info('1B cell soft warning for: '+context);
+    return 'ok';
   }
   return 'ok';
 }
 let _reservoirSample=[]; // pre-built sample during processing for fast dashboard
-let _ALLVALS_LIM=1000000,_UNIQSET_LIM=5000000; // dynamic limits for large data
+let _ALLVALS_LIM=2000000,_UNIQSET_LIM=10000000; // dynamic limits for large data
 let _rsvRowCount=0; // running row counter for reservoir sampling
 let _useOPFS=false; // OPFS available flag
 let _opfsHandle=null; // OPFS file handle
@@ -1521,11 +1587,19 @@ class HyperLogLog{
   constructor(b=14){this.b=b;this.m=1<<b;this.M=new Uint8Array(this.m);this._count=0;
     this._alpha=this.m===16?0.673:this.m===32?0.697:this.m===64?0.709:0.7213/(1+1.079/this.m)}
   _hash(s){let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193)}return h>>>0}
-  add(val){this._count++;const h=this._hash(String(val));const j=h>>>(32-this.b);let w=h<<this.b|((1<<this.b)-1);
-    let rho=1;while((w&1)===0&&rho<33){w>>>=1;rho++}if(rho>this.M[j])this.M[j]=rho}
+  add(val){this._count++;const h=this._hash(String(val));const j=h>>>(32-this.b);
+    // Count leading zeros in the remaining (32-b) bits + 1
+    let w=(h<<this.b)>>>0;
+    let rho=1;
+    let mask=1<<31;
+    while(mask>0&&(w&mask)===0){rho++;mask>>>=1}
+    if(rho>this.M[j])this.M[j]=rho}
   count(){let Z=0;let V=0;for(let i=0;i<this.m;i++){Z+=Math.pow(2,-this.M[i]);if(this.M[i]===0)V++}
     let E=this._alpha*this.m*this.m/Z;
     if(E<=2.5*this.m&&V>0)E=this.m*Math.log(this.m/V);
+    // Large range correction
+    const twoTo32=4294967296;
+    if(E>twoTo32/30)E=-twoTo32*Math.log(1-E/twoTo32);
     return Math.round(E)}
 }
 
@@ -1602,8 +1676,8 @@ function _initSearchableSelects(root){
     if(sel.classList.contains('ss-done'))_destroySearchableSelect(sel);
     sel.classList.add('ss-done');sel.style.display='none';
     const wrap=document.createElement('div');wrap.className='ss-wrap';
-    if(sel.style.width)wrap.style.width=sel.style.width;
-    if(sel.style.minWidth)wrap.style.minWidth=sel.style.minWidth;
+    // Transfer ALL relevant inline styles from select to wrapper
+    ['width','minWidth','maxWidth','flex','flexGrow','flexShrink','flexBasis'].forEach(p=>{if(sel.style[p])wrap.style[p]=sel.style[p]});
     sel.parentNode.insertBefore(wrap,sel);wrap.appendChild(sel);
     const inp=document.createElement('input');inp.type='text';inp.className='ss-input';inp.autocomplete='off';inp.placeholder='Ara...';
     const list=document.createElement('div');list.className='ss-list';
@@ -1780,6 +1854,9 @@ function showStep(name){
   ['stepUpload','stepModeSelect','stepJoin','stepDelimiter','stepColumns','stepProcessing','stepDone','stepAnalysis'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.classList.toggle('hidden',id!=='step'+name)
   });
+  // Hero banner sadece Upload adımında görünür
+  const _heroBanner=document.getElementById('heroBanner');
+  if(_heroBanner)_heroBanner.style.display=(name==='Upload')?'':'none';
   if(name==='Analysis'){renderAnalysisUI();setTimeout(renderGlobalFilterBar,100);setTimeout(()=>_initSearchableSelects(),300)}
   // Update step nav bar
   const stepOrder=['Upload','ModeSelect','Join','Delimiter','Columns','Processing','Done','Analysis'];
@@ -1836,6 +1913,7 @@ function navStepClick(el){
 }
 
 function showError(msg){document.getElementById('errorText').textContent=msg;document.getElementById('errorBar').classList.remove('hidden');try{_addLog('HATA: '+msg,'err')}catch(e){}}
+function showInfo(msg){const bar=document.getElementById('errorBar');const txt=document.getElementById('errorText');if(bar&&txt){txt.textContent=msg;bar.classList.remove('hidden');bar.style.background='#1e40af';setTimeout(()=>{bar.classList.add('hidden');bar.style.background=''},8000)}try{_addLog('BİLGİ: '+msg,'info')}catch(e){}}
 function hideError(){document.getElementById('errorBar').classList.add('hidden')}
 function showSuccess(msg){
   try{_addLog(msg,'ok')}catch(e){}
@@ -2271,10 +2349,11 @@ async function startProcessing(){
   const isLargeData=estRows>LARGE_DATA_THRESHOLD;
   const useHLL=isLargeData; // Use HyperLogLog for large datasets
   colStats={};
-  outHeaders.forEach(h=>{colStats[h]={count:0,empty:0,numCount:0,sum:0,sumSq:0,min:Infinity,max:-Infinity,freq:{},_freqSize:0,isNumeric:true,allVals:[],uniqueCount:0,_uniqSet:useHLL?new HyperLogLog(14):new Set(),_useHLL:useHLL}});
-  const BATCH=isLargeData?20000:5000,MAX_FREQ=Infinity;
-  _ALLVALS_LIM=isLargeData?50000:1000000;
-  _UNIQSET_LIM=isLargeData?0:5000000; // HLL handles unique count for large data
+  outHeaders.forEach(h=>{colStats[h]={count:0,empty:0,numCount:0,sum:0,sumSq:0,min:Infinity,max:-Infinity,freq:{},_freqSize:0,isNumeric:true,allVals:[],_allValsTotal:0,uniqueCount:0,_uniqSet:useHLL?new HyperLogLog(14):new Set(),_useHLL:useHLL}});
+  const BATCH=isLargeData?20000:5000;
+  const MAX_FREQ=Infinity; // Sınırsız — tüm frekanslar tam olarak tutulur
+  _ALLVALS_LIM=isLargeData?10000000:2000000; // 10M for large data — reservoir sampling ensures representativeness
+  _UNIQSET_LIM=isLargeData?0:10000000; // HLL handles unique count for large data
   // Try OPFS for large data streaming output
   let opfsActive=false;
   if(isLargeData){opfsActive=await _initOPFS()}
@@ -2286,6 +2365,14 @@ async function startProcessing(){
     const estMB=Math.round(currentFile.size/(1024*1024));
     const _estCells=Math.round(estRows)*outHeaders.length;
     document.getElementById('processedCount').textContent='⏳ Büyük veri modu: ~'+estMB+' MB, ~'+_formatCells(_estCells)+' hücre, tahmini '+estMins+' dk...';
+    // Kullanıcıya uzun işlem uyarısı göster
+    const _longOpBanner=document.createElement('div');
+    _longOpBanner.id='longOpBanner';
+    _longOpBanner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#fff;padding:14px 24px;text-align:center;font-size:15px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;gap:12px';
+    _longOpBanner.innerHTML='<span style="font-size:22px;animation:spin 1s linear infinite">⏳</span> İşleminiz biraz zaman alabilir, lütfen bekleyin... <span style="font-size:12px;font-weight:400;opacity:0.8">(~'+_formatCells(_estCells)+' hücre, tahmini '+estMins+' dk)</span>';
+    const _styleEl=document.createElement('style');_styleEl.textContent='@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}';
+    document.head.appendChild(_styleEl);
+    document.body.appendChild(_longOpBanner);
   }
 
   const headerLine=outHeaders.map(h=>'"'+h.replace(/"/g,'""')+'"').join(outDelim)+'\n';
@@ -2332,7 +2419,7 @@ async function startProcessing(){
         while(true){
           if(abortFlag)break;
           const{done,value}=await reader.read();
-          if(done){if(leftover.trim()&&!isSeparatorLine(leftover)){const _flds=splitLine(leftover,delimiterMode);if(_flds.length>=headers.length){processAndCollect(_flds,outDelim,batch,MAX_FREQ,isMerge?fi:-1);rowCount++}else{_skippedRows++}}break}
+          if(done){if(leftover.trim()&&!isSeparatorLine(leftover)){const _flds=splitLine(leftover,delimiterMode);while(_flds.length<headers.length)_flds.push('');processAndCollect(_flds,outDelim,batch,MAX_FREQ,isMerge?fi:-1);rowCount++}break}
           totalRead+=value.byteLength;
           const text=leftover+decoder.decode(value,{stream:true});
           const split=csvSplitLines(text);
@@ -2342,7 +2429,8 @@ async function startProcessing(){
             if(isSeparatorLine(ln))continue;
             if(isFirst){isFirst=false;continue}
             const _flds=splitLine(ln,delimiterMode);
-            if(_flds.length<headers.length){_skippedRows++;continue}
+            // Pad short rows with empty strings instead of skipping — zero data loss
+            while(_flds.length<headers.length)_flds.push('');
             processAndCollect(_flds,outDelim,batch,MAX_FREQ,isMerge?fi:-1);
             rowCount++;
             if(batch.length>=BATCH){
@@ -2365,6 +2453,8 @@ async function startProcessing(){
     }
     if(batch.length)await _flushBatch(batch.join(''));
     totalRows=rowCount;
+    // Uzun işlem banner'ını kaldır
+    const _lob=document.getElementById('longOpBanner');if(_lob)_lob.remove();
     document.getElementById('progressFill').style.width='100%';
     document.getElementById('progressPct').textContent='100%';
     const _doneCells=rowCount*outHeaders.length;
@@ -2373,17 +2463,41 @@ async function startProcessing(){
     let _doneMsg=rowCount.toLocaleString('tr-TR')+' satır × '+outHeaders.length+' sütun = '+_formatCells(_doneCells)+' hücre işlendi.';
     _doneMsg+=' Başarı: %'+_successPct;
     if(_skippedRows>0)_doneMsg+=' ('+_skippedRows.toLocaleString('tr-TR')+' satır hatalı/atlandı)';
+    if(parseFloat(_successPct)<95)_doneMsg+=' ⚠️ Başarı oranı %95 altında! Veri kaybı olabilir.';
     document.getElementById('doneText').textContent=_doneMsg;
+    if(parseFloat(_successPct)<95){document.getElementById('doneText').style.color='#ef4444'}else{document.getElementById('doneText').style.color=''}
     const noteEl=document.getElementById('xlsxNote');
     if(rowCount>1e6){noteEl.textContent='⚠️ 1M+ satır: Excel RAM kullanabilir, CSV önerilir.';noteEl.style.color='#f59e0b'}
     else noteEl.textContent='';
     outHeaders.forEach(h=>{
       const st=colStats[h];if(!st)return;
-      if(st._useHLL&&st._uniqSet instanceof HyperLogLog){st.uniqueCount=st._uniqSet.count();st._uniqSet=null}
-      else if(st._uniqSet&&st._uniqSet.size!==undefined){st.uniqueCount=st._uniqSet.size;delete st._uniqSet}
-      else if(!st.uniqueCount)st.uniqueCount=Object.keys(st.freq).length;
-      // Pre-compute median and free allVals to save RAM
-      if(st.isNumeric&&st.allVals&&st.allVals.length>0){
+      // Use HLL for large data (always accurate), freq map size for small data
+      if(st._useHLL&&st._uniqSet instanceof HyperLogLog){st.uniqueCount=st._uniqSet.count()}
+      else if(st._uniqSet&&st._uniqSet.size!==undefined){st.uniqueCount=st._uniqSet.size}
+      else if(st._freqSize>0){st.uniqueCount=st._freqSize}
+      else{st.uniqueCount=Object.keys(st.freq).length}
+      // Log high-cardinality columns but keep ALL freq data (zero data loss)
+      if(st._freqSize>1000000){console.info('ℹ️ Sütun "'+h+'": '+st._freqSize.toLocaleString()+' benzersiz değer — freq haritası tam olarak korunuyor')}
+      // Free HLL to save RAM
+      if(st._uniqSet){st._uniqSet=null;delete st._uniqSet}
+      // Pre-compute median from freq map (EXACT — uses ALL data, not sampled)
+      if(st.isNumeric&&st.numCount>0){
+        const numE=[];
+        Object.entries(st.freq).forEach(([val,cnt])=>{const n=parseFloat(String(val).replace(',','.'));if(!isNaN(n)&&isFinite(n))numE.push({v:n,c:cnt})});
+        if(numE.length>0){
+          numE.sort((a,b)=>a.v-b.v);
+          const tN=numE.reduce((a,e)=>a+e.c,0);
+          let cum=0;
+          // Exact median from full frequency distribution
+          for(const e of numE){cum+=e.c;if(cum>=tN*0.5){st._median=e.v;break}}
+          // Exact Q1 (25th percentile)
+          cum=0;for(const e of numE){cum+=e.c;if(cum>=tN*0.25){st._p25=e.v;break}}
+          // Exact Q3 (75th percentile)
+          cum=0;for(const e of numE){cum+=e.c;if(cum>=tN*0.75){st._p75=e.v;break}}
+        }
+      }
+      // Fallback: use allVals if freq-based computation failed
+      if(st.isNumeric&&st._median===undefined&&st.allVals&&st.allVals.length>0){
         const nums=st.allVals.map(v=>parseFloat(String(v).replace(',','.'))).filter(v=>!isNaN(v)).sort((a,b)=>a-b);
         const mid=Math.floor(nums.length/2);
         st._median=nums.length%2?nums[mid]:((nums[mid-1]+nums[mid])/2);
@@ -2439,9 +2553,10 @@ function processAndCollect(fields,outDelim,batch,MAX_FREQ,sourceFileIdx){
       const num=parseFloat(val.replace(',','.'));
       if(!isNaN(num)&&isFinite(num)){st.numCount++;st.sum+=num;st.sumSq+=num*num;if(num<st.min)st.min=num;if(num>st.max)st.max=num}
       else st.isNumeric=false;
-      if(val in st.freq){st.freq[val]++}else if(st._freqSize<MAX_FREQ){st.freq[val]=1;st._freqSize++}
+      if(val in st.freq){st.freq[val]++}else if(st._freqSize<MAX_FREQ){st.freq[val]=1;st._freqSize++;if(st._freqSize===_FREQ_SOFT_CAP&&typeof _FREQ_SOFT_CAP!=='undefined')console.warn('⚠️ Sütun "'+outHeaders[oi]+'" freq haritası '+_FREQ_SOFT_CAP.toLocaleString()+' benzersiz değere ulaştı — yüksek bellek kullanımı olabilir')}
       if(st._useHLL){st._uniqSet.add(val)}else{if(st._uniqSet.size<_UNIQSET_LIM)st._uniqSet.add(val)}
-      if(st.allVals.length<_ALLVALS_LIM)st.allVals.push(val);
+      st._allValsTotal++;
+      if(st.allVals.length<_ALLVALS_LIM){st.allVals.push(val)}else{const j=Math.floor(Math.random()*st._allValsTotal);if(j<_ALLVALS_LIM)st.allVals[j]=val}
     }
     parts.push('"'+val.replace(/"/g,'""')+'"');
     oi++;
@@ -2903,6 +3018,7 @@ async function executeJoin(){
         if(done){
           if(leftover.trim()&&!isSeparatorLine(leftover)&&!isFirst){
             const fields=splitLine(leftover,joinLeftDelimiter).map(v=>v.trim());
+            while(fields.length<joinLeftHeaders.length)fields.push('');
             const key=lKeyIdxs.map(i=>fields[i]||'').join('|||');
             if(!leftMap.has(key))leftMap.set(key,[]);
             leftMap.get(key).push(fields);
@@ -2916,6 +3032,7 @@ async function executeJoin(){
           if(!ln.trim()||isSeparatorLine(ln))continue;
           if(isFirst){isFirst=false;continue}
           const fields=splitLine(ln,joinLeftDelimiter).map(v=>v.trim());
+          while(fields.length<joinLeftHeaders.length)fields.push('');
           const key=lKeyIdxs.map(i=>fields[i]||'').join('|||');
           if(!leftMap.has(key))leftMap.set(key,[]);
           leftMap.get(key).push(fields);
@@ -2943,6 +3060,7 @@ async function executeJoin(){
       if(done){
         if(leftover.trim()&&!isSeparatorLine(leftover)&&!isFirst){
           const fields=splitLine(leftover,joinRightDelimiter).map(v=>v.trim());
+          while(fields.length<joinRightHeaders.length)fields.push('');
           processJoinRightRow(fields,rKeyIdxs,leftMap,outHeaders,keyRightCols,outRows,matchedKeys);
           rightRowCount++;
         }
@@ -2954,6 +3072,7 @@ async function executeJoin(){
         if(!ln.trim()||isSeparatorLine(ln))continue;
         if(isFirst){isFirst=false;continue}
         const fields=splitLine(ln,joinRightDelimiter).map(v=>v.trim());
+        while(fields.length<joinRightHeaders.length)fields.push('');
         processJoinRightRow(fields,rKeyIdxs,leftMap,outHeaders,keyRightCols,outRows,matchedKeys);
         rightRowCount++;
         if(rightRowCount%10000===0){
@@ -3126,7 +3245,7 @@ function renderSummaryStats(){
   let filteredTotal=totalRows;
   if(fStats){filteredTotal=0;outHeaders.forEach(h=>{if(fStats[h])filteredTotal=Math.max(filteredTotal,fStats[h].count+fStats[h].empty)});if(filteredTotal===0){const firstH=outHeaders[0];if(fStats[firstH])filteredTotal=fStats[firstH].count+fStats[firstH].empty}}
   const items=[
-    {v:anyFilter?(filteredTotal>10000000?'10M+':filteredTotal.toLocaleString('tr-TR')):(totalRows>10000000?'10M+':totalRows.toLocaleString('tr-TR')),l:anyFilter?'Filtrelenmiş Satır':'Toplam Satır'},
+    {v:anyFilter?_formatCells(filteredTotal):_formatCells(totalRows),l:anyFilter?'Filtrelenmiş Satır':'Toplam Satır'},
     {v:outHeaders.length,l:'Sütun'},
     {v:numCols,l:'Sayısal Sütun'},
     {v:catCols,l:'Kategorik Sütun'}
@@ -3535,7 +3654,7 @@ function updateKPICards(){
   row.innerHTML='';
   const kpis=[];
   // Total rows
-  kpis.push({val:totalRows>10000000?'10M+':totalRows.toLocaleString('tr-TR'),label:'Toplam Satır',cls:'kpi-blue'});
+  kpis.push({val:_formatCells(totalRows),label:'Toplam Satır',cls:'kpi-blue'});
   // X unique values
   const xCol=document.getElementById('xVar')?document.getElementById('xVar').value:'';
   if(xCol&&colStats[xCol]){
@@ -3704,7 +3823,7 @@ function openGroupingModal(){
   if(isNum){
     // Numeric grouping
     modalHTML+='<div style="margin-bottom:12px;padding:8px;background:#f0f9ff;border-radius:6px;font-size:11px;color:#0369a1">';
-    modalHTML+='<strong>'+escHtml(col)+'</strong>: Min='+s.min.toLocaleString('tr-TR')+' | Maks='+s.max.toLocaleString('tr-TR')+' | Ort='+(s.sum/s.numCount).toFixed(2)+' | Frekans='+s.numCount.toLocaleString('tr-TR');
+    modalHTML+='<strong>'+escHtml(col)+'</strong>: Min='+s.min.toLocaleString('tr-TR')+' | Maks='+s.max.toLocaleString('tr-TR')+' | Ort='+(s.sum/s.numCount).toFixed(2)+' | n='+s.numCount.toLocaleString('tr-TR');
     modalHTML+='</div>';
 
     // Template chips
@@ -3731,7 +3850,7 @@ function openGroupingModal(){
     const uniqueVals=Object.entries(s.freq).sort((a,b)=>b[1]-a[1]).slice(0,100);
 
     modalHTML+='<div style="margin-bottom:12px;padding:8px;background:#fefce8;border-radius:6px;font-size:11px;color:#854d0e">';
-    modalHTML+='<strong>'+escHtml(col)+'</strong>: '+Object.keys(s.freq).length+' benzersiz değer | Frekans='+s.count.toLocaleString('tr-TR');
+    modalHTML+='<strong>'+escHtml(col)+'</strong>: '+Object.keys(s.freq).length+' benzersiz değer | n='+s.count.toLocaleString('tr-TR');
     modalHTML+='</div>';
 
     // Custom group name
@@ -5009,7 +5128,7 @@ function computeMultiSubPivot(xCol,subGroups,yCols,aggType){
   const sgKeyList=[...allSgKeys].sort();
 
   // Determine columns: each sgKey × each Y measure
-  const yMeasures=yCols.length?yCols:['Frekans'];
+  const yMeasures=yCols.length?yCols:['Sayı (n)'];
 
   function extractVal(g,yIdx,agg){
     if(!g)return 0;
@@ -5055,12 +5174,12 @@ function computeMultiSubPivot(xCol,subGroups,yCols,aggType){
       sgKeyList.forEach(()=>{
         yCols.forEach(y=>{html+='<th style="position:sticky;top:'+topPx+'px;background:#f1f5f9;z-index:2;font-size:10px;text-align:center">'+escHtml(y.length>15?y.substring(0,13)+'..':y)+'</th>'});
       });
-      html+='<th style="position:sticky;top:'+topPx+'px;background:#f1f5f9;z-index:2">N</th></tr>';
+      html+='<th style="position:sticky;top:'+topPx+'px;background:#f1f5f9;z-index:2">Sayı (n)</th></tr>';
     }else{
       const topPx=subGroups.length*24;
       html+='<tr><th style="position:sticky;top:'+topPx+'px;background:#f1f5f9;z-index:2">'+escHtml(xCol)+'</th>';
       sgKeyList.forEach(()=>{html+='<th style="position:sticky;top:'+topPx+'px;background:#f1f5f9;z-index:2;text-align:center">'+aggLabels[aggType]+'</th>'});
-      html+='<th style="position:sticky;top:'+topPx+'px;background:#f1f5f9;z-index:2">N</th></tr>';
+      html+='<th style="position:sticky;top:'+topPx+'px;background:#f1f5f9;z-index:2">Sayı (n)</th></tr>';
     }
     html+='</thead>';
   }
@@ -5319,7 +5438,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
   const hasMultiSub=subGroups.length>1;
   let title=xCol||yLabel||'';
   if(yCols.length&&xCol)title=yLabel+' by '+xCol+' ('+aggLabels[agg]+')';
-  else if(xCol&&agg==='count')title=xCol+' (Frekans)';
+  else if(xCol&&agg==='count')title=xCol+' (n)';
   else if(type==='histogram')title=(yCols[0]||xCol)+' Histogram';
   else if(type==='boxplot')title=(yCols[0]||'')+' Dağılım — '+xCol;
   if(subGroups.length)title+=' ['+subGroups.join(' > ')+']';
@@ -5432,7 +5551,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
       const result=computeMultiAgg(xCol,yCols,agg);
       let html='<div style="overflow:auto;max-height:75vh;border:1px solid #e2e8f0;border-radius:8px;contain:layout style;will-change:scroll-position"><table class="corr-matrix" style="font-size:12px;content-visibility:auto"><thead><tr><th style="position:sticky;top:0;left:0;background:#f1f5f9;z-index:3;white-space:normal;word-break:break-word;min-width:120px;max-width:220px;padding:4px 8px">'+escHtml(xCol)+'</th>';
       result.datasets.forEach(ds=>{html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2;white-space:normal;word-break:break-word;min-width:60px;max-width:160px;padding:4px 8px">'+escHtml(ds.label)+'</th>'});
-      html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2">N</th><th style="position:sticky;top:0;background:#f1f5f9;z-index:2">%</th></tr></thead><tbody>';
+      html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2">Sayı (n)</th><th style="position:sticky;top:0;background:#f1f5f9;z-index:2">%</th></tr></thead><tbody>';
       const totalCount=result.groups.reduce((s,e)=>s+e[1].count,0);
       const maxVals=result.datasets.map(ds=>Math.max(...ds.data.filter(v=>!isNaN(v)&&v>0)));
       result.groups.forEach(([label,g],i)=>{
@@ -5733,11 +5852,8 @@ function _updateUndoBtn(){
 function _computeFilteredColStats(){
   // Stream ALL rows for accurate counts — no sampling
   const stats={};
-  const _numVals={}; // separate array for median calculation (with memory limit)
-  const _MEDIAN_LIM=500000; // keep at most 500K values for median calc
   outHeaders.forEach(h=>{
     stats[h]={count:0,empty:0,numCount:0,sum:0,sumSq:0,min:Infinity,max:-Infinity,freq:{},isNumeric:colStats[h]&&colStats[h].isNumeric,uniqueCount:0,_median:0};
-    _numVals[h]=[];
   });
   streamOutputRows(row=>{
     let skip=false;
@@ -5756,20 +5872,27 @@ function _computeFilteredColStats(){
         if(!isNaN(num)&&isFinite(num)){
           s.numCount++;s.sum+=num;s.sumSq+=num*num;
           if(num<s.min)s.min=num;if(num>s.max)s.max=num;
-          if(_numVals[h].length<_MEDIAN_LIM)_numVals[h].push(num);
+          // sum, sumSq, min, max already accumulated above — no sampling needed
         }
       }
     });
   });
-  // Compute median and uniqueCount
+  // Compute EXACT median from freq map and uniqueCount — zero data loss
   outHeaders.forEach(h=>{
     const s=stats[h];
     s.uniqueCount=Object.keys(s.freq).length;
-    const vals=_numVals[h];
-    if(vals.length>0){
-      vals.sort((a,b)=>a-b);
-      const mid=Math.floor(vals.length/2);
-      s._median=vals.length%2?vals[mid]:(vals[mid-1]+vals[mid])/2;
+    // Exact median from complete filtered freq distribution
+    if(s.isNumeric&&s.numCount>0){
+      const numE=[];
+      Object.entries(s.freq).forEach(([val,cnt])=>{const n=parseFloat(String(val).replace(',','.'));if(!isNaN(n)&&isFinite(n))numE.push({v:n,c:cnt})});
+      if(numE.length>0){
+        numE.sort((a,b)=>a.v-b.v);
+        const tN=numE.reduce((a,e)=>a+e.c,0);
+        let cum=0;
+        for(const e of numE){cum+=e.c;if(cum>=tN*0.5){s._median=e.v;break}}
+        cum=0;for(const e of numE){cum+=e.c;if(cum>=tN*0.25){s._p25=e.v;break}}
+        cum=0;for(const e of numE){cum+=e.c;if(cum>=tN*0.75){s._p75=e.v;break}}
+      }
     }
     if(s.min===Infinity)s.min=0;
     if(s.max===-Infinity)s.max=0;
@@ -5856,7 +5979,7 @@ function updateKPICardsFiltered(){
       displayTotal=rows.length>=totalRows?filteredCount:Math.round(filteredCount*sampleRatio);
     }else{displayTotal=filteredCount}
   }
-  const displayStr=displayTotal>10000000?'10M+':displayTotal.toLocaleString('tr-TR');
+  const displayStr=_formatCells(displayTotal);
   kpis.push({val:displayStr,label:anyFilter?'Filtrelenmiş Satır':'Toplam Satır',cls:'kpi-blue'});
   // X unique values
   const xCol=document.getElementById('xVar')?document.getElementById('xVar').value:'';
@@ -6150,7 +6273,7 @@ function _ruleInterpretCrossTab(){
   const{rowCol,colCol,aggType,rArr,cArr,grid}=_lastCrossTab;
   let t='Çapraz Tablo Analizi: '+rowCol+' × '+colCol+'\n\n';
   t+='Boyut: '+rArr.length+' satır × '+cArr.length+' sütun. ';
-  t+='Hesaplama: '+(aggType==='count'?'Frekans':aggType==='sum'?'Toplam':(aggType==='avg'||aggType==='mean')?'Ortalama':'Sayı')+'.\n\n';
+  t+='Hesaplama: '+(aggType==='count'?'Sayı (n)':aggType==='sum'?'Toplam':(aggType==='avg'||aggType==='mean')?'Ortalama':'Sayı')+'.\n\n';
   // Find max and min cells
   let maxV=-Infinity,minV=Infinity,maxR='',maxC='',minR='',minC='',totalSum=0,totalCells=0;
   for(let r=0;r<rArr.length;r++){
@@ -6539,7 +6662,7 @@ function renderTopBottomData(){
   html+='<h4 style="font-size:13px;font-weight:700;color:#c2410c;margin-bottom:10px">📊 Filtrelenmiş Veri Özet İstatistikleri — '+escHtml(sortVar)+'</h4>';
   html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;font-size:12px">';
   const statItems=[
-    {label:'Frekans',val:n.toLocaleString('tr-TR')},
+    {label:'n (Gözlem)',val:n.toLocaleString('tr-TR')},
     {label:'Toplam',val:sum.toLocaleString('tr-TR',{maximumFractionDigits:2})},
     {label:'Ortalama',val:mean.toLocaleString('tr-TR',{maximumFractionDigits:2})},
     {label:'Medyan',val:median.toLocaleString('tr-TR',{maximumFractionDigits:2})},
@@ -6641,8 +6764,8 @@ function renderTopBottomGroupData(){
   });
   // Sıralama sütununu belirle: seçili ise o, değilse ilk sayısal
   const sortKey=sortCol&&numCols.includes(sortCol)?sortCol:numCols[0];
-  const metricLabel={mean:'Ort.',max:'Maks',min:'Min',median:'Med.',sum:'Top.',count:'Frekans'}[metric]||'Ort.';
-  const metricLabelFull={mean:'Ortalama',max:'Maksimum',min:'Minimum',median:'Medyan',sum:'Toplam',count:'Frekans'}[metric]||'Ortalama';
+  const metricLabel={mean:'Ort.',max:'Maks',min:'Min',median:'Med.',sum:'Top.',count:'Sayı (n)'}[metric]||'Ort.';
+  const metricLabelFull={mean:'Ortalama',max:'Maksimum',min:'Minimum',median:'Medyan',sum:'Toplam',count:'Sayı (n)'}[metric]||'Ortalama';
   // Entries oluştur
   let entries=Object.entries(groups).map(([key,g])=>{
     const stats={};
@@ -6758,7 +6881,7 @@ function renderTopBottomGroupData(){
     html+='<table style="width:100%;border-collapse:collapse;font-size:12px" id="topBottomGrpDetail_'+cls+'"><thead><tr>';
     html+='<th style="position:sticky;top:0;background:#e2e8f0;padding:5px 8px;border:1px solid #cbd5e1;font-weight:700">'+escHtml(indepVar)+'</th>';
     numCols.forEach(h=>{
-      ['Ort.','Med.','Min','Maks','Top.','Std.S.','Frekans'].forEach(lbl=>{
+      ['Ort.','Med.','Min','Maks','Top.','Std.S.','n'].forEach(lbl=>{
         html+='<th style="position:sticky;top:0;background:#e2e8f0;padding:4px 5px;border:1px solid #cbd5e1;text-align:right;font-size:10px;white-space:nowrap">'+escHtml(h)+'<br>'+lbl+'</th>';
       });
     });
@@ -6847,7 +6970,7 @@ function renderQuickView(){
     let html=filterBanner+'<table style="width:100%;border-collapse:collapse;font-size:12px" id="quickviewTbl"><thead><tr>';
     html+='<th class="sortable-th" data-sort-col="0" data-tbl="quickviewTbl" onclick="sortSummaryTable(this)" style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;cursor:pointer;user-select:none">Değişken <span class="sort-icon">⇅</span></th>';
     html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center">Tür</th>';
-    html+='<th class="sortable-th" data-sort-col="2" data-tbl="quickviewTbl" onclick="sortSummaryTable(this)" style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center;cursor:pointer;user-select:none">Dolu (Frekans) <span class="sort-icon">⇅</span></th>';
+    html+='<th class="sortable-th" data-sort-col="2" data-tbl="quickviewTbl" onclick="sortSummaryTable(this)" style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center;cursor:pointer;user-select:none">Dolu (Satır) <span class="sort-icon">⇅</span></th>';
     html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center">Boş</th>';
     html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center">Benzersiz</th>';
     html+='<th class="sortable-th" data-sort-col="5" data-tbl="quickviewTbl" onclick="sortSummaryTable(this)" style="position:sticky;top:0;background:#dbeafe;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center;cursor:pointer;user-select:none">Toplam <span class="sort-icon">⇅</span></th>';
@@ -6970,13 +7093,13 @@ function renderSummaryStatsTable(){
       const tblId='summTbl_'+catCol.replace(/[^a-zA-Z0-9]/g,'_');
       html+='<div style="overflow-x:auto;max-height:600px;overflow-y:auto"><table id="'+tblId+'" style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>';
       html+='<th class="sortable-th" data-sort-col="cat" data-tbl="'+tblId+'" style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;min-width:120px;cursor:pointer;user-select:none" onclick="sortSummaryTable(this)">'+escHtml(catCol)+' <span class="sort-icon">⇅</span></th>';
-      html+='<th class="sortable-th" data-sort-col="freq" data-tbl="'+tblId+'" style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center;min-width:50px;cursor:pointer;user-select:none" onclick="sortSummaryTable(this)">N <span class="sort-icon">⇅</span></th>';
+      html+='<th class="sortable-th" data-sort-col="freq" data-tbl="'+tblId+'" style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center;min-width:50px;cursor:pointer;user-select:none" onclick="sortSummaryTable(this)">n <span class="sort-icon">⇅</span></th>';
       numIndices.forEach(({col:numCol})=>{
         html+='<th colspan="4" style="position:sticky;top:0;background:#dbeafe;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center">'+escHtml(numCol)+'</th>';
       });
       html+='</tr><tr>';
       html+='<th style="position:sticky;top:28px;background:#f1f5f9;z-index:1;padding:4px 10px;border:1px solid #e2e8f0"></th>';
-      html+='<th style="position:sticky;top:28px;background:#f1f5f9;z-index:1;padding:4px 10px;border:1px solid #e2e8f0;text-align:center;font-size:10px">Frekans</th>';
+      html+='<th style="position:sticky;top:28px;background:#f1f5f9;z-index:1;padding:4px 10px;border:1px solid #e2e8f0;text-align:center;font-size:10px">n</th>';
       numIndices.forEach(({col:numCol},nIdx)=>{
         const colBase=numCol.replace(/[^a-zA-Z0-9]/g,'_');
         html+='<th class="sortable-th" data-sort-col="avg_'+nIdx+'" data-tbl="'+tblId+'" style="position:sticky;top:28px;background:#e0f2fe;z-index:1;padding:4px 6px;border:1px solid #e2e8f0;text-align:center;font-size:10px;min-width:70px;cursor:pointer;user-select:none" onclick="sortSummaryTable(this)">Ort. <span class="sort-icon">⇅</span></th>';
@@ -7121,7 +7244,7 @@ function renderDetailedStats(){
 
   // Basic stats
   html+='<div class="stat-detail-grid mb-16">';
-  html+='<div class="stat-detail-card"><div class="sdv">'+filled.toLocaleString('tr-TR')+'</div><div class="sdl">Dolu</div></div>';
+  html+='<div class="stat-detail-card"><div class="sdv">'+filled.toLocaleString('tr-TR')+'</div><div class="sdl">Dolu (Satır)</div></div>';
   html+='<div class="stat-detail-card"><div class="sdv">'+s.empty.toLocaleString('tr-TR')+'</div><div class="sdl">Boş</div></div>';
   html+='<div class="stat-detail-card"><div class="sdv">'+uniq.toLocaleString('tr-TR')+'</div><div class="sdl">Benzersiz</div></div>';
   html+='<div class="stat-detail-card"><div class="sdv">'+(filled?((s.empty/s.count)*100).toFixed(1)+'%':'0%')+'</div><div class="sdl">Eksık Oran</div></div>';
@@ -7303,7 +7426,6 @@ function computeCrossTab(){
 
   setTimeout(()=>{
     const t0=performance.now();
-    const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
     const ri=outHeaders.indexOf(rowCol),ci=outHeaders.indexOf(colCol),vi=valCol?outHeaders.indexOf(valCol):-1;
 
     // Use Map for faster lookup instead of string concatenation
@@ -7317,17 +7439,17 @@ function computeCrossTab(){
       if(colFilters[outHeaders[fi]]&&hasActiveFilter(outHeaders[fi]))activeFilterCols.push(fi);
     }
 
-    for(let idx=0;idx<rows.length;idx++){
-      const row=rows[idx];
+    // Stream ALL rows — no sampling, no data loss
+    streamOutputRows(row=>{
       // Fast filter check - only check active filter columns
       let skip=false;
       for(let k=0;k<activeFilterCols.length;k++){
         const fi=activeFilterCols[k];
         if(!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
       }
-      if(skip)continue;
+      if(skip)return;
       const rv=row[ri]||'',cv=row[ci]||'';
-      if(!rv||!cv)continue;
+      if(!rv||!cv)return;
       colValsSet.add(cv);
       let rMap=rowMap.get(rv);
       if(!rMap){rMap=new Map();rowMap.set(rv,rMap)}
@@ -7335,7 +7457,7 @@ function computeCrossTab(){
       if(!cell){cell={count:0,sum:0,n:0};rMap.set(cv,cell)}
       cell.count++;
       if(vi>=0){const n=parseFloat((row[vi]||'').replace(',','.'));if(!isNaN(n)){cell.sum+=n;cell.n++}}
-    }
+    });
 
     // Sort rows and columns — limit for performance
     let rArr=[...rowMap.keys()].sort((a,b)=>a.localeCompare(b,'tr'));
@@ -7487,7 +7609,7 @@ function exportCrossTabExcel(){
   if(!_lastCrossTab){showError('Önce çapraz tabloyu hesaplayın.');return}
   if(typeof XLSX==='undefined'){showError('XLSX kütüphanesi yüklenemedi.');return}
   const{rowCol,colCol,aggType,rArr,cArr,grid}=_lastCrossTab;
-  const aggLabel=aggType==='count'?'Sayı':aggType==='sum'?'Toplam':(aggType==='avg'||aggType==='mean')?'Ortalama':'Sayı';
+  const aggLabel=aggType==='count'?'Sayı (n)':aggType==='sum'?'Toplam':(aggType==='avg'||aggType==='mean')?'Ortalama':'Sayı';
 
   // Build worksheet data
   const wsData=[];
@@ -7853,14 +7975,17 @@ function buildLLMPrompt(){
     prompt+='\n';
   }
 
-  prompt+='## Veri Seti Özeti\nToplam satır: '+totalRows+'\nSütun sayısı: '+outHeaders.length+'\nSütunlar: '+outHeaders.join(', ')+'\n\n';
+  const _anyFilterLLM=activeFilters.length>0;
+  const _fStatsLLM=_anyFilterLLM?_computeFilteredColStats():null;
+  const _llmRowCount=_anyFilterLLM&&_fStatsLLM?Math.max(...outHeaders.map(h=>_fStatsLLM[h]?((_fStatsLLM[h].count||0)+(_fStatsLLM[h].empty||0)):0)):totalRows;
+  prompt+='## Veri Seti Özeti\nToplam satır: '+totalRows+(_anyFilterLLM?' (filtrelenmiş: '+_llmRowCount+')':'')+'\nSütun sayısı: '+outHeaders.length+'\nSütunlar: '+outHeaders.join(', ')+'\n\n';
 
-  prompt+='## Sütun İstatistikleri\n';
+  prompt+='## Sütun İstatistikleri'+(_anyFilterLLM?' (Filtrelenmiş Veri)':'')+'\n';
   outHeaders.forEach(h=>{
-    const s=colStats[h];if(!s)return;
+    const s=_anyFilterLLM&&_fStatsLLM&&_fStatsLLM[h]?_fStatsLLM[h]:colStats[h];if(!s)return;
     const isNum=s.isNumeric&&s.numCount>0;
     prompt+=h+' ('+( isNum?'Sayısal':'Kategorik')+'):\n';
-    prompt+='  Dolu: '+(s.count-s.empty)+', Boş: '+s.empty+', Benzersiz: '+Object.keys(s.freq).length+'\n';
+    prompt+='  Dolu: '+(s.count-(s.empty||0))+', Boş: '+(s.empty||0)+', Benzersiz: '+(s.uniqueCount||Object.keys(s.freq).length)+'\n';
     if(isNum){
       const mean=s.sum/s.numCount;
       const variance=s.sumSq/s.numCount-mean*mean;
@@ -8254,7 +8379,7 @@ async function generateAPA7PDF(){
       const topE=Object.entries(s.freq).sort((a,b)=>b[1]-a[1])[0];
       return[h,isNum?'Sayısal':'Kategorik',String(filled),isNum?String(s.min):'-',isNum?String(s.max):'-',isNum?(s.sum/s.numCount).toFixed(2):'-',medV,stdV,topE?topE[0].substring(0,15):'-'];
     });
-    doc.autoTable({startY:y,head:[[_pt('Değişken'),_pt('Tip'),_pt('Frekans'),'Min',_pt('Maks'),_pt('Ort.'),_pt('Medyan'),'SS','Mod']],body:statsRows.map(r=>r.map(_pt)),styles:{fontSize:7,cellPadding:2,font:_pdfFN},headStyles:{fillColor:[59,130,246],font:_pdfFN},margin:{left:mg,right:mg},theme:'grid'});
+    doc.autoTable({startY:y,head:[[_pt('Değişken'),_pt('Tip'),'n','Min',_pt('Maks'),_pt('Ort.'),_pt('Medyan'),'SS','Mod']],body:statsRows.map(r=>r.map(_pt)),styles:{fontSize:7,cellPadding:2,font:_pdfFN},headStyles:{fillColor:[59,130,246],font:_pdfFN},margin:{left:mg,right:mg},theme:'grid'});
     y=doc.lastAutoTable.finalY+12;
 
     // ======= CHARTS WITH LLM INTERPRETATIONS =======
@@ -8756,7 +8881,7 @@ function buildSmartReportPDF(doc,indepVar,sections,partNum,totalParts,opts){
   doc.text(_pt('Kullanılan Kısaltmalar'),pw/2,y,{align:'center'});y+=5;
   doc.setFont(_pdfFN,'normal');
   const abbrData=[
-    [_pt('Frekans'),_pt('Veritabanında kaç kez geçtiği (gözlem sayısı)')],
+    ['n',_pt('Gözlem sayısı (alt grup büyüklüğü, APA7: küçük n)')],
     [_pt('Ort.'),_pt('Aritmetik ortalama (tüm değerlerin toplamı / gözlem sayısı)')],
     [_pt('Medyan'),_pt('Ortanca değer (sıralandığında tam ortadaki değer)')],
     ['SS',_pt('Standart sapma (verilerin ortalamadan sapma ölçüsü)')],
@@ -8829,7 +8954,7 @@ function buildSmartReportPDF(doc,indepVar,sections,partNum,totalParts,opts){
 
       // Tablo: Alt Grup | N | depVar1 Ort | depVar1 SS | depVar2 Ort | depVar2 SS ...
       const depVarNames=Object.keys(sec.summaryTable[0].vars);
-      const head=[_pt(sec.subGroupVar),_pt('Frekans')];
+      const head=[_pt(sec.subGroupVar),'n'];
       depVarNames.forEach(dv=>{head.push(_pt(dv+' Ort.'));head.push(_pt(dv+' SS'))});
 
       const body=sec.summaryTable.map(row=>{
@@ -8883,7 +9008,7 @@ function buildSmartReportPDF(doc,indepVar,sections,partNum,totalParts,opts){
 
         // Stats for histogram type
         if(sgc.type==='histogram'&&sgc.stats){
-          doc.autoTable({startY:y,head:[[_pt('Frekans'),_pt('Ort.'),_pt('Medyan'),'SS','Min',_pt('Maks'),'Q1','Q3']],body:[[sgc.stats.n,sgc.stats.mean.toFixed(2),sgc.stats.median.toFixed(2),sgc.stats.std.toFixed(2),sgc.stats.min.toFixed(2),sgc.stats.max.toFixed(2),sgc.stats.q1.toFixed(2),sgc.stats.q3.toFixed(2)]],styles:{fontSize:7,cellPadding:2,font:_pdfFN},headStyles:{fillColor:[59,130,246],font:_pdfFN},margin:{left:mg,right:mg},theme:'grid'});
+          doc.autoTable({startY:y,head:[['n',_pt('Ort.'),_pt('Medyan'),'SS','Min',_pt('Maks'),'Q1','Q3']],body:[[sgc.stats.n,sgc.stats.mean.toFixed(2),sgc.stats.median.toFixed(2),sgc.stats.std.toFixed(2),sgc.stats.min.toFixed(2),sgc.stats.max.toFixed(2),sgc.stats.q1.toFixed(2),sgc.stats.q3.toFixed(2)]],styles:{fontSize:7,cellPadding:2,font:_pdfFN},headStyles:{fillColor:[59,130,246],font:_pdfFN},margin:{left:mg,right:mg},theme:'grid'});
           y=doc.lastAutoTable.finalY+4;
         }
         y+=6;
@@ -8907,7 +9032,7 @@ function buildSmartReportPDF(doc,indepVar,sections,partNum,totalParts,opts){
 
       // Stats mini table (alt gruplama yokken göster)
       if(ch.stats&&opts.incStats!==false&&!sec.summaryTable){
-        doc.autoTable({startY:y,head:[[_pt('Frekans'),_pt('Ort.'),_pt('Medyan'),'SS','Min',_pt('Maks'),'Q1','Q3']],body:[[ch.stats.n,ch.stats.mean.toFixed(2),ch.stats.median.toFixed(2),ch.stats.std.toFixed(2),ch.stats.min.toFixed(2),ch.stats.max.toFixed(2),ch.stats.q1.toFixed(2),ch.stats.q3.toFixed(2)]],styles:{fontSize:7,cellPadding:2,font:_pdfFN},headStyles:{fillColor:[5,150,105],font:_pdfFN},margin:{left:mg,right:mg},theme:'grid'});
+        doc.autoTable({startY:y,head:[['n',_pt('Ort.'),_pt('Medyan'),'SS','Min',_pt('Maks'),'Q1','Q3']],body:[[ch.stats.n,ch.stats.mean.toFixed(2),ch.stats.median.toFixed(2),ch.stats.std.toFixed(2),ch.stats.min.toFixed(2),ch.stats.max.toFixed(2),ch.stats.q1.toFixed(2),ch.stats.q3.toFixed(2)]],styles:{fontSize:7,cellPadding:2,font:_pdfFN},headStyles:{fillColor:[5,150,105],font:_pdfFN},margin:{left:mg,right:mg},theme:'grid'});
         y=doc.lastAutoTable.finalY+4;
       }
 
@@ -8997,7 +9122,7 @@ async function generatePDF(){
         isNum?(s.sum/s.numCount).toFixed(2):'-',median,stdDev,
         topE?topE[0].substring(0,12):'-'];
     });
-    doc.autoTable({startY:y,head:[[_pt('Sütun'),_pt('Tip'),_pt('Dolu'),'Min',_pt('Maks'),_pt('Ort.'),_pt('Medyan'),'Std','Mod']],body:statsRows.map(r=>r.map(_pt)),styles:{fontSize:7,cellPadding:2,font:_pdfFN},headStyles:{fillColor:[59,130,246],font:_pdfFN},margin:{left:15,right:15},theme:'grid'});
+    doc.autoTable({startY:y,head:[[_pt('Sütun'),_pt('Tip'),_pt('Dolu (Satır)'),'Min',_pt('Maks'),_pt('Ort.'),_pt('Medyan'),'Std','Mod']],body:statsRows.map(r=>r.map(_pt)),styles:{fontSize:7,cellPadding:2,font:_pdfFN},headStyles:{fillColor:[59,130,246],font:_pdfFN},margin:{left:15,right:15},theme:'grid'});
     y=doc.lastAutoTable.finalY+10;
 
     // Kısaltmalar tablosu
@@ -9005,7 +9130,7 @@ async function generatePDF(){
     doc.setFontSize(11);doc.setFont(_pdfFN,'bold');doc.text(_pt('Kullanılan Kısaltmalar'),15,y);y+=6;
     doc.setFont(_pdfFN,'normal');
     const abbrRows=[
-      [_pt('Frekans'),_pt('Veritabanında kaç kez geçtiği (gözlem sayısı)')],
+      ['n',_pt('Gözlem sayısı (alt grup büyüklüğü, APA7: küçük n)')],
       [_pt('Ort.'),_pt('Aritmetik ortalama')],
       [_pt('Medyan'),_pt('Ortanca değer (sıralandığında tam ortadaki)')],
       ['Std / SS',_pt('Standart sapma (verilerin ortalamadan sapması)')],
@@ -10564,7 +10689,7 @@ function processQuestion(q){
   if(ql.match(/kisaltma|abbrevi|n nedir|ort nedir|ss nedir|q1 nedir|q3 nedir|medyan nedir|mod nedir/)){
     return '📖 <b>Kullanılan Kısaltmalar</b><br>'+
       '<table><tr><th>Kısaltma</th><th>Açıklama</th></tr>'+
-      '<tr><td><b>Frekans</b></td><td>Veritabanında kaç kez geçtiği (gözlem sayısı)</td></tr>'+
+      '<tr><td><b>n / N</b></td><td>n = alt grup gözlem sayısı, N = toplam popülasyon büyüklüğü (APA7)</td></tr>'+
       '<tr><td><b>Ort.</b></td><td>Aritmetik ortalama (tüm değerlerin toplamı / gözlem sayısı)</td></tr>'+
       '<tr><td><b>Medyan</b></td><td>Ortanca değer (sıralandığında tam ortadaki değer)</td></tr>'+
       '<tr><td><b>SS / Std</b></td><td>Standart sapma (verilerin ortalamadan sapma ölçüsü)</td></tr>'+
@@ -11077,7 +11202,7 @@ function _buildContextSummary(){
         text+='Test: '+r.test+'\n';
         if(r.test==='ttest')text+='Gruplar: '+r.groups.join(' vs ')+'\nt = '+r.t.toFixed(4)+', p = '+r.p.toFixed(4)+'\nCohen d = '+r.cohensD.toFixed(3)+'\nEtki büyüklüğü: '+(Math.abs(r.cohensD)<0.2?'İhmal edilebilir':Math.abs(r.cohensD)<0.5?'Küçük':Math.abs(r.cohensD)<0.8?'Orta':'Büyük')+'\n';
         if(r.test==='anova'){text+='F = '+r.F.toFixed(4)+', p = '+r.p.toFixed(4)+', η² = '+r.etaSq.toFixed(3)+'\n';text+='Grup sayısı: '+r.groups.length+' ('+r.groups.join(', ')+')\n';
-          if(r.groupStats)r.groupStats.forEach(g=>{text+='- '+g.group+': Frekans='+g.n+' Ort='+g.mean.toFixed(2)+' SS='+g.std.toFixed(2)+'\n'})}
+          if(r.groupStats)r.groupStats.forEach(g=>{text+='- '+g.group+': n='+g.n+' Ort='+g.mean.toFixed(2)+' SS='+g.std.toFixed(2)+'\n'})}
         if(r.test==='chisquare')text+='χ² = '+r.chiSq.toFixed(4)+', p = '+r.p.toFixed(4)+', df = '+r.df+'\nCramer V = '+r.cramerV.toFixed(3)+'\n';
         if(r.test==='correlation')text+='Pearson r = '+r.pearsonR.toFixed(4)+', p = '+r.pearsonP.toFixed(4)+'\nSpearman ρ = '+r.spearmanR.toFixed(4)+', p = '+r.spearmanP.toFixed(4)+'\n';
         if(r.test==='regression')text+='R² = '+r.R2.toFixed(4)+', Düz. R² = '+r.adjR2.toFixed(4)+'\nF = '+r.F.toFixed(4)+', p = '+r.pF.toFixed(4)+'\n';
@@ -11209,7 +11334,7 @@ function initMapView(){
   if(!locSel||!metSel)return;
   // Populate dropdowns
   locSel.innerHTML='<option value="">-- Konum Seçin --</option>';
-  metSel.innerHTML='<option value="">Sayı (Frekans)</option>';
+  metSel.innerHTML='<option value="">Sayı (n)</option>';
   outHeaders.forEach(h=>{
     const s=colStats[h];if(!s)return;
     if(!s.isNumeric||s.numCount===0){
@@ -11344,7 +11469,7 @@ function renderMapChart(){
 
   const metrics=validResults.map(r=>r.metric);
   const minM=Math.min(...metrics),maxM=Math.max(...metrics);
-  const metLabel=metVar?(aggType==='count'?'Sayı':aggType==='sum'?'Toplam':aggType==='mean'?'Ortalama':aggType==='min'?'Min':'Maks'):'Frekans';
+  const metLabel=metVar?(aggType==='count'?'Sayı (n)':aggType==='sum'?'Toplam':aggType==='mean'?'Ortalama':aggType==='min'?'Min':'Maks'):'Sayı (n)';
 
   validResults.forEach(r=>{
     const radius=Math.max(8,Math.min(35,8+27*(maxM===minM?0.5:(r.metric-minM)/(maxM-minM))));
@@ -11668,7 +11793,7 @@ function advStatsRefreshIfActive(){
 function _getFilteredNumericValues(colName){
   const ci=outHeaders.indexOf(colName);if(ci<0)return[];
   const vals=[];
-  const _MAX_VALS=50000000; // 50M values max for memory safety
+  const _MAX_VALS=500000000; // 500M values — supports up to 2B cells
   const hasFilters=Object.keys(colFilters).some(k=>colFilters[k]);
   let total=0;
   streamOutputRows(row=>{
@@ -11691,18 +11816,18 @@ function _getFilteredNumericValues(colName){
 
 // --- Helper: get filtered rows as objects ---
 function _getFilteredRowObjects(){
-  // Stream ALL rows for accurate statistics — reservoir sampling for very large datasets to prevent OOM
-  const _MAX_ROW_OBJS=50000000; // 50M row objects max in memory
+  // For large datasets: stream all rows but limit row objects to prevent OOM
+  // Reservoir sampling ensures representative sample if data exceeds limit
+  const _MAX_ROW_OBJS=50000000; // 50M row objects — EFA/CFA/SEM (tarayıcı RAM sınırı)
   const result=[];
   let ri=0,totalPassed=0;
-  const hasFilters=Object.keys(colFilters).some(k=>colFilters[k]);
+  const _anyFilter=outHeaders.some(h=>hasActiveFilter(h));
   streamOutputRows(row=>{
-    // Outlier exclusion check
     if(outlierFilter.enabled && outlierFilter.excludedRows.has(ri)){ri++;return}
-    if(hasFilters){
+    if(_anyFilter){
       let skip=false;
       for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){
-        if(colFilters[outHeaders[fi]]&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
+        if(colFilters[outHeaders[fi]]&&hasActiveFilter(outHeaders[fi])&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
       }
       if(skip){ri++;return}
     }
@@ -11712,13 +11837,92 @@ function _getFilteredRowObjects(){
     if(result.length<_MAX_ROW_OBJS){
       result.push(obj);
     }else{
-      // Reservoir sampling for datasets beyond limit
       const j=Math.floor(Math.random()*totalPassed);
       if(j<_MAX_ROW_OBJS)result[j]=obj;
     }
     ri++;
   });
   return result;
+}
+
+// === MEMORY-EFFICIENT: Stream grouped numeric values for statistical tests ===
+// Returns: {groupKey: numericArray[]} — processes ALL rows without building row objects
+function _streamGroupedValues(groupCol,valCol){
+  const gi=outHeaders.indexOf(groupCol),vi=outHeaders.indexOf(valCol);
+  if(gi<0||vi<0)return{};
+  const groups={};
+  const _anyFilter=outHeaders.some(h=>hasActiveFilter(h));
+  const _MAX_PER_GROUP=500000000; // 500M values per group — supports up to 2B cells
+  let ri=0;
+  streamOutputRows(row=>{
+    if(outlierFilter.enabled&&outlierFilter.excludedRows.has(ri)){ri++;return}
+    if(_anyFilter){
+      let skip=false;
+      for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){
+        if(colFilters[outHeaders[fi]]&&hasActiveFilter(outHeaders[fi])&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
+      }
+      if(skip){ri++;return}
+    }
+    const g=row[gi]||'';
+    const v=parseFloat((row[vi]||'').replace(',','.'));
+    if(g&&!isNaN(v)&&isFinite(v)){
+      if(!groups[g])groups[g]=[];
+      if(groups[g].length<_MAX_PER_GROUP)groups[g].push(v);
+    }
+    ri++;
+  });
+  return groups;
+}
+
+// Stream paired values for paired tests (paired t-test, Wilcoxon)
+function _streamPairedValues(col1,col2){
+  const i1=outHeaders.indexOf(col1),i2=outHeaders.indexOf(col2);
+  if(i1<0||i2<0)return[];
+  const pairs=[];
+  const _anyFilter=outHeaders.some(h=>hasActiveFilter(h));
+  const _MAX_PAIRS=500000000; // 500M pairs — supports up to 2B cells
+  let ri=0;
+  streamOutputRows(row=>{
+    if(outlierFilter.enabled&&outlierFilter.excludedRows.has(ri)){ri++;return}
+    if(_anyFilter){
+      let skip=false;
+      for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){
+        if(colFilters[outHeaders[fi]]&&hasActiveFilter(outHeaders[fi])&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
+      }
+      if(skip){ri++;return}
+    }
+    const v1=parseFloat((row[i1]||'').replace(',','.'));
+    const v2=parseFloat((row[i2]||'').replace(',','.'));
+    if(!isNaN(v1)&&!isNaN(v2)&&isFinite(v1)&&isFinite(v2)){
+      if(pairs.length<_MAX_PAIRS)pairs.push([v1,v2]);
+    }
+    ri++;
+  });
+  return pairs;
+}
+
+// Stream cross-tab values for Chi-Square test
+function _streamCrossValues(col1,col2){
+  const i1=outHeaders.indexOf(col1),i2=outHeaders.indexOf(col2);
+  if(i1<0||i2<0)return{freq:{},rows:new Set(),cols:new Set(),n:0};
+  const freq={},rSet=new Set(),cSet=new Set();
+  let n=0;
+  const _anyFilter=outHeaders.some(h=>hasActiveFilter(h));
+  let ri=0;
+  streamOutputRows(row=>{
+    if(outlierFilter.enabled&&outlierFilter.excludedRows.has(ri)){ri++;return}
+    if(_anyFilter){
+      let skip=false;
+      for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){
+        if(colFilters[outHeaders[fi]]&&hasActiveFilter(outHeaders[fi])&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
+      }
+      if(skip){ri++;return}
+    }
+    const rv=row[i1]||'',cv=row[i2]||'';
+    if(rv&&cv){rSet.add(rv);cSet.add(cv);const key=rv+'|||'+cv;freq[key]=(freq[key]||0)+1;n++}
+    ri++;
+  });
+  return{freq,rows:rSet,cols:cSet,n};
 }
 // Memory-efficient streaming: extract only needed columns without building full row objects
 function _streamFilteredValues(cols,callback){
@@ -12087,15 +12291,18 @@ function advStatsRun(testId){
   interpArea.style.display='none';
   let html='';
   let resultData={test:testId};
-
+  // Büyük veri uyarısı
+  if(totalRows>1000000){
+    resTable.innerHTML='<div style="text-align:center;padding:20px;color:#2563eb;font-weight:600"><span style="font-size:20px">⏳</span> İşleminiz biraz zaman alabilir, lütfen bekleyin... <span style="font-size:11px;opacity:0.7">('+totalRows.toLocaleString('tr-TR')+' satır)</span></div>';
+  }
+  const _testStart=Date.now();
   try{
   if(testId==='ttest'){
     const groupCol=document.getElementById('advGroup').value;
     const depCol=document.getElementById('advDepVar').value;
     if(!groupCol||!depCol){resTable.innerHTML='<p style="color:#ef4444">Lütfen her iki değişkeni de seçin.</p>';return}
-    const rows=_getFilteredRowObjects();
-    const groups={};
-    rows.forEach(r=>{const g=r[groupCol];const v=parseFloat((r[depCol]||'').replace(',','.'));if(g&&!isNaN(v)){if(!groups[g])groups[g]=[];groups[g].push(v)}});
+    // Memory-efficient: stream ALL rows, only collect group+numeric value
+    const groups=_streamGroupedValues(groupCol,depCol);
     const gKeys=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr'));
     if(gKeys.length!==2){
       if(gKeys.length>2){
@@ -12131,8 +12338,8 @@ function advStatsRun(testId){
     resultData={test:'ttest',groupCol,depCol,groups:gKeys,n1,n2,m1,m2,s1,s2,t,df,p,cohensD};
     html='<table class="stat-table" style="font-size:12px;width:100%;border-collapse:collapse">';
     html+='<tr style="background:#f8fafc"><th style="padding:6px 10px;text-align:left;border:1px solid #e2e8f0">İstatistik</th><th style="padding:6px 10px;border:1px solid #e2e8f0">Değer</th></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 1:</strong> '+gKeys[0]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">Frekans='+n1+', Ort='+m1.toFixed(3)+', SS='+s1.toFixed(3)+'</td></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 2:</strong> '+gKeys[1]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">Frekans='+n2+', Ort='+m2.toFixed(3)+', SS='+s2.toFixed(3)+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 1:</strong> '+gKeys[0]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">n='+n1+', Ort='+m1.toFixed(3)+', SS='+s1.toFixed(3)+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 2:</strong> '+gKeys[1]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">n='+n2+', Ort='+m2.toFixed(3)+', SS='+s2.toFixed(3)+'</td></tr>';
     html+='<tr style="background:#eff6ff"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>t değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700">'+t.toFixed(4)+'</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Serbestlik derecesi (df)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+df+'</td></tr>';
     html+='<tr style="background:'+(p<0.05?'#fef2f2':'#f0fdf4')+'"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>p değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700;color:'+(p<0.05?'#dc2626':'#16a34a')+'">'+(p<0.001?'<0.001':p.toFixed(4))+(p<0.05?' ✱ Anlamlı':' Anlamsız')+'</td></tr>';
@@ -12143,9 +12350,7 @@ function advStatsRun(testId){
     const groupCol=document.getElementById('advGroup').value;
     const depCol=document.getElementById('advDepVar').value;
     if(!groupCol||!depCol){resTable.innerHTML='<p style="color:#ef4444">Lütfen her iki değişkeni de seçin.</p>';return}
-    const rows=_getFilteredRowObjects();
-    const groups={};
-    rows.forEach(r=>{const g=r[groupCol];const v=parseFloat((r[depCol]||'').replace(',','.'));if(g&&!isNaN(v)){if(!groups[g])groups[g]=[];groups[g].push(v)}});
+    const groups=_streamGroupedValues(groupCol,depCol);
     const gKeys=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr'));
     if(gKeys.length<2){resTable.innerHTML='<p style="color:#ef4444">ANOVA için en az 2 grup gerekli.</p>';return}
     const allVals=gKeys.flatMap(k=>groups[k]);
@@ -12162,7 +12367,7 @@ function advStatsRun(testId){
     gKeys.forEach(g=>resultData.groupData[g]={n:groups[g].length,mean:_mean(groups[g]),std:_std(groups[g])});
     html='<h5 style="margin:0 0 8px;font-size:13px">Grup İstatistikleri</h5>';
     html+='<table class="stat-table" style="font-size:12px;width:100%;border-collapse:collapse;margin-bottom:12px">';
-    html+='<tr style="background:#f8fafc"><th style="padding:5px 8px;border:1px solid #e2e8f0">Grup</th><th style="padding:5px 8px;border:1px solid #e2e8f0">N</th><th style="padding:5px 8px;border:1px solid #e2e8f0">Ortalama</th><th style="padding:5px 8px;border:1px solid #e2e8f0">Std Sapma</th></tr>';
+    html+='<tr style="background:#f8fafc"><th style="padding:5px 8px;border:1px solid #e2e8f0">Grup</th><th style="padding:5px 8px;border:1px solid #e2e8f0">n</th><th style="padding:5px 8px;border:1px solid #e2e8f0">Ortalama</th><th style="padding:5px 8px;border:1px solid #e2e8f0">Std Sapma</th></tr>';
     gKeys.forEach(g=>{html+='<tr><td style="padding:5px 8px;border:1px solid #e2e8f0">'+g+'</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+groups[g].length+'</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+_mean(groups[g]).toFixed(3)+'</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+_std(groups[g]).toFixed(3)+'</td></tr>'});
     html+='</table>';
     html+='<h5 style="margin:0 0 8px;font-size:13px">ANOVA Tablosu</h5>';
@@ -12177,12 +12382,11 @@ function advStatsRun(testId){
     const rowCol=document.getElementById('advChiRow').value;
     const colCol=document.getElementById('advChiCol').value;
     if(!rowCol||!colCol||rowCol===colCol){resTable.innerHTML='<p style="color:#ef4444">İki farklı kategorik değişken seçin.</p>';return}
-    const rows=_getFilteredRowObjects();
-    const rowVals=new Set(),colVals=new Set();
-    const freq={};
-    rows.forEach(r=>{const rv=r[rowCol],cv=r[colCol];if(rv&&cv){rowVals.add(rv);colVals.add(cv);const key=rv+'|||'+cv;freq[key]=(freq[key]||0)+1}});
-    const rKeys=[...rowVals].sort(),cKeys=[...colVals].sort();
-    const N=rows.filter(r=>r[rowCol]&&r[colCol]).length;
+    const crossData=_streamCrossValues(rowCol,colCol);
+    const rKeys=[...crossData.rows].sort((a,b)=>a.localeCompare(b,'tr'));
+    const cKeys=[...crossData.cols].sort((a,b)=>a.localeCompare(b,'tr'));
+    const freq=crossData.freq;
+    const N=crossData.n;
     const rowTotals={},colTotals={};
     rKeys.forEach(r=>{rowTotals[r]=0;cKeys.forEach(c=>{const o=freq[r+'|||'+c]||0;rowTotals[r]+=o})});
     cKeys.forEach(c=>{colTotals[c]=0;rKeys.forEach(r=>{colTotals[c]+=(freq[r+'|||'+c]||0)})});
@@ -12197,7 +12401,7 @@ function advStatsRun(testId){
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Serbestlik derecesi (df)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+df+'</td></tr>';
     html+='<tr style="background:'+(p<0.05?'#fef2f2':'#f0fdf4')+'"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>p değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700;color:'+(p<0.05?'#dc2626':'#16a34a')+'">'+(p<0.001?'<0.001':p.toFixed(4))+(p<0.05?' ✱ Anlamlı':' Anlamsız')+'</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Cramer\'s V</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+cramerV.toFixed(3)+' ('+(cramerV<0.1?'İhmal edilebilir':cramerV<0.3?'Zayıf':cramerV<0.5?'Orta':'Güçlü')+')</td></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Toplam gözlem (Frekans)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+N+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Toplam gözlem (N)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+N+'</td></tr>';
     html+='</table>';
     html+=_buildTestExplanation('chisquare',resultData);
   }else if(testId==='normality'){
@@ -12214,7 +12418,7 @@ function advStatsRun(testId){
     html+='<tr style="background:'+(sw.p<0.05?'#fef2f2':'#f0fdf4')+'"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>p değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700;color:'+(sw.p<0.05?'#dc2626':'#16a34a')+'">'+(sw.p<0.001?'<0.001':sw.p.toFixed(4))+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+(sw.p<0.05?'❌ Normal dağılıma UYMUYOR':'✅ Normal dağılıma uyuyor')+'</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Çarpıklık (Skewness)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+sk.toFixed(4)+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+(Math.abs(sk)<0.5?'Simetrik (±0.5)':sk>0?'Sağa çarpık':'Sola çarpık')+'</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Basıklık (Kurtosis)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+ku.toFixed(4)+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+(Math.abs(ku)<1?'Normal (mesokurtik)':ku>0?'Sivri (leptokurtik)':'Basık (platikurtik)')+'</td></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>N</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+vals.length+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">Ort='+_mean(vals).toFixed(3)+', SS='+_std(vals).toFixed(3)+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>n</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+vals.length+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">Ort='+_mean(vals).toFixed(3)+', SS='+_std(vals).toFixed(3)+'</td></tr>';
     html+='</table>';
     html+=_buildTestExplanation('normality',resultData);
     // === NORMALLIK SONUCUNA GÖRE TEST YÖNLENDİRME PANELİ ===
@@ -12261,9 +12465,7 @@ function advStatsRun(testId){
     const groupCol=document.getElementById('advGroup').value;
     const depCol=document.getElementById('advDepVar').value;
     if(!groupCol||!depCol){resTable.innerHTML='<p style="color:#ef4444">Lütfen her iki değişkeni de seçin.</p>';return}
-    const rows=_getFilteredRowObjects();
-    const groups={};
-    rows.forEach(r=>{const g=r[groupCol];const v=parseFloat((r[depCol]||'').replace(',','.'));if(g&&!isNaN(v)){if(!groups[g])groups[g]=[];groups[g].push(v)}});
+    const groups=_streamGroupedValues(groupCol,depCol);
     const gKeys=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr'));
     if(gKeys.length!==2){
       if(gKeys.length>2){
@@ -12318,8 +12520,8 @@ function advStatsRun(testId){
       med1:_median(g1),med2:_median(g2),mean1:_mean(g1),mean2:_mean(g2)};
     html='<table class="stat-table" style="font-size:12px;width:100%;border-collapse:collapse">';
     html+='<tr style="background:#f8fafc"><th style="padding:6px 10px;text-align:left;border:1px solid #e2e8f0">İstatistik</th><th style="padding:6px 10px;border:1px solid #e2e8f0">Değer</th></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 1:</strong> '+gKeys[0]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">Frekans='+n1+', Medyan='+_median(g1).toFixed(3)+', Sıra Ort='+((R1/n1).toFixed(2))+'</td></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 2:</strong> '+gKeys[1]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">Frekans='+n2+', Medyan='+_median(g2).toFixed(3)+', Sıra Ort='+((R2/n2).toFixed(2))+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 1:</strong> '+gKeys[0]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">n='+n1+', Medyan='+_median(g1).toFixed(3)+', Sıra Ort='+((R1/n1).toFixed(2))+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 2:</strong> '+gKeys[1]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">n='+n2+', Medyan='+_median(g2).toFixed(3)+', Sıra Ort='+((R2/n2).toFixed(2))+'</td></tr>';
     html+='<tr style="background:#fdf2f8"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Mann-Whitney U</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700">'+U.toFixed(1)+'</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Z değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+zU.toFixed(4)+'</td></tr>';
     html+='<tr style="background:'+(pU<0.05?'#fef2f2':'#f0fdf4')+'"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>p değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700;color:'+(pU<0.05?'#dc2626':'#16a34a')+'">'+(pU<0.001?'<0.001':pU.toFixed(4))+(pU<0.05?' ✱ Anlamlı':' Anlamsız')+'</td></tr>';
@@ -12331,9 +12533,7 @@ function advStatsRun(testId){
     const groupCol=document.getElementById('advGroup').value;
     const depCol=document.getElementById('advDepVar').value;
     if(!groupCol||!depCol){resTable.innerHTML='<p style="color:#ef4444">Lütfen her iki değişkeni de seçin.</p>';return}
-    const rows=_getFilteredRowObjects();
-    const groups={};
-    rows.forEach(r=>{const g=r[groupCol];const v=parseFloat((r[depCol]||'').replace(',','.'));if(g&&!isNaN(v)){if(!groups[g])groups[g]=[];groups[g].push(v)}});
+    const groups=_streamGroupedValues(groupCol,depCol);
     const gKeys=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr'));
     if(gKeys.length<2){resTable.innerHTML='<p style="color:#ef4444">Kruskal-Wallis için en az 2 grup gerekli.</p>';return}
     // Combine and rank all values
@@ -12364,7 +12564,7 @@ function advStatsRun(testId){
     gKeys.forEach(g=>resultData.groupData[g]={n:groups[g].length,median:_median(groups[g]),mean:_mean(groups[g]),rankMean:rankSums[g]/groups[g].length});
     html='<h5 style="margin:0 0 8px;font-size:13px">Grup İstatistikleri</h5>';
     html+='<table class="stat-table" style="font-size:12px;width:100%;border-collapse:collapse;margin-bottom:12px">';
-    html+='<tr style="background:#f8fafc"><th style="padding:5px 8px;border:1px solid #e2e8f0">Grup</th><th style="padding:5px 8px;border:1px solid #e2e8f0">N</th><th style="padding:5px 8px;border:1px solid #e2e8f0">Medyan</th><th style="padding:5px 8px;border:1px solid #e2e8f0">Sıra Ort.</th></tr>';
+    html+='<tr style="background:#f8fafc"><th style="padding:5px 8px;border:1px solid #e2e8f0">Grup</th><th style="padding:5px 8px;border:1px solid #e2e8f0">n</th><th style="padding:5px 8px;border:1px solid #e2e8f0">Medyan</th><th style="padding:5px 8px;border:1px solid #e2e8f0">Sıra Ort.</th></tr>';
     gKeys.forEach(g=>{html+='<tr><td style="padding:5px 8px;border:1px solid #e2e8f0">'+g+'</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+groups[g].length+'</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+_median(groups[g]).toFixed(3)+'</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+(rankSums[g]/groups[g].length).toFixed(2)+'</td></tr>'});
     html+='</table>';
     html+='<h5 style="margin:0 0 8px;font-size:13px">Test Sonuçları</h5>';
@@ -12381,9 +12581,9 @@ function advStatsRun(testId){
     const var1=document.getElementById('advPaired1').value;
     const var2=document.getElementById('advPaired2').value;
     if(!var1||!var2||var1===var2){resTable.innerHTML='<p style="color:#ef4444">İki farklı sayısal değişken seçin.</p>';return}
-    const rows=_getFilteredRowObjects();
+    const _pairedArr=_streamPairedValues(var1,var2);
     const pairs=[];
-    rows.forEach(r=>{const v1=parseFloat((r[var1]||'').replace(',','.'));const v2=parseFloat((r[var2]||'').replace(',','.'));if(!isNaN(v1)&&!isNaN(v2))pairs.push({a:v1,b:v2,d:v1-v2})});
+    _pairedArr.forEach(p=>{pairs.push({a:p[0],b:p[1],d:p[0]-p[1]})});
     if(pairs.length<3){resTable.innerHTML='<p style="color:#ef4444">En az 3 eşleşme gerekli. Mevcut: '+pairs.length+'</p>';return}
     const diffs=pairs.map(p=>p.d);
     const n=diffs.length;
@@ -12406,7 +12606,7 @@ function advStatsRun(testId){
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Serbestlik derecesi (df)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+df+'</td></tr>';
     html+='<tr style="background:'+(p<0.05?'#fef2f2':'#f0fdf4')+'"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>p değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700;color:'+(p<0.05?'#dc2626':'#16a34a')+'">'+(p<0.001?'<0.001':p.toFixed(4))+(p<0.05?' ✱ Anlamlı':' Anlamsız')+'</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Cohen\'s d</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+cohensD.toFixed(3)+' ('+(Math.abs(cohensD)<0.2?'Küçük':Math.abs(cohensD)<0.5?'Küçük-Orta':Math.abs(cohensD)<0.8?'Orta':'Büyük')+')</td></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Frekans (çift sayısı)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+n+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>n (çift sayısı)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+n+'</td></tr>';
     html+='</table>';
     html+=_buildTestExplanation('pairedttest',resultData);
   }else if(testId==='wilcoxon'){
@@ -12414,9 +12614,9 @@ function advStatsRun(testId){
     const var1=document.getElementById('advPaired1').value;
     const var2=document.getElementById('advPaired2').value;
     if(!var1||!var2||var1===var2){resTable.innerHTML='<p style="color:#ef4444">İki farklı sayısal değişken seçin.</p>';return}
-    const rows=_getFilteredRowObjects();
+    const _wPairedArr=_streamPairedValues(var1,var2);
     const pairs=[];
-    rows.forEach(r=>{const v1=parseFloat((r[var1]||'').replace(',','.'));const v2=parseFloat((r[var2]||'').replace(',','.'));if(!isNaN(v1)&&!isNaN(v2)){const d=v1-v2;if(d!==0)pairs.push({a:v1,b:v2,d})}});
+    _wPairedArr.forEach(p=>{const d=p[0]-p[1];if(d!==0)pairs.push({a:p[0],b:p[1],d})});
     if(pairs.length<3){resTable.innerHTML='<p style="color:#ef4444">En az 3 sıfır olmayan fark gerekli. Mevcut: '+pairs.length+'</p>';return}
     // Rank absolute differences
     const absDiffs=pairs.map((p,i)=>({idx:i,abs:Math.abs(p.d),sign:p.d>0?1:-1}));
@@ -12438,8 +12638,9 @@ function advStatsRun(testId){
     const zW=sW>0?(W-mW)/sW:0;
     const pW=2*(1-_normalCDF(Math.abs(zW)));
     const rEff=Math.abs(zW)/Math.sqrt(n);
-    const mean1=_mean(rows.filter(r=>!isNaN(parseFloat((r[var1]||'').replace(',','.')))).map(r=>parseFloat(r[var1].replace(',','.'))));
-    const mean2=_mean(rows.filter(r=>!isNaN(parseFloat((r[var2]||'').replace(',','.')))).map(r=>parseFloat(r[var2].replace(',','.'))));
+    const _allPairedW=_streamPairedValues(var1,var2);
+    const mean1=_allPairedW.length?_mean(_allPairedW.map(p=>p[0])):0;
+    const mean2=_allPairedW.length?_mean(_allPairedW.map(p=>p[1])):0;
     const med1=_median(pairs.map(p=>p.a)),med2=_median(pairs.map(p=>p.b));
     resultData={test:'wilcoxon',var1,var2,n,W,Wp,Wn,z:zW,p:pW,rEffect:rEff,mean1,mean2,med1,med2};
     html='<table class="stat-table" style="font-size:12px;width:100%;border-collapse:collapse">';
@@ -12451,7 +12652,7 @@ function advStatsRun(testId){
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Z değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+zW.toFixed(4)+'</td></tr>';
     html+='<tr style="background:'+(pW<0.05?'#fef2f2':'#f0fdf4')+'"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>p değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700;color:'+(pW<0.05?'#dc2626':'#16a34a')+'">'+(pW<0.001?'<0.001':pW.toFixed(4))+(pW<0.05?' ✱ Anlamlı':' Anlamsız')+'</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Etki büyüklüğü (r)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+rEff.toFixed(3)+' ('+(rEff<0.1?'İhmal edilebilir':rEff<0.3?'Küçük':rEff<0.5?'Orta':'Büyük')+')</td></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Frekans (çift sayısı)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+n+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>n (çift sayısı)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+n+'</td></tr>';
     html+='</table>';
     html+=_buildTestExplanation('wilcoxon',resultData);
   }else if(testId==='correlation'){
@@ -12460,8 +12661,8 @@ function advStatsRun(testId){
     if(!xCol||!yCol||xCol===yCol){resTable.innerHTML='<p style="color:#ef4444">İki farklı sayısal değişken seçin.</p>';return}
     const xVals=_getFilteredNumericValues(xCol);
     const yVals=_getFilteredNumericValues(yCol);
-    const rows=_getFilteredRowObjects();
-    const paired=[];rows.forEach(r=>{const x=parseFloat((r[xCol]||'').replace(',','.'));const y=parseFloat((r[yCol]||'').replace(',','.'));if(!isNaN(x)&&!isNaN(y))paired.push({x,y})});
+    const _corrPaired=_streamPairedValues(xCol,yCol);
+    const paired=_corrPaired.map(p=>({x:p[0],y:p[1]}));
     const px=paired.map(p=>p.x),py=paired.map(p=>p.y);
     const pr=_pearson(px,py);
     const sr=_spearman(px,py);
@@ -12471,7 +12672,7 @@ function advStatsRun(testId){
     const rStr=r=>(Math.abs(r)<0.1?'İhmal edilebilir':Math.abs(r)<0.3?'Zayıf':Math.abs(r)<0.5?'Orta':Math.abs(r)<0.7?'Güçlü':'Çok Güçlü');
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Pearson (r)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700">'+pr.r.toFixed(4)+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0;color:'+(pr.p<0.05?'#dc2626':'#16a34a')+'">'+(pr.p<0.001?'<0.001':pr.p.toFixed(4))+(pr.p<0.05?' ✱':'')+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+rStr(pr.r)+'</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Spearman (ρ)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700">'+sr.r.toFixed(4)+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0;color:'+(sr.p<0.05?'#dc2626':'#16a34a')+'">'+(sr.p<0.001?'<0.001':sr.p.toFixed(4))+(sr.p<0.05?' ✱':'')+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+rStr(sr.r)+'</td></tr>';
-    html+='<tr style="background:#f8fafc"><td colspan="4" style="padding:6px 10px;border:1px solid #e2e8f0;font-size:11px;color:#64748b">Frekans='+paired.length+' çift gözlem | R²='+Math.pow(pr.r,2).toFixed(4)+' (varyansın %'+Math.round(Math.pow(pr.r,2)*100)+'\'i açıklanıyor)</td></tr>';
+    html+='<tr style="background:#f8fafc"><td colspan="4" style="padding:6px 10px;border:1px solid #e2e8f0;font-size:11px;color:#64748b">n='+paired.length+' çift gözlem | R²='+Math.pow(pr.r,2).toFixed(4)+' (varyansın %'+Math.round(Math.pow(pr.r,2)*100)+'\'i açıklanıyor)</td></tr>';
     html+='</table>';
     html+=_buildTestExplanation('correlation',resultData);
   }else if(testId==='regression'){
@@ -12479,11 +12680,23 @@ function advStatsRun(testId){
     const xChecks=document.querySelectorAll('.advRegXCheck:checked');
     const xCols=[...xChecks].map(c=>c.value).filter(c=>c!==yCol);
     if(!yCol||xCols.length===0){resTable.innerHTML='<p style="color:#ef4444">Bağımlı değişken ve en az bir bağımsız değişken seçin.</p>';return}
-    const rows=_getFilteredRowObjects();
-    // Simple/Multiple linear regression using normal equations
+    // Stream regression data: [y, x1, x2, ...] per row
+    const _regCols=[yCol,...xCols];
+    const _regIdxs=_regCols.map(c=>outHeaders.indexOf(c));
     const data=[];
-    rows.forEach(r=>{const y=parseFloat((r[yCol]||'').replace(',','.'));if(isNaN(y))return;const xs=xCols.map(c=>parseFloat((r[c]||'').replace(',','.')));if(xs.some(v=>isNaN(v)))return;data.push({y,xs})});
-    if(data.length<xCols.length+2){resTable.innerHTML='<p style="color:#ef4444">Yeterli gözlem yok (Frekans='+data.length+', en az '+(xCols.length+2)+' gerekli).</p>';return}
+    const _anyFilter=outHeaders.some(h=>hasActiveFilter(h));
+    let _regRi=0;
+    streamOutputRows(row=>{
+      if(outlierFilter.enabled&&outlierFilter.excludedRows.has(_regRi)){_regRi++;return}
+      if(_anyFilter){let skip=false;for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){if(colFilters[outHeaders[fi]]&&hasActiveFilter(outHeaders[fi])&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}}if(skip){_regRi++;return}}
+      const y=parseFloat((row[_regIdxs[0]]||'').replace(',','.'));
+      if(isNaN(y)){_regRi++;return}
+      const xs=[];let ok=true;
+      for(let k=1;k<_regIdxs.length;k++){const v=parseFloat((row[_regIdxs[k]]||'').replace(',','.'));if(isNaN(v)){ok=false;break}xs.push(v)}
+      if(ok&&data.length<500000000)data.push({y,xs});
+      _regRi++;
+    });
+    if(data.length<xCols.length+2){resTable.innerHTML='<p style="color:#ef4444">Yeterli gözlem yok (n='+data.length+', en az '+(xCols.length+2)+' gerekli).</p>';return}
     const n=data.length,p2=xCols.length+1;
     // Build X matrix (with intercept) and Y vector
     const X=data.map(d=>[1,...d.xs]);const Y=data.map(d=>d.y);
@@ -12521,7 +12734,7 @@ function advStatsRun(testId){
     html+='<tr><td style="padding:5px 8px;border:1px solid #e2e8f0"><strong>Düzeltilmiş R²</strong></td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+adjR2.toFixed(4)+'</td></tr>';
     html+='<tr><td style="padding:5px 8px;border:1px solid #e2e8f0"><strong>F</strong></td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+F2.toFixed(4)+' (df₁='+( p2-1)+', df₂='+(n-p2)+')</td></tr>';
     html+='<tr style="background:'+(pF<0.05?'#fef2f2':'#f0fdf4')+'"><td style="padding:5px 8px;border:1px solid #e2e8f0"><strong>p (Model)</strong></td><td style="padding:5px 8px;border:1px solid #e2e8f0;font-weight:700;color:'+(pF<0.05?'#dc2626':'#16a34a')+'">'+(pF<0.001?'<0.001':pF.toFixed(4))+(pF<0.05?' ✱ Model anlamlı':' Model anlamsız')+'</td></tr>';
-    html+='<tr><td style="padding:5px 8px;border:1px solid #e2e8f0"><strong>N</strong></td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+n+'</td></tr>';
+    html+='<tr><td style="padding:5px 8px;border:1px solid #e2e8f0"><strong>n</strong></td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+n+'</td></tr>';
     html+='</table>';
     html+='<h5 style="margin:0 0 8px;font-size:13px">Katsayılar</h5>';
     html+='<table class="stat-table" style="font-size:12px;width:100%;border-collapse:collapse">';
@@ -12545,7 +12758,7 @@ function advStatsRun(testId){
     html+='<tr style="background:#f8fafc"><th style="padding:6px 10px;text-align:left;border:1px solid #e2e8f0">İstatistik</th><th style="padding:6px 10px;border:1px solid #e2e8f0">Değer</th></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Ortalama (μ)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+m.toFixed(4)+'</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Standart Sapma (σ)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+sd.toFixed(4)+'</td></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>N</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+vals.length+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>n</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+vals.length+'</td></tr>';
     html+='<tr style="background:#fefce8"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>|Z|>2 (aykırı değer)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700;color:#d97706">'+outliers2+' gözlem (%'+((outliers2/vals.length)*100).toFixed(1)+')</td></tr>';
     html+='<tr style="background:#fef2f2"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>|Z|>3 (uç değer)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700;color:#dc2626">'+outliers3+' gözlem (%'+((outliers3/vals.length)*100).toFixed(1)+')</td></tr>';
     html+='</table>';
@@ -12571,7 +12784,7 @@ function advStatsRun(testId){
     // Left: stats table
     html+='<div><table class="stat-table" style="font-size:12px;width:100%;border-collapse:collapse">';
     html+='<tr style="background:#f8fafc"><th style="padding:5px 8px;text-align:left;border:1px solid #e2e8f0">Ölçü</th><th style="padding:5px 8px;border:1px solid #e2e8f0">Değer</th></tr>';
-    html+='<tr><td style="padding:5px 8px;border:1px solid #e2e8f0">N</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+vals.length+'</td></tr>';
+    html+='<tr><td style="padding:5px 8px;border:1px solid #e2e8f0">n</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+vals.length+'</td></tr>';
     html+='<tr><td style="padding:5px 8px;border:1px solid #e2e8f0">Ortalama</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+m.toFixed(4)+'</td></tr>';
     html+='<tr><td style="padding:5px 8px;border:1px solid #e2e8f0">Medyan</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+med.toFixed(4)+'</td></tr>';
     html+='<tr><td style="padding:5px 8px;border:1px solid #e2e8f0">Std Sapma</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+sd.toFixed(4)+'</td></tr>';
@@ -12622,16 +12835,14 @@ function advStatsRun(testId){
     }
 
     let groups={};
-    const rows=_getFilteredRowObjects();
     if(groupVar){
-      rows.forEach(r=>{
-        const g=r[groupVar]||'Boş';
-        if(!groups[g])groups[g]=[];
-        const v=parseFloat(r[varName]);
-        if(!isNaN(v))groups[g].push(v);
-      });
+      groups=_streamGroupedValues(groupVar,varName);
+      // Rename empty key to 'Boş'
+      if(groups['']){groups['Boş']=(groups['Boş']||[]).concat(groups['']);delete groups['']};
     }else{
-      groups['Tümü']=rows.map(r=>parseFloat(r[varName])).filter(v=>!isNaN(v));
+      // No group variable: get all numeric values for the variable via streaming
+      const _bpVals=_getFilteredNumericValues(varName);
+      groups['Tümü']=_bpVals;
     }
 
     const allStats={};
@@ -13176,6 +13387,9 @@ function advStatsRun(testId){
   }catch(err){html='<p style="color:#ef4444">Hesaplama hatası: '+err.message+'</p>'}
 
   _advLastResult=resultData;
+  // İşlem süresi bilgisi
+  const _testElapsed=((Date.now()-_testStart)/1000).toFixed(1);
+  if(parseFloat(_testElapsed)>2){html+='<div style="margin-top:6px;font-size:10px;color:#94a3b8;text-align:right">İşlem süresi: '+_testElapsed+' sn</div>'}
   resTable.innerHTML=html;
   // Draw JASP-like chart
   try{_advStatsDrawChart(resultData)}catch(e){console.warn('advStats chart err:',e)}
@@ -13195,7 +13409,7 @@ function _buildTestExplanation(testId, resultData){
     html+='<p style="margin:0 0 8px"><strong>t İstatistiği ('+resultData.t.toFixed(4)+'):</strong> Gruplar arası farkın standart hataya oranı. |t| > 2 genellikle anlamlıdır. Mevcut değer '+(Math.abs(resultData.t)>2?'<b style="color:#16a34a">anlamlı</b>':'<b style="color:#dc2626">anlamsız</b>')+'.</p>';
     html+='<p style="margin:0 0 8px"><strong>p Değeri ('+( resultData.p<0.001?'&lt;0.001':resultData.p.toFixed(4))+'):</strong> '+(resultData.p<0.05?'<b style="color:#16a34a">&lt;0.05 — İstatistiksel olarak anlamlı</b>. H₀ (fark yok) hipotezi reddedilir. Gruplar arasında <b>anlamlı</b> bir fark vardır.':'<b style="color:#dc2626">≥0.05 — İstatistiksel olarak anlamsız</b>. H₀ hipotezi kabul edilir. Gruplar arasında anlamlı bir fark yoktur.')+'</p>';
     html+='<p style="margin:0 0 8px"><strong>Cohen\'s d ('+resultData.cohensD.toFixed(3)+'):</strong> Etki büyüklüğü (pratik anlamlılık). |d|&lt;0.2 <b>Küçük</b>, 0.2–0.5 <b>Küçük-Orta</b>, 0.5–0.8 <b>Orta</b>, &gt;0.8 <b>Büyük</b>. Mevcut değer: <b>'+(Math.abs(resultData.cohensD)<0.2?'Küçük':Math.abs(resultData.cohensD)<0.5?'Küçük-Orta':Math.abs(resultData.cohensD)<0.8?'Orta':'Büyük')+'</b> etki.</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> İki grup ortalaması karşılaştırılmıştır. N₁='+resultData.n1+', N₂='+resultData.n2+'; Ort₁='+resultData.m1.toFixed(3)+', Ort₂='+resultData.m2.toFixed(3)+'.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> İki grup ortalaması karşılaştırılmıştır. n₁='+resultData.n1+', n₂='+resultData.n2+'; Ort₁='+resultData.m1.toFixed(3)+', Ort₂='+resultData.m2.toFixed(3)+'.</p>';
   }
   else if(testId==='anova'){
     html+='<p style="margin:0 0 8px"><strong>F İstatistiği ('+resultData.F.toFixed(4)+'):</strong> Gruplar arası varyans / grup içi varyans oranı. F&gt;1 ise gruplar farklı olabilir. Yüksek F değerleri gruplar arası farka işaret eder.</p>';
@@ -13207,66 +13421,66 @@ function _buildTestExplanation(testId, resultData){
     html+='<p style="margin:0 0 8px"><strong>χ² İstatistiği ('+resultData.chiSq.toFixed(4)+'):</strong> Gözlenen ve beklenen frekanslar arasındaki fark. Yüksek χ² değeri kategorik değişkenler arası <b>güçlü ilişkiye</b> işaret eder.</p>';
     html+='<p style="margin:0 0 8px"><strong>p Değeri ('+(resultData.p<0.001?'&lt;0.001':resultData.p.toFixed(4))+'):</strong> '+(resultData.p<0.05?'<b style="color:#16a34a">&lt;0.05 — Kategorik değişkenler arasında <b>anlamlı ilişki</b> vardır.</b>':'<b style="color:#dc2626">≥0.05 — Anlamlı ilişki <b>yoktur</b>.</b>')+'</p>';
     html+='<p style="margin:0 0 8px"><strong>Cramer\'s V ('+resultData.cramerV.toFixed(3)+'):</strong> İlişki gücü (bağımsızlık ölçüsü). &lt;0.1 <b>İhmal Edilebilir</b>, 0.1–0.3 <b>Zayıf</b>, 0.3–0.5 <b>Orta</b>, &gt;0.5 <b>Güçlü</b>. Mevcut: <b>'+(resultData.cramerV<0.1?'İhmal':resultData.cramerV<0.3?'Zayıf':resultData.cramerV<0.5?'Orta':'Güçlü')+'</b> ilişki.</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> Frekans='+resultData.N+' gözlemde iki kategorik değişken analiz edilmiştir (df='+resultData.df+').</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> N='+resultData.N+' gözlemde iki kategorik değişken analiz edilmiştir (df='+resultData.df+').</p>';
   }
   else if(testId==='normality'){
     html+='<p style="margin:0 0 8px"><strong>Shapiro-Wilk W ('+resultData.W.toFixed(4)+'):</strong> Normallik testi. W=1 ise mükemmel normal dağılım. W&lt;0.95 genellikle normallikten sapma gösterir.</p>';
     html+='<p style="margin:0 0 8px"><strong>p Değeri ('+(resultData.p<0.001?'&lt;0.001':resultData.p.toFixed(4))+'):</strong> '+(resultData.p>=0.05?'<b style="color:#16a34a">≥0.05 — Veri <b>normal dağılıma uyuyor</b>.</b> Parametrik testler uygulanabilir.':'<b style="color:#dc2626">&lt;0.05 — Veri <b>normal dağılıma uymuyor</b>.</b> Non-parametrik testler önerilir.')+'</p>';
     html+='<p style="margin:0 0 8px"><strong>Çarpıklık ('+resultData.skewness.toFixed(4)+'):</strong> Dağılım şekli. 0=Simetrik, &gt;0=Sağa Çarpık, &lt;0=Sola Çarpık. |değer|&lt;1 kabul edilebilir. Mevcut: <b>'+(Math.abs(resultData.skewness)<0.5?'Simetrik':resultData.skewness>0?'Sağa Çarpık':'Sola Çarpık')+'</b>.</p>';
     html+='<p style="margin:0 0 8px"><strong>Basıklık ('+resultData.kurtosis.toFixed(4)+'):</strong> Kuyruk ağırlığı. 0=Normal, &gt;0=Sivri (Leptokurtik), &lt;0=Basık (Platikurtik). |değer|&lt;2 kabul edilebilir.</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> Frekans='+resultData.n+' gözlemde normallik analiz edilmiştir. Ort='+resultData.mean.toFixed(3)+', SS='+resultData.std.toFixed(3)+'.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> n='+resultData.n+' gözlemde normallik analiz edilmiştir. Ort='+resultData.mean.toFixed(3)+', SS='+resultData.std.toFixed(3)+'.</p>';
   }
   else if(testId==='mannwhitney'){
     html+='<p style="margin:0 0 8px"><strong>Mann-Whitney U ('+resultData.U.toFixed(1)+'):</strong> Sıralama tabanlı karşılaştırma (t-testi\'nin non-parametrik hali). Düşük U = gruplar <b>daha farklı</b>. U1='+resultData.U1.toFixed(1)+', U2='+resultData.U2.toFixed(1)+'.</p>';
     html+='<p style="margin:0 0 8px"><strong>Z Değeri ('+resultData.z.toFixed(4)+'):</strong> Normal yaklaşımdan hesaplanan test istatistiği. |Z|&gt;1.96 genellikle anlamlı (α=0.05).</p>';
     html+='<p style="margin:0 0 8px"><strong>p Değeri ('+(resultData.p<0.001?'&lt;0.001':resultData.p.toFixed(4))+'):</strong> '+(resultData.p<0.05?'<b style="color:#16a34a">&lt;0.05 — Gruplar <b>anlamlı şekilde farklıdır</b>.</b>':'<b style="color:#dc2626">≥0.05 — Gruplar arasında <b>anlamlı fark yoktur</b>.</b>')+'</p>';
     html+='<p style="margin:0 0 8px"><strong>Etki Büyüklüğü r ('+resultData.rEffect.toFixed(3)+'):</strong> &lt;0.1 <b>İhmal</b>, 0.1–0.3 <b>Küçük</b>, 0.3–0.5 <b>Orta</b>, &gt;0.5 <b>Büyük</b>. Mevcut: <b>'+(resultData.rEffect<0.1?'İhmal':resultData.rEffect<0.3?'Küçük':resultData.rEffect<0.5?'Orta':'Büyük')+'</b>.</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> Non-parametrik test, normal dağılım varsayımı <b>gerekli değildir</b>. N₁='+resultData.n1+', N₂='+resultData.n2+'; Sıra Ortalamaları: '+resultData.gKeys[0]+'='+( resultData.R1/resultData.n1).toFixed(2)+', '+resultData.gKeys[1]+'='+(resultData.R2/resultData.n2).toFixed(2)+'.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> Non-parametrik test, normal dağılım varsayımı <b>gerekli değildir</b>. n₁='+resultData.n1+', n₂='+resultData.n2+'; Sıra Ortalamaları: '+resultData.gKeys[0]+'='+( resultData.R1/resultData.n1).toFixed(2)+', '+resultData.gKeys[1]+'='+(resultData.R2/resultData.n2).toFixed(2)+'.</p>';
   }
   else if(testId==='kruskalwallis'){
     html+='<p style="margin:0 0 8px"><strong>Kruskal-Wallis H ('+resultData.H.toFixed(4)+'):</strong> Non-parametrik ANOVA. Chi-kare dağılımına yaklaşır (df='+resultData.df+'). Yüksek H = gruplar <b>daha farklı</b>.</p>';
     html+='<p style="margin:0 0 8px"><strong>p Değeri ('+(resultData.p<0.001?'&lt;0.001':resultData.p.toFixed(4))+'):</strong> '+(resultData.p<0.05?'<b style="color:#16a34a">&lt;0.05 — '+resultData.groups.length+' grup arasında <b>anlamlı fark</b> vardır.</b>':'<b style="color:#dc2626">≥0.05 — Gruplar arasında <b>anlamlı fark yoktur</b>.</b>')+'</p>';
     html+='<p style="margin:0 0 8px"><strong>η² (Eta-kare, '+resultData.etaSq.toFixed(3)+'):</strong> Etki büyüklüğü. &lt;0.01 <b>Çok Küçük</b>, 0.01–0.06 <b>Orta</b>, &gt;0.14 <b>Büyük</b>. Mevcut: <b>'+(resultData.etaSq<0.01?'Çok Küçük':resultData.etaSq<0.06?'Orta':'Büyük')+'</b>.</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> Non-parametrik test, normal dağılım varsayımı gerekli <b>değildir</b>. '+resultData.groups.length+' grup (Frekans='+resultData.N+') karşılaştırılmıştır. Normal dağılmayan veriler için tercih edilir.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> Non-parametrik test, normal dağılım varsayımı gerekli <b>değildir</b>. '+resultData.groups.length+' grup (N='+resultData.N+') karşılaştırılmıştır. Normal dağılmayan veriler için tercih edilir.</p>';
   }
   else if(testId==='pairedttest'){
     html+='<p style="margin:0 0 8px"><strong>t İstatistiği ('+resultData.t.toFixed(4)+'):</strong> Eşleştirilmiş (bağımlı) gruplar t-testi. Aynı bireyler iki farklı anda veya koşulda ölçülmüştür. |t|&gt;2 genellikle anlamlıdır.</p>';
     html+='<p style="margin:0 0 8px"><strong>p Değeri ('+(resultData.p<0.001?'&lt;0.001':resultData.p.toFixed(4))+'):</strong> '+(resultData.p<0.05?'<b style="color:#16a34a">&lt;0.05 — İki ölçüm arasında <b>anlamlı fark</b> vardır.</b>':'<b style="color:#dc2626">≥0.05 — Anlamlı fark <b>yoktur</b>.</b>')+'</p>';
     html+='<p style="margin:0 0 8px"><strong>Cohen\'s d ('+resultData.cohensD.toFixed(3)+'):</strong> Etki büyüklüğü. |d|&lt;0.2 <b>Küçük</b>, 0.2–0.5 <b>Küçük-Orta</b>, 0.5–0.8 <b>Orta</b>, &gt;0.8 <b>Büyük</b>. Mevcut: <b>'+(Math.abs(resultData.cohensD)<0.2?'Küçük':Math.abs(resultData.cohensD)<0.5?'Küçük-Orta':Math.abs(resultData.cohensD)<0.8?'Orta':'Büyük')+'</b>.</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> Frekans='+resultData.n+' eşleştirilmiş çift (ön-test/son-test veya iki ölçüm). Ortalama fark='+resultData.dMean.toFixed(3)+', SS='+resultData.dStd.toFixed(3)+'.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> n='+resultData.n+' eşleştirilmiş çift (ön-test/son-test veya iki ölçüm). Ortalama fark='+resultData.dMean.toFixed(3)+', SS='+resultData.dStd.toFixed(3)+'.</p>';
   }
   else if(testId==='wilcoxon'){
     html+='<p style="margin:0 0 8px"><strong>W İstatistiği ('+resultData.W.toFixed(1)+'):</strong> Wilcoxon işaret-sıra testi. Pozitif (W+='+resultData.Wp.toFixed(1)+') ve negatif (W−='+resultData.Wn.toFixed(1)+') sıra toplamlarından <b>küçük olan</b>.</p>';
     html+='<p style="margin:0 0 8px"><strong>Z Değeri ('+resultData.z.toFixed(4)+'):</strong> Normal yaklaşımdan hesaplanan istatistik. |Z|&gt;1.96 genellikle anlamlı (α=0.05).</p>';
     html+='<p style="margin:0 0 8px"><strong>p Değeri ('+(resultData.p<0.001?'&lt;0.001':resultData.p.toFixed(4))+'):</strong> '+(resultData.p<0.05?'<b style="color:#16a34a">&lt;0.05 — İki ölçüm arasında <b>anlamlı fark</b> vardır.</b>':'<b style="color:#dc2626">≥0.05 — Anlamlı fark <b>yoktur</b>.</b>')+'</p>';
     html+='<p style="margin:0 0 8px"><strong>Etki Büyüklüğü r ('+resultData.rEffect.toFixed(3)+'):</strong> &lt;0.1 <b>İhmal</b>, 0.1–0.3 <b>Küçük</b>, 0.3–0.5 <b>Orta</b>, &gt;0.5 <b>Büyük</b>. Mevcut: <b>'+(resultData.rEffect<0.1?'İhmal':resultData.rEffect<0.3?'Küçük':resultData.rEffect<0.5?'Orta':'Büyük')+'</b>.</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> Non-parametrik eşleştirilmiş test. Frekans='+resultData.n+' çift. Medyan ön-test='+resultData.med1.toFixed(3)+', Medyan son-test='+resultData.med2.toFixed(3)+'.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> Non-parametrik eşleştirilmiş test. n='+resultData.n+' çift. Medyan ön-test='+resultData.med1.toFixed(3)+', Medyan son-test='+resultData.med2.toFixed(3)+'.</p>';
   }
   else if(testId==='correlation'){
     html+='<p style="margin:0 0 8px"><strong>Pearson r ('+resultData.pearsonR.toFixed(4)+'):</strong> Doğrusal ilişki katsayısı [−1, +1]. 0=İlişki yok, ±0.3 <b>Zayıf</b>, ±0.5 <b>Orta</b>, ±0.7 <b>Güçlü</b>, ±0.9+ <b>Çok Güçlü</b>. Mevcut: <b>'+(Math.abs(resultData.pearsonR)<0.3?'Zayıf/Yok':Math.abs(resultData.pearsonR)<0.5?'Zayıf-Orta':Math.abs(resultData.pearsonR)<0.7?'Orta':Math.abs(resultData.pearsonR)<0.9?'Güçlü':'Çok Güçlü')+'</b>.</p>';
     html+='<p style="margin:0 0 8px"><strong>p (Pearson, '+(resultData.pearsonP<0.001?'&lt;0.001':resultData.pearsonP.toFixed(4))+'):</strong> '+(resultData.pearsonP<0.05?'<b style="color:#16a34a">&lt;0.05 — Korelasyon <b>istatistiksel olarak anlamlıdır</b>.</b>':'<b style="color:#dc2626">≥0.05 — Korelasyon <b>anlamsızdır</b>.</b>')+'</p>';
     html+='<p style="margin:0 0 8px"><strong>Spearman ρ ('+resultData.spearmanR.toFixed(4)+', p='+(resultData.spearmanP<0.001?'&lt;0.001':resultData.spearmanP.toFixed(4))+'):</strong> Non-parametrik ilişki (sıralama tabanlı). Normallik varsayımı gerektirmez. Sonuç: '+(resultData.spearmanP<0.05?'<b>Anlamlı</b>':'<b>Anlamsız</b>')+'.</p>';
     html+='<p style="margin:0 0 8px"><strong>R² ('+Math.pow(resultData.pearsonR,2).toFixed(4)+'):</strong> Açıklanan varyans oranı. Bağımsız değişken, bağımlı değişken varyansının <b>%'+Math.round(Math.pow(resultData.pearsonR,2)*100)+'</b>\'ini açıklıyor.</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> Frekans='+resultData.n+' çift gözlem. Pearson: Doğrusal ilişki, normal dağılım varsayımı gerekli. Spearman: Monotonik ilişki, normal dağılım varsayımı yok.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> n='+resultData.n+' çift gözlem. Pearson: Doğrusal ilişki, normal dağılım varsayımı gerekli. Spearman: Monotonik ilişki, normal dağılım varsayımı yok.</p>';
   }
   else if(testId==='regression'){
     html+='<p style="margin:0 0 8px"><strong>R² ('+resultData.R2.toFixed(4)+'):</strong> Model açıklayıcılığı. Bağımlı değişkendeki varyansın <b>%'+Math.round(resultData.R2*100)+'</b>\'i model tarafından açıklanıyor. 0–1 arası; 0.5+ iyi kabul edilir. Mevcut: <b>'+(resultData.R2<0.3?'Düşük':resultData.R2<0.6?'Orta':'Yüksek')+'</b>.</p>';
     html+='<p style="margin:0 0 8px"><strong>F ('+resultData.F.toFixed(4)+'):</strong> Model anlamlılık testi. df=('+( resultData.xCols.length)+', '+(resultData.n-resultData.xCols.length-1)+').</p>';
     html+='<p style="margin:0 0 8px"><strong>p (Model, '+(resultData.pF<0.001?'&lt;0.001':resultData.pF.toFixed(4))+'):</strong> '+(resultData.pF<0.05?'<b style="color:#16a34a">&lt;0.05 — Model <b>istatistiksel olarak anlamlıdır</b>.</b>':'<b style="color:#dc2626">≥0.05 — Model <b>anlamsızdır</b>.</b>')+'</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> Lineer regresyon modeli oluşturulmuştur. Bağımlı: '+resultData.yCol+'; Bağımsız: '+resultData.xCols.join(', ')+' ('+resultData.xCols.length+' değişken). Frekans='+resultData.n+'.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> Lineer regresyon modeli oluşturulmuştur. Bağımlı: '+resultData.yCol+'; Bağımsız: '+resultData.xCols.join(', ')+' ('+resultData.xCols.length+' değişken). n='+resultData.n+'.</p>';
   }
   else if(testId==='zscore'){
     html+='<p style="margin:0 0 8px"><strong>Z-Skoru Formülü:</strong> Z = (X − μ) / σ. Standartlaştırılmış değer, ortalamadan kaç standart sapma uzak olduğunu gösterir.</p>';
     html+='<p style="margin:0 0 8px"><strong>Aykırı Değerler (|Z|&gt;2):</strong> '+resultData.outliers2+' gözlem <b>('+((resultData.outliers2/resultData.n)*100).toFixed(1)+'%)</b>. Orta ölçüde aykırı değerler, ancak normal dağılımda beklenir.</p>';
     html+='<p style="margin:0 0 8px"><strong>Uç Değerler (|Z|&gt;3):</strong> '+resultData.outliers3+' gözlem <b>('+((resultData.outliers3/resultData.n)*100).toFixed(1)+'%)</b>. Normal dağılımda nadir. <b>İnceleme önerilir.</b></p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> '+resultData.col+': Ort='+resultData.mean.toFixed(3)+', SS='+resultData.std.toFixed(3)+', Frekans='+resultData.n+'. Z-skoru outlier tespiti için kullanılır.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> '+resultData.col+': Ort='+resultData.mean.toFixed(3)+', SS='+resultData.std.toFixed(3)+', n='+resultData.n+'. Z-skoru outlier tespiti için kullanılır.</p>';
   }
   else if(testId==='distribution'){
     html+='<p style="margin:0 0 8px"><strong>Ortalama ('+resultData.mean.toFixed(4)+') vs Medyan ('+resultData.median.toFixed(4)+'):</strong> Ortalama ≈ Medyan ise dağılım simetrik. Fark varsa çarpık dağılım gösterir.</p>';
     html+='<p style="margin:0 0 8px"><strong>Çarpıklık ('+resultData.skewness.toFixed(4)+'):</strong> 0=Simetrik, &gt;0=Sağa Çarpık, &lt;0=Sola Çarpık. |değer|&lt;1 kabul edilebilir. Mevcut: <b>'+(Math.abs(resultData.skewness)<0.5?'Simetrik':resultData.skewness>0?'Sağa Çarpık':'Sola Çarpık')+'</b>.</p>';
     html+='<p style="margin:0 0 8px"><strong>Basıklık ('+resultData.kurtosis.toFixed(4)+'):</strong> 0=Normal, &gt;0=Sivri (Leptokurtik), &lt;0=Basık (Platikurtik). |değer|&lt;2 kabul edilebilir.</p>';
     html+='<p style="margin:0 0 8px"><strong>Shapiro-Wilk p ('+(resultData.pNorm<0.001?'&lt;0.001':resultData.pNorm.toFixed(4))+'):</strong> '+(resultData.pNorm>=0.05?'<b style="color:#16a34a">≥0.05 — Normal dağılıma uyuyor</b>.':'<b style="color:#dc2626">&lt;0.05 — Normal dağılıma uymuyor</b>. Non-parametrik testler önerilir.')+'</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> '+resultData.col+': Frekans='+resultData.n+', Min='+resultData.min.toFixed(2)+', Max='+resultData.max.toFixed(2)+', IQR='+resultData.iqr.toFixed(2)+'. Dağılım şekli incelenmiştir.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> '+resultData.col+': n='+resultData.n+', Min='+resultData.min.toFixed(2)+', Max='+resultData.max.toFixed(2)+', IQR='+resultData.iqr.toFixed(2)+'. Dağılım şekli incelenmiştir.</p>';
   }
   else if(testId==='boxplot'){
     html+='<p style="margin:0 0 8px"><strong>Box Plot (Kutu-Bıyık Grafiği):</strong> Beş sayılı özet (Min, Q1, Medyan, Q3, Max) görselleştirilir. Aykırı değerler noktalar olarak gösterilir.</p>';
@@ -13455,19 +13669,27 @@ function _advStatsDrawChart(r){
     config={type:'bar',data:{labels,datasets:[{label:'Frekans',data:bins,backgroundColor:'rgba(124,58,237,0.5)',borderColor:'#7c3aed',borderWidth:1,barPercentage:1,categoryPercentage:1}]},options:{responsive:true,plugins:{title:{display:true,text:'Normallik: '+r.col+' (W='+r.W.toFixed(3)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+')',font:{size:14}},legend:{display:false}},scales:{x:{title:{display:true,text:r.col}},y:{title:{display:true,text:'Frekans'}}}}};
   }else if(r.test==='correlation'){
     // Scatter plot
-    const rows=_getFilteredRowObjects();
-    const points=[];rows.forEach(row=>{const x=parseFloat((row[r.xCol]||'').replace(',','.'));const y=parseFloat((row[r.yCol]||'').replace(',','.'));if(!isNaN(x)&&!isNaN(y))points.push({x,y})});
+    const _corrChartPaired=_streamPairedValues(r.xCol,r.yCol);
+    const points=_corrChartPaired.map(p=>({x:p[0],y:p[1]}));
     const sample=points.length>500?points.filter((_,i)=>i%Math.ceil(points.length/500)===0):points;
     config={type:'scatter',data:{datasets:[{label:r.xCol+' vs '+r.yCol,data:sample,backgroundColor:'rgba(139,92,246,0.4)',borderColor:'#8b5cf6',pointRadius:3}]},options:{responsive:true,plugins:{title:{display:true,text:'Korelasyon: r='+r.pearsonR.toFixed(3)+' (p='+(r.pearsonP<0.001?'<.001':r.pearsonP.toFixed(3))+')',font:{size:14}},legend:{display:false}},scales:{x:{title:{display:true,text:r.xCol}},y:{title:{display:true,text:r.yCol}}}}};
   }else if(r.test==='regression'){
-    // Predicted vs Actual scatter
-    const rows=_getFilteredRowObjects();
+    // Predicted vs Actual scatter — use streaming
+    const _regAllCols=[r.yCol,...r.xCols];
+    const _regVizIdxs=_regAllCols.map(c=>outHeaders.indexOf(c));
     const pts=[];
-    rows.forEach(row=>{
-      const y=parseFloat((row[r.yCol]||'').replace(',','.'));if(isNaN(y))return;
-      const xs=r.xCols.map(c=>parseFloat((row[c]||'').replace(',','.')));if(xs.some(v=>isNaN(v)))return;
+    const _anyVizFilter=outHeaders.some(h=>hasActiveFilter(h));
+    let _rvRi=0;
+    streamOutputRows(row=>{
+      if(outlierFilter.enabled&&outlierFilter.excludedRows.has(_rvRi)){_rvRi++;return}
+      if(_anyVizFilter){let skip=false;for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){if(colFilters[outHeaders[fi]]&&hasActiveFilter(outHeaders[fi])&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}}if(skip){_rvRi++;return}}
+      const y=parseFloat((row[_regVizIdxs[0]]||'').replace(',','.'));if(isNaN(y)){_rvRi++;return}
+      const xs=[];let ok=true;
+      for(let k=1;k<_regVizIdxs.length;k++){const v=parseFloat((row[_regVizIdxs[k]]||'').replace(',','.'));if(isNaN(v)){ok=false;break}xs.push(v)}
+      if(!ok){_rvRi++;return}
       let yHat=r.beta[0];xs.forEach((x,j)=>yHat+=r.beta[j+1]*x);
-      pts.push({x:yHat,y});
+      if(pts.length<50000)pts.push({x:yHat,y});
+      _rvRi++;
     });
     const sample=pts.length>500?pts.filter((_,i)=>i%Math.ceil(pts.length/500)===0):pts;
     const allVals=[...sample.map(p=>p.x),...sample.map(p=>p.y)];
@@ -13560,7 +13782,7 @@ function advStatsSuggestTests(){
             title:'t-Testi: "'+cc+'" × "'+nc+'"',
             desc:'İki grubun (<b>'+gi.groups.join('</b> vs <b>')+'</b>) <b>'+nc+'</b> ortalamalarını karşılaştırır.',
             howto:'<b>Gruplama:</b> '+cc+' &nbsp;→&nbsp; <b>Test Değişkeni:</b> '+nc,
-            note:normHint+(ni?' (N₁+N₂='+ni.n+')':''),
+            note:normHint+(ni?' (n₁+n₂='+ni.n+')':''),
             vars:{group:cc,dep:nc}
           });
         });
@@ -13592,7 +13814,7 @@ function advStatsSuggestTests(){
               title:'Mann-Whitney U: "'+cc+'" × "'+nc+'"',
               desc:'<b>Non-parametrik</b>: İki grubun (<b>'+gi.groups.join('</b> vs <b>')+'</b>) <b>'+nc+'</b> sıra ortalamalarını karşılaştırır.',
               howto:'<b>Gruplama:</b> '+cc+' &nbsp;→&nbsp; <b>Test Değişkeni:</b> '+nc,
-              note:'⚠ '+nc+' normal dağılmıyor → Mann-Whitney U önerilir. (Frekans='+ni.n+')',
+              note:'⚠ '+nc+' normal dağılmıyor → Mann-Whitney U önerilir. (n='+ni.n+')',
               vars:{group:cc,dep:nc}
             });
           }
@@ -13702,7 +13924,7 @@ function advStatsSuggestTests(){
       title:'Normallik: "'+nc+'"',
       desc:'<b>'+nc+'</b> normal dağılıma uyuyor mu? '+(ni.normal!==null?(ni.normal?'<span style="color:#16a34a">Ön tahminde normal.</span>':'<span style="color:#dc2626">Ön tahminde normal değil.</span>'):''),
       howto:'<b>Değişken:</b> '+nc+' → Shapiro-Wilk testi uygulanır',
-      note:'Parametrik testler öncesi kontrol. Ort='+ni.mean.toFixed(1)+', SS='+ni.std.toFixed(1)+', N='+ni.n,
+      note:'Parametrik testler öncesi kontrol. Ort='+ni.mean.toFixed(1)+', SS='+ni.std.toFixed(1)+', n='+ni.n,
       vars:{numVar:nc}
     });
     suggestions.push({test:'zscore',icon:'📏',priority:4,
@@ -13811,14 +14033,14 @@ async function advStatsPDF(){
   const rows=[];
   if(r.test==='ttest'){rows.push([_pt('Gruplar'),_pt(r.groups.join(' vs '))],[_pt('t istatistiği'),r.t.toFixed(4)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('Cohen d'),r.cohensD.toFixed(3)],[_pt('N1 / N2'),r.n1+' / '+r.n2],[_pt('Ort1 / Ort2'),r.m1.toFixed(2)+' / '+r.m2.toFixed(2)])}
   if(r.test==='anova'){rows.push(['F',r.F.toFixed(4)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('η² (Etki büyüklüğü)'),r.etaSq.toFixed(4)],[_pt('Grup sayısı'),String(r.groupData.length)])}
-  if(r.test==='chisquare'){rows.push([_pt('χ² değeri'),r.chiSq.toFixed(4)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('Cramer V'),r.cramerV.toFixed(4)],[_pt('Frekans'),String(r.N)],['df',String(r.df)])}
+  if(r.test==='chisquare'){rows.push([_pt('χ² değeri'),r.chiSq.toFixed(4)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('Cramer V'),r.cramerV.toFixed(4)],['N',String(r.N)],['df',String(r.df)])}
   if(r.test==='normality'){rows.push([_pt('Shapiro-Wilk W'),r.W.toFixed(4)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('Çarpıklık'),r.skewness.toFixed(4)],[_pt('Basıklık'),r.kurtosis.toFixed(4)])}
   if(r.test==='correlation'){rows.push([_pt('Pearson r'),r.pearsonR.toFixed(4)],[_pt('Pearson p'),r.pearsonP.toFixed(6)],[_pt('Spearman ρ'),r.spearmanR.toFixed(4)],[_pt('Spearman p'),r.spearmanP.toFixed(6)],[_pt('R²'),r.R2.toFixed(4)])}
   if(r.test==='regression'){rows.push([_pt('R²'),r.R2.toFixed(4)],[_pt('Düzeltilmiş R²'),r.adjR2.toFixed(4)],['F',r.F.toFixed(4)],[_pt('p değeri'),r.pF.toFixed(6)])}
   if(r.test==='zscore'){rows.push([_pt('Ortalama'),r.mean.toFixed(4)],[_pt('Standart Sapma'),r.std.toFixed(4)],[_pt('|Z|>2 Aykırı'),String(r.outliers2)],[_pt('|Z|>3 Aykırı'),String(r.outliers3)])}
   if(r.test==='distribution'){rows.push([_pt('Ortalama'),r.mean.toFixed(4)],[_pt('Medyan'),r.median.toFixed(4)],[_pt('Standart Sapma'),r.std.toFixed(4)],[_pt('Çarpıklık'),r.skewness.toFixed(4)],[_pt('Basıklık'),r.kurtosis.toFixed(4)],[_pt('S-W p (normallik)'),r.pNorm.toFixed(6)])}
   if(r.test==='mannwhitney'){rows.push([_pt('Gruplar'),_pt(r.groups.join(' vs '))],[_pt('Mann-Whitney U'),r.U.toFixed(1)],[_pt('Z değeri'),r.z.toFixed(4)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('Etki büyüklüğü (r)'),r.rEffect.toFixed(3)],[_pt('N1 / N2'),r.n1+' / '+r.n2],[_pt('Medyan1 / Medyan2'),r.med1.toFixed(2)+' / '+r.med2.toFixed(2)])}
-  if(r.test==='kruskalwallis'){rows.push([_pt('Kruskal-Wallis H'),r.H.toFixed(4)],[_pt('df'),String(r.df)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('η² (Etki büyüklüğü)'),r.etaSq.toFixed(3)],[_pt('Frekans'),String(r.N)],[_pt('Grup sayısı'),String(r.groups.length)])}
+  if(r.test==='kruskalwallis'){rows.push([_pt('Kruskal-Wallis H'),r.H.toFixed(4)],[_pt('df'),String(r.df)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('η² (Etki büyüklüğü)'),r.etaSq.toFixed(3)],['N',String(r.N)],[_pt('Grup sayısı'),String(r.groups.length)])}
   if(r.test==='pairedttest'){rows.push([_pt('Değişkenler'),_pt(r.var1+' vs '+r.var2)],[_pt('t istatistiği'),r.t.toFixed(4)],[_pt('df'),String(r.df)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('Cohen d'),r.cohensD.toFixed(3)],[_pt('Fark Ortalaması'),r.dMean.toFixed(4)],[_pt('N (çift)'),String(r.n)])}
   if(r.test==='wilcoxon'){rows.push([_pt('Değişkenler'),_pt(r.var1+' vs '+r.var2)],[_pt('W'),r.W.toFixed(1)],[_pt('Z değeri'),r.z.toFixed(4)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('Etki büyüklüğü (r)'),r.rEffect.toFixed(3)],[_pt('N (çift)'),String(r.n)])}
   if(rows.length){
@@ -13887,7 +14109,7 @@ function advStatsInterpret(){
 function _buildInterpretationPrompt(r){
   let p='Aşağıdaki istatistik test sonuçlarını akademik düzeyde ama herkesin anlayabileceği şekilde Türkçe yorumla. Yorumunda şunları belirt: 1) Testin ne anlama geldiği 2) Sonuçların anlamı 3) Pratik çıkarımlar. Kısa ve öz ol.\n\n';
   p+='Test: '+r.test+'\n';
-  if(r.test==='ttest')p+='Gruplar: '+r.groups.join(' vs ')+', t='+r.t.toFixed(4)+', p='+r.p.toFixed(4)+', Cohen d='+r.cohensD.toFixed(3)+', N1='+r.n1+', N2='+r.n2+', Ort1='+r.m1.toFixed(2)+', Ort2='+r.m2.toFixed(2);
+  if(r.test==='ttest')p+='Gruplar: '+r.groups.join(' vs ')+', t='+r.t.toFixed(4)+', p='+r.p.toFixed(4)+', Cohen d='+r.cohensD.toFixed(3)+', n1='+r.n1+', n2='+r.n2+', Ort1='+r.m1.toFixed(2)+', Ort2='+r.m2.toFixed(2);
   if(r.test==='anova')p+='F='+r.F.toFixed(4)+', p='+r.p.toFixed(4)+', η²='+r.etaSq.toFixed(3)+', Gruplar: '+JSON.stringify(r.groupData);
   if(r.test==='chisquare')p+='χ²='+r.chiSq.toFixed(4)+', p='+r.p.toFixed(4)+', Cramer V='+r.cramerV.toFixed(3)+', N='+r.N;
   if(r.test==='normality')p+='W='+r.W.toFixed(4)+', p='+r.p.toFixed(4)+', Çarpıklık='+r.skewness.toFixed(4)+', Basıklık='+r.kurtosis.toFixed(4);
@@ -13917,12 +14139,12 @@ function _generateRuleBasedInterpretation(r){
     html+='<em>Not: Anlamlı çıktığında post-hoc (Tukey/Bonferroni) ile hangi gruplar arasında fark olduğu belirlenmelidir.</em>';
   }else if(r.test==='chisquare'){
     html+='<strong>Ki-Kare Bağımsızlık Testi:</strong> "'+r.rowCol+'" ile "'+r.colCol+'" arasındaki ilişki incelenmiştir.<br>';
-    html+='χ²('+r.df+')='+r.chiSq.toFixed(3)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+', Frekans='+r.N+'.<br>';
+    html+='χ²('+r.df+')='+r.chiSq.toFixed(3)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+', N='+r.N+'.<br>';
     if(r.p<0.05){html+='<span style="color:#dc2626;font-weight:600">✱ İki değişken arasında anlamlı bir ilişki bulunmuştur.</span><br>';}
     else{html+='<span style="color:#16a34a;font-weight:600">İki değişken birbirinden bağımsızdır (anlamlı ilişki yok).</span><br>';}
     html+='Cramer\'s V='+r.cramerV.toFixed(3)+' olup etki büyüklüğü '+(r.cramerV<0.1?'ihmal edilebilir':r.cramerV<0.3?'zayıf':r.cramerV<0.5?'orta':'güçlü')+' düzeydedir.';
   }else if(r.test==='normality'){
-    html+='<strong>Normallik Testi (Shapiro-Wilk):</strong> "'+r.col+'" değişkeni incelenmiştir (Frekans='+r.n+').<br>';
+    html+='<strong>Normallik Testi (Shapiro-Wilk):</strong> "'+r.col+'" değişkeni incelenmiştir (n='+r.n+').<br>';
     html+='W='+r.W.toFixed(4)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+'.<br>';
     if(r.p>=0.05){html+='<span style="color:#16a34a;font-weight:600">✅ Veriler normal dağılıma uymaktadır (p>0.05). Parametrik testler kullanılabilir.</span><br>';}
     else{html+='<span style="color:#dc2626;font-weight:600">❌ Veriler normal dağılıma uymamaktadır (p<0.05). Parametrik olmayan testler (Mann-Whitney, Kruskal-Wallis) önerilir.</span><br>';}
@@ -13930,34 +14152,34 @@ function _generateRuleBasedInterpretation(r){
     html+='Basıklık='+r.kurtosis.toFixed(3)+' ('+(Math.abs(r.kurtosis)<1?'normal':r.kurtosis>0?'sivri':'basık')+').';
   }else if(r.test==='mannwhitney'){
     html+='<strong>Mann-Whitney U Testi:</strong> "'+r.depCol+'" değişkeni "'+r.groupCol+'" gruplarına göre karşılaştırılmıştır.<br>';
-    html+='Gruplar: '+r.groups[0]+' (Frekans='+r.n1+', Medyan='+r.med1.toFixed(2)+') vs '+r.groups[1]+' (Frekans='+r.n2+', Medyan='+r.med2.toFixed(2)+').<br>';
+    html+='Gruplar: '+r.groups[0]+' (n='+r.n1+', Medyan='+r.med1.toFixed(2)+') vs '+r.groups[1]+' (n='+r.n2+', Medyan='+r.med2.toFixed(2)+').<br>';
     html+='U='+r.U.toFixed(1)+', Z='+r.z.toFixed(3)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+'.<br>';
     if(r.p<0.05){html+='<span style="color:#dc2626;font-weight:600">✱ İki grup arasında istatistiksel olarak anlamlı fark bulunmuştur (p<0.05).</span><br>';}
     else{html+='<span style="color:#16a34a;font-weight:600">İki grup arasında anlamlı fark bulunmamıştır (p≥0.05).</span><br>';}
     html+='Etki büyüklüğü r='+r.rEffect.toFixed(3)+' ('+(r.rEffect<0.1?'ihmal edilebilir':r.rEffect<0.3?'küçük':r.rEffect<0.5?'orta':'büyük')+').';
   }else if(r.test==='kruskalwallis'){
     html+='<strong>Kruskal-Wallis H Testi:</strong> "'+r.depCol+'" değişkeni "'+r.groupCol+'" gruplarına göre karşılaştırılmıştır ('+r.groups.length+' grup).<br>';
-    html+='H('+r.df+')='+r.H.toFixed(3)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+', Frekans='+r.N+'.<br>';
+    html+='H('+r.df+')='+r.H.toFixed(3)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+', N='+r.N+'.<br>';
     if(r.p<0.05){html+='<span style="color:#dc2626;font-weight:600">✱ En az iki grup arasında anlamlı fark bulunmuştur (p<0.05).</span><br>';
       html+='Post-hoc karşılaştırma için Mann-Whitney U testini her iki grup için ayrı ayrı uygulayabilirsiniz.<br>';}
     else{html+='<span style="color:#16a34a;font-weight:600">Gruplar arasında anlamlı fark bulunmamıştır (p≥0.05).</span><br>';}
     html+='Etki büyüklüğü η²='+r.etaSq.toFixed(3)+' ('+(r.etaSq<0.01?'ihmal edilebilir':r.etaSq<0.06?'küçük':r.etaSq<0.14?'orta':'büyük')+').';
   }else if(r.test==='pairedttest'){
-    html+='<strong>Eşleştirilmiş t-Testi:</strong> "'+r.var1+'" ile "'+r.var2+'" değişkenleri karşılaştırılmıştır (Frekans='+r.n+' çift).<br>';
+    html+='<strong>Eşleştirilmiş t-Testi:</strong> "'+r.var1+'" ile "'+r.var2+'" değişkenleri karşılaştırılmıştır (n='+r.n+' çift).<br>';
     html+=r.var1+': Ort='+r.mean1.toFixed(2)+', SS='+r.std1.toFixed(2)+' | '+r.var2+': Ort='+r.mean2.toFixed(2)+', SS='+r.std2.toFixed(2)+'.<br>';
     html+='Fark ortalaması d̄='+r.dMean.toFixed(3)+', t('+r.df+')='+r.t.toFixed(3)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+'.<br>';
     if(r.p<0.05){html+='<span style="color:#dc2626;font-weight:600">✱ İki ölçüm arasında istatistiksel olarak anlamlı fark bulunmuştur.</span><br>';}
     else{html+='<span style="color:#16a34a;font-weight:600">İki ölçüm arasında anlamlı fark bulunmamıştır.</span><br>';}
     html+='Cohen\'s d='+r.cohensD.toFixed(3)+' ('+(Math.abs(r.cohensD)<0.2?'küçük':Math.abs(r.cohensD)<0.5?'küçük-orta':Math.abs(r.cohensD)<0.8?'orta':'büyük')+' etki).';
   }else if(r.test==='wilcoxon'){
-    html+='<strong>Wilcoxon İşaret-Sıra Testi:</strong> "'+r.var1+'" ile "'+r.var2+'" değişkenleri karşılaştırılmıştır (Frekans='+r.n+' çift).<br>';
+    html+='<strong>Wilcoxon İşaret-Sıra Testi:</strong> "'+r.var1+'" ile "'+r.var2+'" değişkenleri karşılaştırılmıştır (n='+r.n+' çift).<br>';
     html+=r.var1+': Medyan='+r.med1.toFixed(2)+' | '+r.var2+': Medyan='+r.med2.toFixed(2)+'.<br>';
     html+='W='+r.W.toFixed(1)+', Z='+r.z.toFixed(3)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+'.<br>';
     if(r.p<0.05){html+='<span style="color:#dc2626;font-weight:600">✱ İki ölçüm arasında istatistiksel olarak anlamlı fark bulunmuştur.</span><br>';}
     else{html+='<span style="color:#16a34a;font-weight:600">İki ölçüm arasında anlamlı fark bulunmamıştır.</span><br>';}
     html+='Etki büyüklüğü r='+r.rEffect.toFixed(3)+' ('+(r.rEffect<0.1?'ihmal edilebilir':r.rEffect<0.3?'küçük':r.rEffect<0.5?'orta':'büyük')+').';
   }else if(r.test==='correlation'){
-    html+='<strong>Korelasyon Analizi:</strong> "'+r.xCol+'" ile "'+r.yCol+'" arasındaki ilişki incelenmiştir (Frekans='+r.n+').<br>';
+    html+='<strong>Korelasyon Analizi:</strong> "'+r.xCol+'" ile "'+r.yCol+'" arasındaki ilişki incelenmiştir (n='+r.n+').<br>';
     html+='<strong>Pearson r='+r.pearsonR.toFixed(3)+'</strong> (p='+(r.pearsonP<0.001?'<.001':r.pearsonP.toFixed(3))+') → '+(Math.abs(r.pearsonR)<0.1?'ilişki yok':Math.abs(r.pearsonR)<0.3?'zayıf':Math.abs(r.pearsonR)<0.5?'orta':Math.abs(r.pearsonR)<0.7?'güçlü':'çok güçlü')+' '+(r.pearsonR>0?'pozitif':'negatif')+' ilişki.<br>';
     html+='<strong>Spearman ρ='+r.spearmanR.toFixed(3)+'</strong> (p='+(r.spearmanP<0.001?'<.001':r.spearmanP.toFixed(3))+').<br>';
     html+='R²='+Math.pow(r.pearsonR,2).toFixed(3)+' → Bir değişken diğerindeki varyansın %'+Math.round(Math.pow(r.pearsonR,2)*100)+'\'ini açıklamaktadır.';
@@ -13977,7 +14199,7 @@ function _generateRuleBasedInterpretation(r){
     else if(r.outliers2>0){html+='<span style="color:#d97706;font-weight:600">⚠️ Bazı aykırı değerler mevcuttur ancak ciddi düzeyde değildir.</span>';}
     else{html+='<span style="color:#16a34a;font-weight:600">✅ Ciddi aykırı değer bulunmamaktadır.</span>';}
   }else if(r.test==='distribution'){
-    html+='<strong>Dağılım Analizi:</strong> "'+r.col+'" değişkeni incelenmiştir (Frekans='+r.n+').<br>';
+    html+='<strong>Dağılım Analizi:</strong> "'+r.col+'" değişkeni incelenmiştir (n='+r.n+').<br>';
     html+='Ortalama='+r.mean.toFixed(2)+', Medyan='+r.median.toFixed(2)+', SS='+r.std.toFixed(2)+'.<br>';
     html+='Çarpıklık='+r.skewness.toFixed(3)+' → '+(Math.abs(r.skewness)<0.5?'Dağılım yaklaşık simetrik.':r.skewness>0?'Sağa çarpık dağılım (kuyruk sağda uzun).':'Sola çarpık dağılım (kuyruk solda uzun).')+'<br>';
     html+='Basıklık='+r.kurtosis.toFixed(3)+' → '+(Math.abs(r.kurtosis)<1?'Normal basıklık (mesokurtik).':r.kurtosis>0?'Sivri dağılım (leptokurtik) — merkez etrafında yoğunlaşma var.':'Basık dağılım (platikurtik) — gözlemler daha yayılmış.')+'<br>';
@@ -14155,7 +14377,7 @@ function _generateRuleBasedInterpretation(r){
       </div>
       <div style="margin-top:8px;padding:8px 10px;background:#1e293b;border-radius:6px;font-size:11px;color:#94a3b8;line-height:1.6">
         <div style="color:#f8fafc;font-weight:600;margin-bottom:4px">🛡️ Hücre & JOIN Güvenlik Limitleri</div>
-        <div>Toplam hücre limiti: <span style="color:#fbbf24;font-weight:600">5B</span> (uyarı: <span style="color:#fb923c">2B</span>)</div>
+        <div>Toplam hücre limiti: <span style="color:#fbbf24;font-weight:600">5B</span> (ön uyarı: <span style="color:#60a5fa">1B</span>, ciddi uyarı: <span style="color:#fb923c">2B</span>)</div>
         <div>JOIN sol tablo: <span style="color:#fbbf24;font-weight:600">100M satır</span> üst limit (uyarı: <span style="color:#fb923c">50M</span>)</div>
         <div style="margin-top:4px;font-size:10px;color:#64748b">Hücre = satır × sütun. Limitler büyük veri işlemlerinde tarayıcı çökmesini önler.</div>
       </div>
@@ -14315,7 +14537,7 @@ function _generateRuleBasedInterpretation(r){
 
 <footer style="text-align:center;padding:18px 12px 14px;margin-top:30px;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px">
   <div>&copy; Sefa Emre Öncü, 2026 — Açık Analiz</div>
-  <div style="margin-top:4px">Sürüm v1.4</div>
+  <div style="margin-top:4px">Sürüm v1.5</div>
 <!-- Smart Report Modal -->
 <div id="smartReportModal" class="grp-modal-overlay hidden" style="z-index:10001">
   <div class="grp-modal" style="width:520px;max-height:90vh;overflow-y:auto">
