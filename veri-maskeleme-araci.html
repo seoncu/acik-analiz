@@ -99,6 +99,16 @@
   .dash-section{margin-bottom:16px}
   .dash-section-title{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
   .dash-select{width:100%;padding:8px 12px;border-radius:6px;border:1px solid #d1d5db;font-size:14px;background:#fff}
+  /* Searchable select wrapper */
+  .ss-wrap{position:relative;display:inline-block;min-width:140px}
+  .ss-input{width:100%;padding:6px 28px 6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' fill='none' stroke='%2394a3b8' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 8px center;outline:none;cursor:pointer}
+  .ss-input:focus{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.15)}
+  .ss-list{position:absolute;z-index:999;top:100%;left:0;right:0;max-height:220px;overflow-y:auto;background:#fff;border:1px solid #d1d5db;border-radius:6px;margin-top:2px;box-shadow:0 4px 12px rgba(0,0,0,.12);display:none}
+  .ss-list.open{display:block}
+  .ss-item{padding:6px 10px;font-size:12px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ss-item:hover,.ss-item.highlighted{background:#eff6ff;color:#1e40af}
+  .ss-item.selected{background:#dbeafe;font-weight:600}
+  .ss-empty{padding:8px 10px;font-size:11px;color:#94a3b8;text-align:center;font-style:italic}
   .agg-chips{display:flex;flex-wrap:wrap;gap:4px}
   .agg-chip{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid #d1d5db;background:#fff;color:#64748b;transition:.15s}
   .agg-chip:hover{border-color:#93c5fd}.agg-chip.active{background:#8b5cf6;color:#fff;border-color:#8b5cf6}
@@ -589,14 +599,14 @@
         <div>
           <p class="text-sm mb-4" style="font-weight:600;color:#334155">Sol Tablo (Ana) <span class="info-tip" title="Ana dosyanız. Tüm satırları korunur (LEFT JOIN seçildiğinde).">i</span></p>
           <div id="joinLeftInfo" style="padding:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;color:#166534"></div>
-          <div class="flex gap-4 flex-center mt-4"><label class="text-xs text-muted" style="flex-shrink:0">Kaynak Etiketi:</label><input type="text" id="joinLeftLabel" class="dash-select" style="font-size:11px;padding:3px 6px;flex:1" placeholder="örn: Notlar" onchange="updateJoinLabels()"/></div>
+          <div class="flex gap-4 flex-center mt-4"><label class="text-xs text-muted" style="flex-shrink:0">Kaynak Etiketi:</label><input type="text" id="joinLeftLabel" class="dash-select searchable-select" style="font-size:11px;padding:3px 6px;flex:1" placeholder="örn: Notlar" onchange="updateJoinLabels()"/></div>
           <div id="joinLeftCols" class="text-xs text-muted mt-4" style="max-height:80px;overflow-y:auto"></div>
         </div>
         <div style="display:flex;align-items:center;justify-content:center;padding-top:30px;font-size:24px;color:#94a3b8">⟷</div>
         <div>
           <p class="text-sm mb-4" style="font-weight:600;color:#334155">Sağ Tablo <span class="info-tip" title="Eşleştirmek istediğiniz ikinci dosya. Seçilen sütunlar ana tabloya eklenir.">i</span></p>
           <div id="joinRightSelectArea">
-            <select id="joinRightFileSelect" class="dash-select" style="width:100%" onchange="onJoinRightFileChange()">
+            <select id="joinRightFileSelect" class="dash-select searchable-select" style="width:100%" onchange="onJoinRightFileChange()">
               <option value="">-- Dosya Seç --</option>
             </select>
             <div style="margin-top:6px;text-align:center">
@@ -606,7 +616,7 @@
               </label>
             </div>
           </div>
-          <div class="flex gap-4 flex-center mt-4"><label class="text-xs text-muted" style="flex-shrink:0">Kaynak Etiketi:</label><input type="text" id="joinRightLabel" class="dash-select" style="font-size:11px;padding:3px 6px;flex:1" placeholder="örn: LMS" onchange="updateJoinLabels()"/></div>
+          <div class="flex gap-4 flex-center mt-4"><label class="text-xs text-muted" style="flex-shrink:0">Kaynak Etiketi:</label><input type="text" id="joinRightLabel" class="dash-select searchable-select" style="font-size:11px;padding:3px 6px;flex:1" placeholder="örn: LMS" onchange="updateJoinLabels()"/></div>
           <div id="joinRightCols" class="text-xs text-muted mt-4" style="max-height:80px;overflow-y:auto"></div>
         </div>
       </div>
@@ -653,10 +663,10 @@
       <div class="mb-16" id="joinSortSeçtion" style="display:none">
         <p class="text-sm mb-8" style="font-weight:600;color:#334155">Sıralama <span class="info-tip" title="Birleştirilmiş veriyi hangi sütuna göre sıralamak istediğinizi seçin. Varsayılan: sıralanmamış (dosyadaki sıraya göre).">i</span></p>
         <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center">
-          <select id="joinSortCol" class="dash-select" style="width:100%">
+          <select id="joinSortCol" class="dash-select searchable-select" style="width:100%">
             <option value="">(Sıralanmamış)</option>
           </select>
-          <select id="joinSortDir" class="dash-select" style="min-width:180px">
+          <select id="joinSortDir" class="dash-select searchable-select" style="min-width:180px">
             <option value="asc">↑ A→Z / Küçükten Büyüğe</option>
             <option value="desc">↓ Z→A / Büyükten Küçüğe</option>
           </select>
@@ -947,19 +957,19 @@
           <div id="tbIndividualControls" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
             <div>
               <label class="text-xs" style="font-weight:600;display:block;margin-bottom:4px">Sıralama Değişkeni (Sayısal)</label>
-              <select id="tbSortVar" class="dash-select" style="min-width:180px" onchange="renderTopBottomData()"><option value="">-- Seçin --</option></select>
+              <select id="tbSortVar" class="dash-select searchable-select" style="min-width:180px" onchange="renderTopBottomData()"><option value="">-- Seçin --</option></select>
             </div>
             <div>
               <label class="text-xs" style="font-weight:600;display:block;margin-bottom:4px">Gösterim</label>
-              <select id="tbDirection" class="dash-select" style="min-width:160px" onchange="renderTopBottomData()">
+              <select id="tbDirection" class="dash-select searchable-select" style="min-width:160px" onchange="renderTopBottomData()">
                 <option value="top">En Yüksek (Top)</option>
                 <option value="bottom">En Düşük (Bottom)</option>
                 <option value="both">İkisi de</option>
               </select>
             </div>
             <div>
-              <label class="text-xs" style="font-weight:600;display:block;margin-bottom:4px">Kayıt Sayısı (N)</label>
-              <select id="tbCount" class="dash-select" style="min-width:80px" onchange="renderTopBottomData()">
+              <label class="text-xs" style="font-weight:600;display:block;margin-bottom:4px">Kayıt Sayısı (Frekans)</label>
+              <select id="tbCount" class="dash-select searchable-select" style="min-width:80px" onchange="renderTopBottomData()">
                 <option value="10" selected>10</option>
                 <option value="20">20</option>
                 <option value="50">50</option>
@@ -969,15 +979,15 @@
             <div>
               <label class="text-xs" style="font-weight:600;display:block;margin-bottom:4px">Alt Kategori Filtresi <span style="color:#94a3b8;font-weight:400">(opsiyonel)</span></label>
               <div style="display:flex;gap:4px;align-items:center">
-                <select id="tbCatVar" class="dash-select" style="min-width:140px" onchange="onTbCatVarChange()"><option value="">Yok</option></select>
-                <select id="tbCatVal" class="dash-select" style="min-width:140px;display:none" onchange="renderTopBottomData()"><option value="">Tümü</option></select>
+                <select id="tbCatVar" class="dash-select searchable-select" style="min-width:140px" onchange="onTbCatVarChange()"><option value="">Yok</option></select>
+                <select id="tbCatVal" class="dash-select searchable-select" style="min-width:140px;display:none" onchange="renderTopBottomData()"><option value="">Tümü</option></select>
               </div>
             </div>
             <div>
               <label class="text-xs" style="font-weight:600;display:block;margin-bottom:4px">Alt Kategori 2 <span style="color:#94a3b8;font-weight:400">(opsiyonel)</span></label>
               <div style="display:flex;gap:4px;align-items:center">
-                <select id="tbCatVar2" class="dash-select" style="min-width:140px" onchange="onTbCatVar2Change()"><option value="">Yok</option></select>
-                <select id="tbCatVal2" class="dash-select" style="min-width:140px;display:none" onchange="renderTopBottomData()"><option value="">Tümü</option></select>
+                <select id="tbCatVar2" class="dash-select searchable-select" style="min-width:140px" onchange="onTbCatVar2Change()"><option value="">Yok</option></select>
+                <select id="tbCatVal2" class="dash-select searchable-select" style="min-width:140px;display:none" onchange="renderTopBottomData()"><option value="">Tümü</option></select>
               </div>
             </div>
           </div>
@@ -985,19 +995,19 @@
           <div id="tbGroupControls" style="display:none;flex-wrap:wrap;gap:12px;align-items:flex-end">
             <div>
               <label class="text-xs" style="font-weight:600;display:block;margin-bottom:4px">Ana Değişken (Kategorik)</label>
-              <select id="tbGrpIndepVar" class="dash-select" style="min-width:180px" onchange="renderTopBottomGroupData()"><option value="">-- Seçin --</option></select>
+              <select id="tbGrpIndepVar" class="dash-select searchable-select" style="min-width:180px" onchange="renderTopBottomGroupData()"><option value="">-- Seçin --</option></select>
             </div>
             <div>
               <label class="text-xs" style="font-weight:600;display:block;margin-bottom:4px">Alt Kırılım <span style="color:#94a3b8;font-weight:400">(opsiyonel — kategorik)</span></label>
-              <select id="tbGrpSubVar" class="dash-select" style="min-width:160px" onchange="renderTopBottomGroupData()"><option value="">Yok</option></select>
+              <select id="tbGrpSubVar" class="dash-select searchable-select" style="min-width:160px" onchange="renderTopBottomGroupData()"><option value="">Yok</option></select>
             </div>
             <div>
               <label class="text-xs" style="font-weight:600;display:block;margin-bottom:4px">Sıralama Sütunu <span style="color:#94a3b8;font-weight:400">(sayısal)</span></label>
-              <select id="tbGrpDepVar" class="dash-select" style="min-width:140px" onchange="renderTopBottomGroupData()"><option value="">-- Seçin --</option></select>
+              <select id="tbGrpDepVar" class="dash-select searchable-select" style="min-width:140px" onchange="renderTopBottomGroupData()"><option value="">-- Seçin --</option></select>
             </div>
             <div>
               <label class="text-xs" style="font-weight:600;display:block;margin-bottom:4px">Gösterim</label>
-              <select id="tbGrpDirection" class="dash-select" style="min-width:140px" onchange="renderTopBottomGroupData()">
+              <select id="tbGrpDirection" class="dash-select searchable-select" style="min-width:140px" onchange="renderTopBottomGroupData()">
                 <option value="top">En Yüksek (Top)</option>
                 <option value="bottom">En Düşük (Bottom)</option>
                 <option value="both">İkisi de</option>
@@ -1005,13 +1015,19 @@
             </div>
             <div>
               <label class="text-xs" style="font-weight:600;display:block;margin-bottom:4px">Sıralama Ölçütü</label>
-              <select id="tbGrpMetric" class="dash-select" style="min-width:120px" onchange="renderTopBottomGroupData()">
+              <select id="tbGrpMetric" class="dash-select searchable-select" style="min-width:120px" onchange="renderTopBottomGroupData()">
                 <option value="mean">Ortalama</option>
                 <option value="max">Maksimum</option>
                 <option value="min">Minimum</option>
                 <option value="median">Medyan</option>
                 <option value="sum">Toplam</option>
-                <option value="count">Sayı (N)</option>
+                <option value="count">Frekans</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs" style="font-weight:600;display:block;margin-bottom:4px">Frekans Ölçütü <span style="color:#059669;font-weight:400">(neyi say?)</span></label>
+              <select id="tbGrpFreqCriterion" class="dash-select searchable-select" style="min-width:160px" onchange="renderTopBottomGroupData()">
+                <option value="">Satır Sayısı</option>
               </select>
             </div>
           </div>
@@ -1028,8 +1044,8 @@
       <div id="tabSummary" class="hidden">
         <p class="text-sm text-muted mb-12">Her kategorik değişken için sayısal değişkenlerin frekans, ortalama, medyan ve standart sapma değerlerini gösterir. Global filtreler uygulanır.</p>
         <div class="flex gap-8 flex-wrap mb-16">
-          <div><div class="dash-section-title">Kategorik Değişken</div><select id="summCatVar" class="dash-select" style="width:220px" onchange="renderSummaryStatsTable()"><option value="">-- Tümü --</option></select></div>
-          <div><div class="dash-section-title">Sayısal Değişkenler</div><select id="summNumVar" class="dash-select" style="width:220px" onchange="renderSummaryStatsTable()"><option value="">-- Tümü --</option></select></div>
+          <div><div class="dash-section-title">Kategorik Değişken</div><select id="summCatVar" class="dash-select searchable-select" style="width:220px" onchange="renderSummaryStatsTable()"><option value="">-- Tümü --</option></select></div>
+          <div><div class="dash-section-title">Sayısal Değişkenler</div><select id="summNumVar" class="dash-select searchable-select" style="width:220px" onchange="renderSummaryStatsTable()"><option value="">-- Tümü --</option></select></div>
           <div style="align-self:flex-end"><button class="btn btn-primary btn-sm" onclick="renderSummaryStatsTable()" title="Özet istatistikleri hesapla">Hesapla</button></div>
           <div style="align-self:flex-end"><button class="btn btn-sm" style="background:#217346;color:#fff" onclick="exportHTMLTableToExcel('summaryStatsTableArea','özet_istatistik')" title="Özet istatistik tablosunu Excel olarak indir">📊 Excel</button></div>
         </div>
@@ -1044,13 +1060,13 @@
               <div class="dash-section">
                 <div class="dash-section-title">Boyut / Bağımsız Değişken (X)</div>
                 <p style="font-size:10px;color:#94a3b8;margin-bottom:4px">Gruplama değişkeni — genellikle kategorik</p>
-                <select id="xVar" class="dash-select" onchange="onXYChange()"><option value="">-- Seçin --</option></select>
+                <select id="xVar" class="dash-select searchable-select" onchange="onXYChange()"><option value="">-- Seçin --</option></select>
               </div>
               <div class="dash-section">
                 <div class="dash-section-title">Alt Gruplar (Pivot Boyutları) <span style="font-size:9px;color:#94a3b8;font-weight:400">sıralı — çoklu seçim</span></div>
                 <p style="font-size:10px;color:#94a3b8;margin-bottom:4px">Ekleme sırası pivot hiyerarşisini belirler. Yukarı/aşağı ile değiştirin.</p>
                 <div class="flex gap-4" style="margin-bottom:6px">
-                  <select id="subGroupAdd" class="dash-select" style="flex:1;font-size:11px"><option value="">-- Alt grup ekle --</option></select>
+                  <select id="subGroupAdd" class="dash-select searchable-select" style="flex:1;font-size:11px"><option value="">-- Alt grup ekle --</option></select>
                   <button class="btn btn-sm btn-outline" onclick="addSubGroup()" title="Ekle">+</button>
                 </div>
                 <div id="subGroupList" class="sub-group-list"></div>
@@ -1063,14 +1079,14 @@
                 <div class="dash-section-title">Hesaplanmış Alan <span style="font-size:9px;color:#94a3b8;font-weight:400">opsiyonel</span></div>
                 <div style="display:flex;flex-direction:column;gap:4px">
                   <div style="display:flex;gap:4px;align-items:center">
-                    <select id="calcCol1" class="dash-select" style="flex:1;font-size:11px"><option value="">Alan 1</option></select>
-                    <select id="calcOp" class="dash-select" style="width:50px;font-size:13px;text-align:center">
+                    <select id="calcCol1" class="dash-select searchable-select" style="flex:1;font-size:11px"><option value="">Alan 1</option></select>
+                    <select id="calcOp" class="dash-select searchable-select" style="width:50px;font-size:13px;text-align:center">
                       <option value="/">÷</option><option value="*">×</option><option value="+">+</option><option value="-">−</option>
                     </select>
-                    <select id="calcCol2" class="dash-select" style="flex:1;font-size:11px"><option value="">Alan 2</option></select>
+                    <select id="calcCol2" class="dash-select searchable-select" style="flex:1;font-size:11px"><option value="">Alan 2</option></select>
                   </div>
                   <div style="display:flex;gap:4px;align-items:center">
-                    <select id="calcTemplate" class="dash-select" style="flex:1;font-size:10px" onchange="applyCalcTemplate()">
+                    <select id="calcTemplate" class="dash-select searchable-select" style="flex:1;font-size:10px" onchange="applyCalcTemplate()">
                       <option value="">Hazır Şablon...</option>
                       <option value="ratio">Oran (A/B)</option>
                       <option value="pct">Yüzde (A/B×100)</option>
@@ -1089,7 +1105,7 @@
                 <div class="dash-section-title">Değer Gruplama <span style="font-size:9px;color:#94a3b8;font-weight:400">sayısal aralık & kategorik birleştirme</span></div>
                 <p style="font-size:10px;color:#94a3b8;margin-bottom:4px">Sütun seçip sayısal aralıkları veya kategorik değerleri gruplandırın</p>
                 <div class="flex gap-4" style="margin-bottom:6px">
-                  <select id="groupColSelect" class="dash-select" style="flex:1;font-size:11px"><option value="">-- Sütun Seç --</option></select>
+                  <select id="groupColSelect" class="dash-select searchable-select" style="flex:1;font-size:11px"><option value="">-- Sütun Seç --</option></select>
                   <button class="btn btn-sm btn-outline" onclick="openGroupingModal()" title="Gruplama tanımla" style="font-size:11px">Grupla</button>
                 </div>
                 <div id="groupedColList" class="grouped-col-list"></div>
@@ -1106,9 +1122,18 @@
                   <span class="agg-chip" data-agg="median" onclick="pickAgg('median')" title="Ortanca değeri bul (MEDIAN)">Medyan</span>
                 </div>
               </div>
+              <!-- Frekans Ölçütü — Looker-style record count selector -->
+              <div class="dash-section" id="freqCriterionSection" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px">
+                <div class="dash-section-title" style="color:#166534">Frekans Ölçütü <span style="font-size:9px;color:#15803d;font-weight:400">neyin sayılacağını seçin</span></div>
+                <p style="font-size:10px;color:#15803d;margin-bottom:6px">Varsayılan: satır sayısı. Bir sütun seçerseniz o sütundaki benzersiz değer sayısı (distinct count) hesaplanır.</p>
+                <select id="freqCriterionCol" class="dash-select searchable-select" style="width:100%;font-size:12px" onchange="onFreqCriterionChange()">
+                  <option value="">Satır Sayısı (Varsayılan)</option>
+                </select>
+                <div id="freqCriterionInfo" style="margin-top:4px;font-size:10px;color:#047857;display:none"></div>
+              </div>
               <div class="dash-section">
                 <div class="dash-section-title">Grafik Türu</div>
-                <select id="chartType" class="dash-select" onchange="onChartTypeChange()">
+                <select id="chartType" class="dash-select searchable-select" onchange="onChartTypeChange()">
                   <option value="bar">Çubuk Grafik</option>
                   <option value="horizontalBar">Yatay Çubuk</option>
                   <option value="pie">Pasta Grafik</option>
@@ -1131,7 +1156,7 @@
                       <option value="row">Satır %</option><option value="col">Sütun %</option><option value="grand">Genel %</option>
                     </select>
                     <label style="font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer" title="Hücre sayısını (N) tabloda göster">
-                      <input type="checkbox" id="pivotShowN"> Hücre N değerini göster
+                      <input type="checkbox" id="pivotShowN"> Hücre frekansını göster
                     </label>
                     <label style="font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer" title="Isı haritası renklendirmesi">
                       <input type="checkbox" id="pivotHeatmap" checked> Isı haritası
@@ -1158,8 +1183,8 @@
               <div class="dash-section">
                 <div class="dash-section-title">Sıralama & Limit</div>
                 <div class="flex gap-8">
-                  <select id="dashSort" class="dash-select" style="flex:1"><option value="desc">Büyükten küçüğe</option><option value="asc">Küçükten büyüğe</option><option value="alpha">Alfabetik</option></select>
-                  <select id="dashLimit" class="dash-select" style="width:70px"><option value="10">10</option><option value="15" selected>15</option><option value="20">20</option><option value="30">30</option><option value="50">50</option><option value="100">100</option></select>
+                  <select id="dashSort" class="dash-select searchable-select" style="flex:1"><option value="desc">Büyükten küçüğe</option><option value="asc">Küçükten büyüğe</option><option value="alpha">Alfabetik</option></select>
+                  <select id="dashLimit" class="dash-select searchable-select" style="width:70px"><option value="10">10</option><option value="15" selected>15</option><option value="20">20</option><option value="30">30</option><option value="50">50</option><option value="100">100</option></select>
                 </div>
                 <div class="quick-btns">
                   <button onclick="setQuickLimit(5,'desc')" title="En yüksek 5 değeri göster">Top 5</button>
@@ -1201,7 +1226,7 @@
               </div>
               <div id="llmBatchConfig" class="hidden">
                 <label class="text-xs" style="font-weight:600;color:#5b21b6">Gruplama Sütunu (örneğin: Program):</label>
-                <select id="llmGroupCol" class="dash-select" style="width:100%;margin-top:2px;font-size:11px" onchange="onLLMGroupColChange()"></select>
+                <select id="llmGroupCol" class="dash-select searchable-select" style="width:100%;margin-top:2px;font-size:11px" onchange="onLLMGroupColChange()"></select>
                 <!-- Tek Grup / Tüm Gruplar seçimi -->
                 <div style="display:flex;gap:4px;margin-top:8px">
                   <label style="display:flex;align-items:center;gap:4px;font-size:11px;flex:1;padding:6px 8px;background:#f0fdf4;border-radius:5px;border:1px solid #bbf7d0;cursor:pointer">
@@ -1212,7 +1237,7 @@
                   </label>
                 </div>
                 <div id="llmSingleGroupDiv" class="hidden" style="margin-top:6px">
-                  <select id="llmSingleGroupVal" class="dash-select" style="width:100%;font-size:11px"></select>
+                  <select id="llmSingleGroupVal" class="dash-select searchable-select" style="width:100%;font-size:11px"></select>
                 </div>
                 <label class="text-xs mt-8" style="font-weight:600;color:#5b21b6;display:block">Rapora dahil edilecek alanlar:</label>
                 <div id="llmFieldChecks" style="max-height:140px;overflow-y:auto;margin-top:4px;padding:4px;background:#fff;border:1px solid #e9d5ff;border-radius:4px"></div>
@@ -1225,16 +1250,16 @@
                 </div>
                 <div id="llmMaxGroupsDiv">
                   <label class="text-xs mt-8" style="font-weight:600;color:#5b21b6;display:block">Maks. grup sayısı:</label>
-                  <select id="llmMaxGroups" class="dash-select" style="width:100%;margin-top:2px;font-size:11px">
+                  <select id="llmMaxGroups" class="dash-select searchable-select" style="width:100%;margin-top:2px;font-size:11px">
                     <option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="0">Tümünü</option>
                   </select>
                 </div>
               </div>
               <hr style="border:none;border-top:1px solid #e9d5ff;margin:10px 0">
               <label class="text-xs" style="font-weight:600;color:#5b21b6">Ollama Model:</label>
-              <input id="llmModel" value="llama3.1:8b" class="dash-select" style="width:100%;margin-top:2px;font-size:11px" placeholder="llama3.1:8b, ministral-3:3b, qwen2.5:3b...">
+              <input id="llmModel" value="llama3.1:8b" class="dash-select searchable-select" style="width:100%;margin-top:2px;font-size:11px" placeholder="llama3.1:8b, ministral-3:3b, qwen2.5:3b...">
               <label class="text-xs mt-8" style="font-weight:600;color:#5b21b6;display:block">API Endpoint:</label>
-              <input id="llmEndpoint" value="http://localhost:11434/api/generate" class="dash-select" style="width:100%;margin-top:2px;font-size:11px">
+              <input id="llmEndpoint" value="http://localhost:11434/api/generate" class="dash-select searchable-select" style="width:100%;margin-top:2px;font-size:11px">
               <div style="display:flex;gap:4px;margin-top:8px">
                 <button class="btn btn-primary" onclick="sendSmartLLM()" title="Ollama LLM ile metin rapor oluştur" style="flex:1;font-size:11px;background:#7c3aed;border-color:#7c3aed;padding:8px 4px">🤖 AI ile Oluştur</button>
                 <button class="btn" onclick="showRuleBasedReport()" title="LLM gerektirmeden kural tabanlı istatistik raporu" style="flex:1;font-size:11px;background:#e67e22;color:#fff;border-color:#e67e22;padding:8px 4px">📊 Otomatik (LLM'siz)</button>
@@ -1252,7 +1277,7 @@
             <div class="llm-query-section" id="llmQuerySeçtion">
               <div style="font-size:11px;font-weight:600;color:#5b21b6;margin-bottom:6px">🤖 Doğal Dil Sorgusu — Veriye istediğinizi sorun</div>
               <div class="flex gap-8">
-                <input id="llmQueryInput" class="dash-select" style="flex:1;font-size:12px" placeholder="Örnek: Program bazında ortalama arasınav notu nedir?">
+                <input id="llmQueryInput" class="dash-select searchable-select" style="flex:1;font-size:12px" placeholder="Örnek: Program bazında ortalama arasınav notu nedir?">
                 <button class="btn btn-primary btn-sm" onclick="sendLLMQuery()" title="Veriye doğal dilde soru sor" style="background:#7c3aed;border-color:#7c3aed">Sor</button>
               </div>
               <div style="font-size:10px;color:#94a3b8;margin-top:4px">Örnekler: "En başarılı 10 öğrenci", "Ders bazında başarı dağılımı", "Ortalama notu 50'nin altında olan programlar"</div>
@@ -1269,7 +1294,7 @@
       <div id="tabStats" class="hidden">
         <div class="dash-section mb-16">
           <div class="dash-section-title">Sütun Seçin</div>
-          <select id="detailStatCol" class="dash-select" style="max-width:300px" onchange="renderDetailedStats()"><option value="">-- Seçin --</option></select>
+          <select id="detailStatCol" class="dash-select searchable-select" style="max-width:300px" onchange="renderDetailedStats()"><option value="">-- Seçin --</option></select>
           <button class="btn btn-sm" style="background:#217346;color:#fff;margin-left:8px" onclick="exportHTMLTableToExcel('detailStatsArea','frekans_dagilimi')" title="Frekans dağılımı tablosunu Excel olarak indir">📊 Excel</button>
         </div>
         <div id="detailStatsArea"></div>
@@ -1287,10 +1312,10 @@
       <!-- TAB: Cross-tab -->
       <div id="tabCrosstab" class="hidden">
         <div class="flex gap-16 flex-wrap mb-16">
-          <div><div class="dash-section-title">Satır Değişkeni</div><select id="ctRow" class="dash-select" style="width:200px"><option value="">-- Seçin --</option></select></div>
-          <div><div class="dash-section-title">Sütun Değişkeni</div><select id="ctCol" class="dash-select" style="width:200px"><option value="">-- Seçin --</option></select></div>
-          <div><div class="dash-section-title">Değer</div><select id="ctAgg" class="dash-select" style="width:150px"><option value="count">Sayı</option><option value="sum">Toplam</option><option value="avg">Ortalama</option></select></div>
-          <div><div class="dash-section-title">Değer Değişkeni (opsiyonel)</div><select id="ctVal" class="dash-select" style="width:200px"><option value="">-- Sayı için boş --</option></select></div>
+          <div><div class="dash-section-title">Satır Değişkeni</div><select id="ctRow" class="dash-select searchable-select" style="width:200px"><option value="">-- Seçin --</option></select></div>
+          <div><div class="dash-section-title">Sütun Değişkeni</div><select id="ctCol" class="dash-select searchable-select" style="width:200px"><option value="">-- Seçin --</option></select></div>
+          <div><div class="dash-section-title">Değer</div><select id="ctAgg" class="dash-select searchable-select" style="width:150px"><option value="count">Sayı</option><option value="sum">Toplam</option><option value="avg">Ortalama</option></select></div>
+          <div><div class="dash-section-title">Değer Değişkeni (opsiyonel)</div><select id="ctVal" class="dash-select searchable-select" style="width:200px"><option value="">-- Sayı için boş --</option></select></div>
           <div style="align-self:flex-end;display:flex;gap:6px">
             <button class="btn btn-primary btn-sm" onclick="computeCrossTab()" title="Çapraz tabloyu hesapla">Hesapla</button>
             <button class="btn btn-success btn-sm" onclick="exportCrossTabExcel()" id="ctExportBtn" title="Çapraz tabloyu Excel olarak indir" style="display:none">📥 Excel'e Aktar</button>
@@ -1313,15 +1338,15 @@
         <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:end">
           <div style="flex:1;min-width:180px">
             <label style="font-size:11px;font-weight:600;color:#334155;display:block;margin-bottom:4px">KONUM DEĞİŞKENİ (Kategorik)</label>
-            <select id="mapLocVar" class="form-select" style="width:100%;font-size:13px" onchange="onMapVarChange()"><option value="">-- Seçin --</option></select>
+            <select id="mapLocVar" class="form-select searchable-select" style="width:100%;font-size:13px" onchange="onMapVarChange()"><option value="">-- Seçin --</option></select>
           </div>
           <div style="flex:1;min-width:180px">
             <label style="font-size:11px;font-weight:600;color:#334155;display:block;margin-bottom:4px">METRİK DEĞİŞKENİ (Sayısal — opsiyonel)</label>
-            <select id="mapMetricVar" class="form-select" style="width:100%;font-size:13px" onchange="onMapVarChange()"><option value="">Sayı (Frekans)</option></select>
+            <select id="mapMetricVar" class="form-select searchable-select" style="width:100%;font-size:13px" onchange="onMapVarChange()"><option value="">Sayı (Frekans)</option></select>
           </div>
           <div style="flex:1;min-width:140px">
             <label style="font-size:11px;font-weight:600;color:#334155;display:block;margin-bottom:4px">HESAPLAMA</label>
-            <select id="mapAggType" class="form-select" style="width:100%;font-size:13px" onchange="onMapVarChange()">
+            <select id="mapAggType" class="form-select searchable-select" style="width:100%;font-size:13px" onchange="onMapVarChange()">
               <option value="count">Sayı</option><option value="sum">Toplam</option><option value="mean" selected>Ortalama</option><option value="min">Min</option><option value="max">Maks</option>
             </select>
           </div>
@@ -1464,7 +1489,7 @@ let _aggCache={}; // cache for grouped aggregation results
 let _filterHashCache='';let _filterHashVal='';
 function filterHash(){const s=JSON.stringify(colFilters);if(s===_filterHashCache)return _filterHashVal;_filterHashCache=s;_filterHashVal=s;return s}
 let _dashUpdateTimer=null; // debounce timer
-let DASH_SAMPLE_LIMIT=50000; // sample limit for dashboard performance (let: configurable via settings)
+let DASH_SAMPLE_LIMIT=200000; // sample limit for dashboard performance (let: configurable via settings)
 const LARGE_DATA_THRESHOLD=500000; // 500K+ rows → large data mode
 const MAX_CELL_LIMIT=5_000_000_000; // 5B hücre güvenli üst limit
 const WARN_CELL_LIMIT=2_000_000_000; // 2B hücre → uyarı göster
@@ -1563,6 +1588,62 @@ let joinedOutput=null; // {headers:[], rows:[[],...]} after join execution
 function formatBytes(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';if(b<1073741824)return(b/1048576).toFixed(1)+' MB';return(b/1073741824).toFixed(2)+' GB'}
 function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 
+// === Searchable Select (combobox) ===
+// Upgrades <select class="searchable-select"> into a filterable dropdown
+function _destroySearchableSelect(sel){
+  if(!sel.classList.contains('ss-done'))return;
+  sel.classList.remove('ss-done');sel.style.display='';
+  const wrap=sel.closest('.ss-wrap');
+  if(wrap){wrap.parentNode.insertBefore(sel,wrap);wrap.remove()}
+}
+function _initSearchableSelects(root){
+  (root||document).querySelectorAll('select.searchable-select').forEach(sel=>{
+    // Re-init: destroy existing wrapper first
+    if(sel.classList.contains('ss-done'))_destroySearchableSelect(sel);
+    sel.classList.add('ss-done');sel.style.display='none';
+    const wrap=document.createElement('div');wrap.className='ss-wrap';
+    if(sel.style.width)wrap.style.width=sel.style.width;
+    if(sel.style.minWidth)wrap.style.minWidth=sel.style.minWidth;
+    sel.parentNode.insertBefore(wrap,sel);wrap.appendChild(sel);
+    const inp=document.createElement('input');inp.type='text';inp.className='ss-input';inp.autocomplete='off';inp.placeholder='Ara...';
+    const list=document.createElement('div');list.className='ss-list';
+    wrap.appendChild(inp);wrap.appendChild(list);
+    let hlIdx=-1;
+    function buildItems(filter){
+      list.innerHTML='';hlIdx=-1;
+      const opts=Array.from(sel.options);
+      const q=(filter||'').toLowerCase().replace(/\s+/g,' ').trim();
+      let matched=0;
+      opts.forEach((opt,i)=>{
+        const txt=opt.textContent;
+        if(q&&!txt.toLowerCase().includes(q))return;
+        const item=document.createElement('div');item.className='ss-item';
+        if(i===sel.selectedIndex)item.classList.add('selected');
+        item.textContent=txt;item.dataset.idx=i;
+        item.addEventListener('mousedown',e=>{e.preventDefault();sel.selectedIndex=i;sel.dispatchEvent(new Event('change'));inp.value=txt;list.classList.remove('open')});
+        list.appendChild(item);matched++;
+      });
+      if(!matched){const em=document.createElement('div');em.className='ss-empty';em.textContent='Sonuç bulunamadı';list.appendChild(em)}
+    }
+    function syncVal(){const o=sel.options[sel.selectedIndex];inp.value=o?o.textContent:''}
+    syncVal();
+    inp.addEventListener('focus',()=>{inp.select();buildItems('');list.classList.add('open')});
+    inp.addEventListener('input',()=>{buildItems(inp.value);list.classList.add('open')});
+    inp.addEventListener('blur',()=>{setTimeout(()=>{list.classList.remove('open');syncVal()},150)});
+    inp.addEventListener('keydown',e=>{
+      const items=list.querySelectorAll('.ss-item');
+      if(e.key==='ArrowDown'){e.preventDefault();hlIdx=Math.min(hlIdx+1,items.length-1);items.forEach((it,i)=>it.classList.toggle('highlighted',i===hlIdx));if(items[hlIdx])items[hlIdx].scrollIntoView({block:'nearest'})}
+      else if(e.key==='ArrowUp'){e.preventDefault();hlIdx=Math.max(hlIdx-1,0);items.forEach((it,i)=>it.classList.toggle('highlighted',i===hlIdx));if(items[hlIdx])items[hlIdx].scrollIntoView({block:'nearest'})}
+      else if(e.key==='Enter'){e.preventDefault();if(hlIdx>=0&&items[hlIdx]){items[hlIdx].dispatchEvent(new MouseEvent('mousedown'))}}
+      else if(e.key==='Escape'){list.classList.remove('open');syncVal();inp.blur()}
+    });
+    // Watch for external select value changes
+    const obs=new MutationObserver(()=>syncVal());
+    obs.observe(sel,{childList:true,attributes:true});
+    sel._ssObs=obs;
+  });
+}
+
 // Check if a line is a separator/divider line (dashes, pipes, plus signs, spaces only)
 function isSeparatorLine(line){
   return /^[\s\-|+=:_.]+$/.test(line.trim()) && line.trim().length>2;
@@ -1646,6 +1727,30 @@ function parseCSVLine(line,delim){
   r.push(cur.trim());return r;
 }
 
+// CSV-aware line splitter: tırnak içindeki newline'ları korur
+// Returns {lines: string[], leftover: string}
+function csvSplitLines(text){
+  const lines=[];
+  let cur='',inQ=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(inQ){
+      if(ch==='"'){
+        if(text[i+1]==='"'){cur+='"';cur+='"';i++} // escaped quote
+        else{cur+=ch;inQ=false}
+      }else{cur+=ch} // tırnak içi: newline dahil her şeyi ekle
+    }else{
+      if(ch==='"'){cur+=ch;inQ=true}
+      else if(ch==='\r'&&text[i+1]==='\n'){lines.push(cur);cur='';i++} // CRLF
+      else if(ch==='\n'){lines.push(cur);cur=''} // LF
+      else{cur+=ch}
+    }
+  }
+  // Eğer hâlâ tırnak açıksa, leftover olarak döndür (sonraki chunk'ta tamamlanacak)
+  if(inQ)return{lines,leftover:cur,openQuote:true};
+  return{lines,leftover:cur,openQuote:false};
+}
+
 function maskValue(v,mode){
   if(!v||!v.trim())return v;
   if(mode==='hash'){let h=0;for(let i=0;i<v.length;i++)h=((h<<5)-h+v.charCodeAt(i))|0;return'MASK_'+Math.abs(h).toString(16).toUpperCase().padStart(8,'0')}
@@ -1675,7 +1780,7 @@ function showStep(name){
   ['stepUpload','stepModeSelect','stepJoin','stepDelimiter','stepColumns','stepProcessing','stepDone','stepAnalysis'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.classList.toggle('hidden',id!=='step'+name)
   });
-  if(name==='Analysis'){renderAnalysisUI();setTimeout(renderGlobalFilterBar,100)}
+  if(name==='Analysis'){renderAnalysisUI();setTimeout(renderGlobalFilterBar,100);setTimeout(()=>_initSearchableSelects(),300)}
   // Update step nav bar
   const stepOrder=['Upload','ModeSelect','Join','Delimiter','Columns','Processing','Done','Analysis'];
   const activeIdx=stepOrder.indexOf(name);
@@ -2167,13 +2272,13 @@ async function startProcessing(){
   const useHLL=isLargeData; // Use HyperLogLog for large datasets
   colStats={};
   outHeaders.forEach(h=>{colStats[h]={count:0,empty:0,numCount:0,sum:0,sumSq:0,min:Infinity,max:-Infinity,freq:{},_freqSize:0,isNumeric:true,allVals:[],uniqueCount:0,_uniqSet:useHLL?new HyperLogLog(14):new Set(),_useHLL:useHLL}});
-  const BATCH=isLargeData?20000:5000,MAX_FREQ=50000;
+  const BATCH=isLargeData?20000:5000,MAX_FREQ=Infinity;
   _ALLVALS_LIM=isLargeData?50000:1000000;
   _UNIQSET_LIM=isLargeData?0:5000000; // HLL handles unique count for large data
   // Try OPFS for large data streaming output
   let opfsActive=false;
   if(isLargeData){opfsActive=await _initOPFS()}
-  let rowCount=0,batch=[];
+  let rowCount=0,batch=[],_skippedRows=0;
   let _procStartTime=Date.now();
 
   if(isLargeData){
@@ -2223,19 +2328,22 @@ async function startProcessing(){
         if(abortFlag)break;
         const file=fileList[fi];
         const reader=file.stream().getReader(),decoder=new TextDecoder(enc);
-        let leftover='',isFirst=true;
+        let leftover='',isFirst=true,_openQuote=false;
         while(true){
           if(abortFlag)break;
           const{done,value}=await reader.read();
-          if(done){if(leftover.trim()&&!isSeparatorLine(leftover)){processAndCollect(splitLine(leftover,delimiterMode),outDelim,batch,MAX_FREQ,isMerge?fi:-1);rowCount++}break}
+          if(done){if(leftover.trim()&&!isSeparatorLine(leftover)){const _flds=splitLine(leftover,delimiterMode);if(_flds.length>=headers.length){processAndCollect(_flds,outDelim,batch,MAX_FREQ,isMerge?fi:-1);rowCount++}else{_skippedRows++}}break}
           totalRead+=value.byteLength;
           const text=leftover+decoder.decode(value,{stream:true});
-          const lines=text.split(/\r?\n/);leftover=lines.pop()||'';
+          const split=csvSplitLines(text);
+          const lines=split.lines;leftover=split.leftover;_openQuote=split.openQuote;
           for(const ln of lines){
             if(!ln.trim())continue;
             if(isSeparatorLine(ln))continue;
             if(isFirst){isFirst=false;continue}
-            processAndCollect(splitLine(ln,delimiterMode),outDelim,batch,MAX_FREQ,isMerge?fi:-1);
+            const _flds=splitLine(ln,delimiterMode);
+            if(_flds.length<headers.length){_skippedRows++;continue}
+            processAndCollect(_flds,outDelim,batch,MAX_FREQ,isMerge?fi:-1);
             rowCount++;
             if(batch.length>=BATCH){
               await _flushBatch(batch.join(''));batch=[];
@@ -2260,7 +2368,12 @@ async function startProcessing(){
     document.getElementById('progressFill').style.width='100%';
     document.getElementById('progressPct').textContent='100%';
     const _doneCells=rowCount*outHeaders.length;
-    document.getElementById('doneText').textContent=rowCount.toLocaleString('tr-TR')+' satır işlendi. ('+_formatCells(_doneCells)+' hücre, '+outHeaders.length+' sütun)';
+    const _totalAttempted=rowCount+_skippedRows;
+    const _successPct=_totalAttempted>0?(rowCount/_totalAttempted*100).toFixed(1):'100.0';
+    let _doneMsg=rowCount.toLocaleString('tr-TR')+' satır × '+outHeaders.length+' sütun = '+_formatCells(_doneCells)+' hücre işlendi.';
+    _doneMsg+=' Başarı: %'+_successPct;
+    if(_skippedRows>0)_doneMsg+=' ('+_skippedRows.toLocaleString('tr-TR')+' satır hatalı/atlandı)';
+    document.getElementById('doneText').textContent=_doneMsg;
     const noteEl=document.getElementById('xlsxNote');
     if(rowCount>1e6){noteEl.textContent='⚠️ 1M+ satır: Excel RAM kullanabilir, CSV önerilir.';noteEl.style.color='#f59e0b'}
     else noteEl.textContent='';
@@ -2798,7 +2911,7 @@ async function executeJoin(){
           break;
         }
         const text=leftover+leftDecoder.decode(value,{stream:true});
-        const lines=text.split(/\r?\n/);leftover=lines.pop()||'';
+        const _sp=csvSplitLines(text);const lines=_sp.lines;leftover=_sp.leftover;
         for(const ln of lines){
           if(!ln.trim()||isSeparatorLine(ln))continue;
           if(isFirst){isFirst=false;continue}
@@ -2836,7 +2949,7 @@ async function executeJoin(){
         break;
       }
       const text=leftover+rightDecoder.decode(value,{stream:true});
-      const lines=text.split(/\r?\n/);leftover=lines.pop()||'';
+      const _sp2=csvSplitLines(text);const lines=_sp2.lines;leftover=_sp2.leftover;
       for(const ln of lines){
         if(!ln.trim()||isSeparatorLine(ln))continue;
         if(isFirst){isFirst=false;continue}
@@ -3127,12 +3240,58 @@ function switchAnalysisTab(tab,btn){
   if(tab==='crosstab'){setTimeout(()=>{try{renderCrossTab()}catch(e){}},100)}
   if(tab==='mapview'){setTimeout(()=>{try{initMapView()}catch(e){console.warn('mapview init err',e)}},100)}
   if(tab==='advstats'){setTimeout(()=>{try{advStatsInit()}catch(e){console.warn('advstats init err',e)}},50)}
+  // Auto-init searchable selects for the visible tab
+  setTimeout(()=>{try{_initSearchableSelects(document.getElementById(map[tab]))}catch(e){}},200)
 }
 
 // === Aggregation picker ===
 function pickAgg(agg){
   currentAgg=agg;
   document.querySelectorAll('.agg-chip').forEach(c=>c.classList.toggle('active',c.dataset.agg===agg));
+  // Show/hide frequency criterion section
+  const fcSec=document.getElementById('freqCriterionSection');
+  if(fcSec){fcSec.style.display=agg==='count'?'':'none'}
+}
+
+/* === Frekans Ölçütü (Looker-style frequency criterion) === */
+let _freqCriterionCol=''; // '' = row count (default), else column name for distinct count
+
+function populateFreqCriterionDropdown(){
+  const sel=document.getElementById('freqCriterionCol');
+  if(!sel)return;
+  const prev=sel.value||'';
+  sel.innerHTML='<option value="">Satır Sayısı (Varsayılan)</option>';
+  outHeaders.forEach(h=>{
+    const s=colStats[h];
+    // Show all columns — user may want distinct count of any field
+    const opt=document.createElement('option');
+    opt.value=h;
+    const uniq=s&&s.freq?Object.keys(s.freq).length:'?';
+    opt.textContent=h+' (benzersiz: '+uniq+')';
+    sel.appendChild(opt);
+  });
+  // Restore previous selection if still valid
+  if(prev&&outHeaders.includes(prev))sel.value=prev;
+  else{sel.value='';_freqCriterionCol=''}
+  _destroySearchableSelect(sel);
+  _initSearchableSelects(sel.parentElement);
+}
+
+function onFreqCriterionChange(){
+  const sel=document.getElementById('freqCriterionCol');
+  _freqCriterionCol=sel?sel.value:'';
+  // Clear aggregation cache so charts recalculate
+  _aggCache={};
+  // Update info text
+  const info=document.getElementById('freqCriterionInfo');
+  if(info){
+    if(_freqCriterionCol){
+      const s=colStats[_freqCriterionCol];
+      const uniq=s&&s.freq?Object.keys(s.freq).length:'?';
+      info.style.display='';
+      info.innerHTML='📊 <b>'+escHtml(_freqCriterionCol)+'</b> sütunundaki benzersiz değerler sayılacak (toplam benzersiz: '+uniq+')';
+    }else{info.style.display='none'}
+  }
 }
 
 // === Filter system (kept from before) ===
@@ -3275,6 +3434,11 @@ function renderAnalysisUI(){
   try{updateKPICards()}catch(e){console.warn('kpi err',e)}
   // Populate summary stats dropdowns
   try{populateSummaryDropdowns()}catch(e){console.warn('summaryDropdowns err',e)}
+  // Populate frequency criterion dropdown
+  try{populateFreqCriterionDropdown()}catch(e){console.warn('freqCriterion err',e)}
+  // Show/hide freq criterion based on current agg
+  const _fcSec=document.getElementById('freqCriterionSection');
+  if(_fcSec)_fcSec.style.display=currentAgg==='count'?'':'none';
 }
 
 function renderYVarList(){
@@ -3540,7 +3704,7 @@ function openGroupingModal(){
   if(isNum){
     // Numeric grouping
     modalHTML+='<div style="margin-bottom:12px;padding:8px;background:#f0f9ff;border-radius:6px;font-size:11px;color:#0369a1">';
-    modalHTML+='<strong>'+escHtml(col)+'</strong>: Min='+s.min.toLocaleString('tr-TR')+' | Maks='+s.max.toLocaleString('tr-TR')+' | Ort='+(s.sum/s.numCount).toFixed(2)+' | N='+s.numCount.toLocaleString('tr-TR');
+    modalHTML+='<strong>'+escHtml(col)+'</strong>: Min='+s.min.toLocaleString('tr-TR')+' | Maks='+s.max.toLocaleString('tr-TR')+' | Ort='+(s.sum/s.numCount).toFixed(2)+' | Frekans='+s.numCount.toLocaleString('tr-TR');
     modalHTML+='</div>';
 
     // Template chips
@@ -3553,7 +3717,7 @@ function openGroupingModal(){
 
     // Custom group name
     modalHTML+='<div style="margin-bottom:10px"><label style="font-size:11px;font-weight:600;color:#475569">Grup Sütun Adı:</label>';
-    modalHTML+='<input id="grpColName" class="dash-select" value="'+escHtml(col)+'_GRUP" style="width:100%;margin-top:2px;font-size:11px"></div>';
+    modalHTML+='<input id="grpColName" class="dash-select searchable-select" value="'+escHtml(col)+'_GRUP" style="width:100%;margin-top:2px;font-size:11px"></div>';
 
     // Range definitions
     modalHTML+='<div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:6px">Aralık Tanımları:</div>';
@@ -3567,12 +3731,12 @@ function openGroupingModal(){
     const uniqueVals=Object.entries(s.freq).sort((a,b)=>b[1]-a[1]).slice(0,100);
 
     modalHTML+='<div style="margin-bottom:12px;padding:8px;background:#fefce8;border-radius:6px;font-size:11px;color:#854d0e">';
-    modalHTML+='<strong>'+escHtml(col)+'</strong>: '+Object.keys(s.freq).length+' benzersiz değer | N='+s.count.toLocaleString('tr-TR');
+    modalHTML+='<strong>'+escHtml(col)+'</strong>: '+Object.keys(s.freq).length+' benzersiz değer | Frekans='+s.count.toLocaleString('tr-TR');
     modalHTML+='</div>';
 
     // Custom group name
     modalHTML+='<div style="margin-bottom:10px"><label style="font-size:11px;font-weight:600;color:#475569">Grup Sütun Adı:</label>';
-    modalHTML+='<input id="grpColName" class="dash-select" value="'+escHtml(col)+'_GRUP" style="width:100%;margin-top:2px;font-size:11px"></div>';
+    modalHTML+='<input id="grpColName" class="dash-select searchable-select" value="'+escHtml(col)+'_GRUP" style="width:100%;margin-top:2px;font-size:11px"></div>';
 
     // Group definitions
     modalHTML+='<div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:6px">Grup Tanımları: <span style="font-weight:400;color:#94a3b8">Her gruba etiket verin, altındaki değerlere tıklayın</span></div>';
@@ -4489,8 +4653,8 @@ function parseOutputRows(maxRows){
     let lineIdx=0;
     for(let ci=0;ci<chunkCount;ci++){
       const text=leftover+outputChunks[ci];
-      const lines=text.split('\n');
-      leftover=lines.pop()||'';
+      const split=csvSplitLines(text);
+      const lines=split.lines;leftover=split.leftover;
       for(const ln of lines){
         if(!ln.trim())continue;
         if(isFirst){isFirst=false;continue}
@@ -4511,8 +4675,8 @@ function parseOutputRows(maxRows){
     // Full scan (only for small datasets)
     for(let ci=0;ci<chunkCount;ci++){
       const text=leftover+outputChunks[ci];
-      const lines=text.split('\n');
-      leftover=lines.pop()||'';
+      const split=csvSplitLines(text);
+      const lines=split.lines;leftover=split.leftover;
       for(const ln of lines){
         if(!ln.trim())continue;
         if(isFirst){isFirst=false;continue}
@@ -4526,6 +4690,27 @@ function parseOutputRows(maxRows){
   return rows;
 }
 
+// === Stream ALL output rows without memory caching (for accurate N counts) ===
+// callback(row) is called for each parsed row (array of strings)
+function streamOutputRows(callback){
+  const outDelim=document.getElementById('outputFormat').value==='tsv'?'\t':',';
+  let leftover='';
+  let isFirst=true;
+  const chunkCount=outputChunks.length;
+  for(let ci=0;ci<chunkCount;ci++){
+    const text=leftover+outputChunks[ci];
+    const split=csvSplitLines(text);
+    const lines=split.lines;
+    leftover=split.leftover;
+    for(const ln of lines){
+      if(!ln.trim())continue;
+      if(isFirst){isFirst=false;continue}
+      callback(parseCSVLine(ln,outDelim));
+    }
+  }
+  if(leftover.trim()&&!isFirst)callback(parseCSVLine(leftover,outDelim));
+}
+
 // Single Y backward-compat wrapper
 function computeGroupedAgg(xCol,yCol,aggType){
   const r=computeMultiAgg(xCol,yCol?[yCol]:[],aggType);
@@ -4534,16 +4719,17 @@ function computeGroupedAgg(xCol,yCol,aggType){
 
 // Multi-Y aggregation engine with caching and sampling
 function computeMultiAgg(xCol,yCols,aggType){
-  const cacheKey=xCol+'|'+yCols.join(',')+':'+aggType+':'+filterHash()+':'+drillStack.length;
+  const _fcCol=_freqCriterionCol||'';
+  const cacheKey=xCol+'|'+yCols.join(',')+':'+aggType+':'+filterHash()+':'+drillStack.length+':fc='+_fcCol;
   if(_aggCache[cacheKey])return _aggCache[cacheKey];
 
   const xi=outHeaders.indexOf(xCol);
 
-  // === FAST PATH: No filters + count agg + no calc fields + no drill → use colStats.freq directly ===
+  // === FAST PATH: No filters + count agg + no calc fields + no drill + no freq criterion → use colStats.freq directly ===
   const noFilters=!outHeaders.some(h=>hasActiveFilter(h));
   const noCalcY=!yCols.some(y=>calcFields.some(cf=>cf.name===y));
   const noDrill=!drillStack||drillStack.length===0;
-  if(noFilters&&noDrill&&aggType==='count'&&(!yCols.length||yCols.length===0)&&xi>=0&&colStats[xCol]&&colStats[xCol].freq){
+  if(noFilters&&noDrill&&aggType==='count'&&!_fcCol&&(!yCols.length||yCols.length===0)&&xi>=0&&colStats[xCol]&&colStats[xCol].freq){
     const freq=colStats[xCol].freq;
     const sortMode=document.getElementById('dashSort')?document.getElementById('dashSort').value:'desc';
     const limitVal=document.getElementById('dashLimit')?parseInt(document.getElementById('dashLimit').value)||15:15;
@@ -4567,7 +4753,11 @@ function computeMultiAgg(xCol,yCols,aggType){
   });
   if(xi<0)return{labels:[],datasets:[],groups:[]};
 
-  // Groups: {xVal: {count, yData: [{sum,sumSq,min,max,vals}]}}
+  // Frequency criterion: if set, count distinct values of that column per group
+  const _fcIdx=_fcCol?outHeaders.indexOf(_fcCol):-1;
+  const _useDistinct=aggType==='count'&&_fcIdx>=0;
+
+  // Groups: {xVal: {count, yData: [{sum,sumSq,min,max,vals}], _dset?:Set}}
   const groups={};
   for(const row of rows){
     const xv=row[xi]||'';
@@ -4578,8 +4768,14 @@ function computeMultiAgg(xCol,yCols,aggType){
     if(skip)continue;
     if(!groups[xv]){
       groups[xv]={count:0,yData:yIndices.map(()=>({sum:0,sumSq:0,min:Infinity,max:-Infinity,vals:[]}))};
+      if(_useDistinct)groups[xv]._dset=new Set();
     }
-    const g=groups[xv];g.count++;
+    const g=groups[xv];
+    if(_useDistinct){
+      const fv=row[_fcIdx]||'';
+      if(fv)g._dset.add(fv);
+      g.count=g._dset.size;
+    }else{g.count++}
     yIndices.forEach((yi,di)=>{
       let num;
       if(yi.calc&&yi.cf){
@@ -4648,7 +4844,8 @@ function computeMultiAgg(xCol,yCols,aggType){
 
   // If no Y cols but count, still produce a dataset
   if(!yCols.length){
-    datasets.push({label:'Sayı',data:sorted.map(([,g])=>g.count)});
+    const _fcLabel=_useDistinct?('Benzersiz '+_fcCol):'Sayı';
+    datasets.push({label:_fcLabel,data:sorted.map(([,g])=>g.count)});
   }
 
   const result={labels,datasets,groups:sorted};
@@ -4751,7 +4948,8 @@ function computeColorGroupAgg(xCol,colorCol,yCol,aggType){
 
 // Multi-level sub-group pivot: X dimension + N sub-group dimensions + Y measures
 function computeMultiSubPivot(xCol,subGroups,yCols,aggType){
-  const cacheKey='pivot:'+xCol+'|'+subGroups.join(',')+':'+yCols.join(',')+':'+aggType+':'+filterHash()+':'+drillStack.length;
+  const _fcCol2=_freqCriterionCol||'';
+  const cacheKey='pivot:'+xCol+'|'+subGroups.join(',')+':'+yCols.join(',')+':'+aggType+':'+filterHash()+':'+drillStack.length+':fc='+_fcCol2;
   if(_aggCache[cacheKey])return _aggCache[cacheKey];
 
   const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
@@ -4759,6 +4957,9 @@ function computeMultiSubPivot(xCol,subGroups,yCols,aggType){
   const sgIndices=subGroups.map(sg=>outHeaders.indexOf(sg));
   const yIndices=yCols.map(y=>outHeaders.indexOf(y));
   if(xi<0)return{html:'<p class="text-xs text-muted">X sütunu bulunamadı.</p>'};
+
+  const _fcIdx2=_fcCol2?outHeaders.indexOf(_fcCol2):-1;
+  const _useDistinct2=aggType==='count'&&_fcIdx2>=0;
 
   // Build nested data: {xVal: {sgKey: {count,sum,vals...}}}
   const data={};
@@ -4780,8 +4981,9 @@ function computeMultiSubPivot(xCol,subGroups,yCols,aggType){
     const sgKey=sgVals.join('|||');
 
     if(!data[xv])data[xv]={};
-    if(!data[xv][sgKey])data[xv][sgKey]={count:0,sums:{},vals:{}};
-    const g=data[xv][sgKey];g.count++;
+    if(!data[xv][sgKey]){data[xv][sgKey]={count:0,sums:{},vals:{}};if(_useDistinct2)data[xv][sgKey]._dset=new Set()}
+    const g=data[xv][sgKey];
+    if(_useDistinct2){const fv=row[_fcIdx2]||'';if(fv)g._dset.add(fv);g.count=g._dset.size}else{g.count++}
 
     yIndices.forEach((yi,yIdx)=>{
       if(yi<0)return;
@@ -4807,7 +5009,7 @@ function computeMultiSubPivot(xCol,subGroups,yCols,aggType){
   const sgKeyList=[...allSgKeys].sort();
 
   // Determine columns: each sgKey × each Y measure
-  const yMeasures=yCols.length?yCols:['N'];
+  const yMeasures=yCols.length?yCols:['Frekans'];
 
   function extractVal(g,yIdx,agg){
     if(!g)return 0;
@@ -5529,17 +5731,20 @@ function _updateUndoBtn(){
 
 // === Compute Filtered Column Stats ===
 function _computeFilteredColStats(){
-  const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
+  // Stream ALL rows for accurate counts — no sampling
   const stats={};
+  const _numVals={}; // separate array for median calculation (with memory limit)
+  const _MEDIAN_LIM=500000; // keep at most 500K values for median calc
   outHeaders.forEach(h=>{
-    stats[h]={count:0,empty:0,numCount:0,sum:0,sumSq:0,min:Infinity,max:-Infinity,freq:{},isNumeric:colStats[h]&&colStats[h].isNumeric,uniqueCount:0,_median:0,vals:[]};
+    stats[h]={count:0,empty:0,numCount:0,sum:0,sumSq:0,min:Infinity,max:-Infinity,freq:{},isNumeric:colStats[h]&&colStats[h].isNumeric,uniqueCount:0,_median:0};
+    _numVals[h]=[];
   });
-  for(const row of rows){
+  streamOutputRows(row=>{
     let skip=false;
     for(let ci2=0;ci2<Math.min(outHeaders.length,row.length);ci2++){
       if(colFilters[outHeaders[ci2]]&&!passesFilter(outHeaders[ci2],row[ci2]||'')){skip=true;break}
     }
-    if(skip)continue;
+    if(skip)return;
     outHeaders.forEach((h,hi)=>{
       const val=row[hi]||'';
       const s=stats[h];
@@ -5551,23 +5756,23 @@ function _computeFilteredColStats(){
         if(!isNaN(num)&&isFinite(num)){
           s.numCount++;s.sum+=num;s.sumSq+=num*num;
           if(num<s.min)s.min=num;if(num>s.max)s.max=num;
-          s.vals.push(num);
+          if(_numVals[h].length<_MEDIAN_LIM)_numVals[h].push(num);
         }
       }
     });
-  }
+  });
   // Compute median and uniqueCount
   outHeaders.forEach(h=>{
     const s=stats[h];
     s.uniqueCount=Object.keys(s.freq).length;
-    if(s.vals.length>0){
-      s.vals.sort((a,b)=>a-b);
-      const mid=Math.floor(s.vals.length/2);
-      s._median=s.vals.length%2?s.vals[mid]:(s.vals[mid-1]+s.vals[mid])/2;
+    const vals=_numVals[h];
+    if(vals.length>0){
+      vals.sort((a,b)=>a-b);
+      const mid=Math.floor(vals.length/2);
+      s._median=vals.length%2?vals[mid]:(vals[mid-1]+vals[mid])/2;
     }
     if(s.min===Infinity)s.min=0;
     if(s.max===-Infinity)s.max=0;
-    delete s.vals; // free memory
   });
   return stats;
 }
@@ -6181,10 +6386,24 @@ function initTopBottomTab(){
   grpDep.innerHTML='<option value="">-- Tümü --</option>';
   numCols.forEach(h=>{const o=document.createElement('option');o.value=h;o.textContent=h;grpDep.appendChild(o)});
   if(prevDep&&numCols.includes(prevDep))grpDep.value=prevDep;
+  // Frekans ölçütü dropdown
+  const grpFC=document.getElementById('tbGrpFreqCriterion');
+  if(grpFC){
+    const prevFC=grpFC.value;
+    grpFC.innerHTML='<option value="">Satır Sayısı</option>';
+    outHeaders.forEach(h=>{
+      const s=colStats[h];
+      const uniq=s&&s.freq?Object.keys(s.freq).length:'?';
+      grpFC.appendChild(Object.assign(document.createElement('option'),{value:h,textContent:h+' (benzersiz: '+uniq+')'}));
+    });
+    if(prevFC&&outHeaders.includes(prevFC))grpFC.value=prevFC;
+  }
   onTbCatVarChange();
   onTbCatVar2Change();
   if(_tbMode==='individual'&&sortSel.value)renderTopBottomData();
   if(_tbMode==='group'&&grpIndep.value)renderTopBottomGroupData();
+  // Init searchable selects after populating dropdowns
+  _initSearchableSelects(document.getElementById('tabTopBottom'));
 }
 function onTbCatVarChange(){
   const catVar=document.getElementById('tbCatVar').value;
@@ -6196,6 +6415,7 @@ function onTbCatVarChange(){
     Object.keys(colStats[catVar].freq).sort((a,b)=>a.localeCompare(b,'tr')).forEach(v=>{
       const o=document.createElement('option');o.value=v;o.textContent=v+' ('+colStats[catVar].freq[v]+')';valSel.appendChild(o)});
   }
+  if(valSel.classList.contains('searchable-select'))_initSearchableSelects(valSel.parentNode);
   renderTopBottomData();
 }
 function onTbCatVar2Change(){
@@ -6208,6 +6428,7 @@ function onTbCatVar2Change(){
     Object.keys(colStats[catVar].freq).sort((a,b)=>a.localeCompare(b,'tr')).forEach(v=>{
       const o=document.createElement('option');o.value=v;o.textContent=v+' ('+colStats[catVar].freq[v]+')';valSel.appendChild(o)});
   }
+  if(valSel.classList.contains('searchable-select'))_initSearchableSelects(valSel.parentNode);
   renderTopBottomData();
 }
 function renderTopBottomData(){
@@ -6230,24 +6451,31 @@ function renderTopBottomData(){
   if(sortIdx<0){area.innerHTML='<p class="text-sm text-muted">Sütun bulunamadı.</p>';return}
   const catIdx=catVar?outHeaders.indexOf(catVar):-1;
   const catIdx2=catVar2?outHeaders.indexOf(catVar2):-1;
-  // Veriyi oku ve filtrele
-  const rows=parseOutputRows(200000);
+  // Veriyi oku ve filtrele — TÜM satırları stream et (sınırsız)
   let filtered=[];
-  for(const r of rows){
+  const _keepMax=Math.max(count*20,1000); // memory-efficient: periyodik budama
+  streamOutputRows(r=>{
     // Global filtreler
     let skip=false;
     for(let ci=0;ci<Math.min(outHeaders.length,r.length);ci++){
       if(colFilters[outHeaders[ci]]&&!passesFilter(outHeaders[ci],r[ci]||'')){skip=true;break}
     }
-    if(skip)continue;
+    if(skip)return;
     // Kategori filtresi 1
-    if(catIdx>=0&&catVal&&(r[catIdx]||'')!==catVal)continue;
+    if(catIdx>=0&&catVal&&(r[catIdx]||'')!==catVal)return;
     // Kategori filtresi 2
-    if(catIdx2>=0&&catVal2&&(r[catIdx2]||'')!==catVal2)continue;
+    if(catIdx2>=0&&catVal2&&(r[catIdx2]||'')!==catVal2)return;
     const numVal=parseFloat((r[sortIdx]||'').replace(',','.'));
-    if(isNaN(numVal))continue;
+    if(isNaN(numVal))return;
     filtered.push({row:r,numVal});
-  }
+    // Periyodik budama: sadece en yüksek/düşük N kaydı tut (bellek optimizasyonu)
+    if(filtered.length>_keepMax*2){
+      if(direction==='top')filtered.sort((a,b)=>b.numVal-a.numVal);
+      else if(direction==='bottom')filtered.sort((a,b)=>a.numVal-b.numVal);
+      else filtered.sort((a,b)=>b.numVal-a.numVal); // both: keep top first
+      filtered.length=_keepMax;
+    }
+  });
   if(!filtered.length){area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px">Seçilen kriterlere uygun veri bulunamadı.</p>';return}
   // Sırala
   let html='';
@@ -6311,7 +6539,7 @@ function renderTopBottomData(){
   html+='<h4 style="font-size:13px;font-weight:700;color:#c2410c;margin-bottom:10px">📊 Filtrelenmiş Veri Özet İstatistikleri — '+escHtml(sortVar)+'</h4>';
   html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;font-size:12px">';
   const statItems=[
-    {label:'Sayı (N)',val:n.toLocaleString('tr-TR')},
+    {label:'Frekans',val:n.toLocaleString('tr-TR')},
     {label:'Toplam',val:sum.toLocaleString('tr-TR',{maximumFractionDigits:2})},
     {label:'Ortalama',val:mean.toLocaleString('tr-TR',{maximumFractionDigits:2})},
     {label:'Medyan',val:median.toLocaleString('tr-TR',{maximumFractionDigits:2})},
@@ -6352,12 +6580,12 @@ function renderTopBottomGroupData(){
   const numCols=outHeaders.filter(h=>colStats[h]&&colStats[h].isNumeric);
   if(!numCols.length){area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px">Veri setinde sayısal sütun bulunamadı.</p>';return}
   const numIdxMap={};numCols.forEach(h=>{numIdxMap[h]=outHeaders.indexOf(h)});
-  const rows=parseOutputRows(200000);
   // Helpers
+  const _VALS_LIM=200000; // median hesabı için sütun başına en fazla değer tutulur
   function calcMedian(arr){if(!arr.length)return 0;const s=arr.slice().sort((a,b)=>a-b);const m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2}
   function calcStd(arr,mean){if(arr.length<2)return 0;let ss=0;for(const v of arr)ss+=(v-mean)*(v-mean);return Math.sqrt(ss/(arr.length-1))}
   function makeAcc(){const o={};numCols.forEach(h=>{o[h]={vals:[],sum:0,count:0,min:Infinity,max:-Infinity}});o._n=0;return o}
-  function pushVal(acc,h,v){const a=acc[h];a.vals.push(v);a.sum+=v;a.count++;if(v<a.min)a.min=v;if(v>a.max)a.max=v;acc._n++}
+  function pushVal(acc,h,v){const a=acc[h];if(a.vals.length<_VALS_LIM)a.vals.push(v);a.sum+=v;a.count++;if(v<a.min)a.min=v;if(v>a.max)a.max=v}
   function calcMetricFor(a){
     if(metric==='mean')return a.count?a.sum/a.count:0;
     if(metric==='max')return a.count?a.max:0;
@@ -6371,17 +6599,24 @@ function renderTopBottomGroupData(){
     const mean=a.count?a.sum/a.count:0;
     return{mean,median:calcMedian(a.vals),std:calcStd(a.vals,mean),min:a.count?a.min:0,max:a.count?a.max:0,sum:a.sum,count:a.count,metric:calcMetricFor(a)};
   }
-  // ── Veriyi grupla ──
+  // ── Frekans Ölçütü (Kırılım) ──
+  const _tbFcCol=document.getElementById('tbGrpFreqCriterion')?document.getElementById('tbGrpFreqCriterion').value:'';
+  const _tbFcIdx=_tbFcCol?outHeaders.indexOf(_tbFcCol):-1;
+
+  // ── Veriyi grupla — TÜM satırları stream ederek (sınırsız) ──
   // groups[indepVal] = {acc: makeAcc(), subs: {subVal: makeAcc()}}
+  area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px"><span class="computing-spinner"></span> Tüm veriler hesaplanıyor...</p>';
   const groups={};
-  for(const r of rows){
+  let _totalProcessed=0;
+  streamOutputRows(r=>{
     let skip=false;
     for(let ci=0;ci<Math.min(outHeaders.length,r.length);ci++){
       if(colFilters[outHeaders[ci]]&&!passesFilter(outHeaders[ci],r[ci]||'')){skip=true;break}
     }
-    if(skip)continue;
+    if(skip)return;
+    _totalProcessed++;
     const indepVal=r[indepIdx]||'(Boş)';
-    if(!groups[indepVal])groups[indepVal]={acc:makeAcc(),subs:{}};
+    if(!groups[indepVal]){groups[indepVal]={acc:makeAcc(),subs:{}};if(_tbFcIdx>=0)groups[indepVal].acc._dset=new Set()}
     const grp=groups[indepVal];
     // Her sayısal sütun için değer topla
     for(const h of numCols){
@@ -6389,22 +6624,25 @@ function renderTopBottomGroupData(){
       if(!isNaN(v))pushVal(grp.acc,h,v);
     }
     grp.acc._n++;
+    // Distinct count for frequency criterion
+    if(_tbFcIdx>=0){const fv=r[_tbFcIdx]||'';if(fv)grp.acc._dset.add(fv);grp.acc._distinctN=grp.acc._dset.size}
     // Alt kırılım
     if(subIdx>=0){
       const subVal=r[subIdx]||'(Boş)';
-      if(!grp.subs[subVal])grp.subs[subVal]=makeAcc();
+      if(!grp.subs[subVal]){grp.subs[subVal]=makeAcc();if(_tbFcIdx>=0)grp.subs[subVal]._dset=new Set()}
       const sg=grp.subs[subVal];
       for(const h of numCols){
         const v=parseFloat((r[numIdxMap[h]]||'').replace(',','.'));
         if(!isNaN(v))pushVal(sg,h,v);
       }
       sg._n++;
+      if(_tbFcIdx>=0){const fv=r[_tbFcIdx]||'';if(fv)sg._dset.add(fv);sg._distinctN=sg._dset.size}
     }
-  }
+  });
   // Sıralama sütununu belirle: seçili ise o, değilse ilk sayısal
   const sortKey=sortCol&&numCols.includes(sortCol)?sortCol:numCols[0];
-  const metricLabel={mean:'Ort.',max:'Maks',min:'Min',median:'Med.',sum:'Top.',count:'N'}[metric]||'Ort.';
-  const metricLabelFull={mean:'Ortalama',max:'Maksimum',min:'Minimum',median:'Medyan',sum:'Toplam',count:'Sayı (N)'}[metric]||'Ortalama';
+  const metricLabel={mean:'Ort.',max:'Maks',min:'Min',median:'Med.',sum:'Top.',count:'Frekans'}[metric]||'Ort.';
+  const metricLabelFull={mean:'Ortalama',max:'Maksimum',min:'Minimum',median:'Medyan',sum:'Toplam',count:'Frekans'}[metric]||'Ortalama';
   // Entries oluştur
   let entries=Object.entries(groups).map(([key,g])=>{
     const stats={};
@@ -6414,10 +6652,11 @@ function renderTopBottomGroupData(){
     if(subIdx>=0){
       subEntries=Object.entries(g.subs).map(([sk,sg])=>{
         const ss={};numCols.forEach(h=>{ss[h]=statRow(sg[h])});
-        return{key:sk,stats:ss,sortMetric:ss[sortKey].metric};
+        return{key:sk,stats:ss,sortMetric:ss[sortKey].metric,rowCount:sg._n,distinctN:sg._distinctN||0};
       });
     }
-    return{key,stats,sortMetric:stats[sortKey].metric,rowCount:g.acc[numCols[0]].count,subs:subEntries};
+    const _dn=g.acc._distinctN||0;
+    return{key,stats,sortMetric:stats[sortKey].metric,rowCount:g.acc._n,distinctN:_dn,subs:subEntries};
   });
   if(!entries.length){area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px">Seçilen kriterlere uygun veri bulunamadı.</p>';return}
   const fmt=(v)=>typeof v==='number'?v.toLocaleString('tr-TR',{maximumFractionDigits:2}):'—';
@@ -6427,6 +6666,7 @@ function renderTopBottomGroupData(){
   if(subVar)html+=' › '+escHtml(subVar);
   html+=' | Sıralama: <strong>'+escHtml(sortKey)+' ('+metricLabelFull+')</strong>';
   html+=' | <strong>'+entries.length+'</strong> grup | Sayısal sütunlar: <strong>'+numCols.length+'</strong>';
+  if(_tbFcIdx>=0)html+=' | Frekans ölçütü: <strong style="color:#059669">Benzersiz '+escHtml(_tbFcCol)+'</strong>';
   html+='</div>';
   // ── Tablo oluştur ──
   const totalGroupCount=entries.length;
@@ -6454,7 +6694,8 @@ function renderTopBottomGroupData(){
     html+='<th style="position:sticky;top:0;background:#f1f5f9;padding:6px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:700;min-width:36px;z-index:2">#</th>';
     html+='<th style="position:sticky;top:0;background:#f1f5f9;padding:6px 8px;border:1px solid #e2e8f0;font-weight:600;z-index:2">'+escHtml(indepVar)+'</th>';
     if(subIdx>=0)html+='<th style="position:sticky;top:0;background:#f1f5f9;padding:6px 8px;border:1px solid #e2e8f0;font-weight:600;z-index:2">'+escHtml(subVar)+'</th>';
-    html+='<th style="position:sticky;top:0;background:#f1f5f9;padding:6px 8px;border:1px solid #e2e8f0;text-align:center;z-index:2">N</th>';
+    html+='<th style="position:sticky;top:0;background:#f1f5f9;padding:6px 8px;border:1px solid #e2e8f0;text-align:center;z-index:2">Satır</th>';
+    if(_tbFcIdx>=0)html+='<th style="position:sticky;top:0;background:#ecfdf5;padding:6px 8px;border:1px solid #e2e8f0;text-align:center;z-index:2;color:#059669;font-weight:700" title="Benzersiz '+escHtml(_tbFcCol)+' sayısı">Benzersiz '+escHtml(_tbFcCol.length>12?_tbFcCol.substring(0,10)+'..':_tbFcCol)+'</th>';
     // Her sayısal sütun için: metrik değeri + (alt kırılımda genel karşılaştırma) — tıklanabilir başlıklar
     numCols.forEach(h=>{
       const isSortCol=(h===sortKey);
@@ -6472,7 +6713,8 @@ function renderTopBottomGroupData(){
       html+='<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;color:#4338ca;vertical-align:middle'+(hasSubs?';vertical-align:middle" rowspan="'+rowSpan+'"':'"')+'>'+(i+1)+'</td>';
       html+='<td style="padding:6px 8px;border:1px solid #e2e8f0;font-weight:700;color:#312e81'+(hasSubs?';vertical-align:middle" rowspan="'+rowSpan+'"':'"')+'>'+escHtml(item.key)+'</td>';
       if(subIdx>=0)html+='<td style="padding:6px 8px;border:1px solid #e2e8f0;font-weight:700;color:#6366f1;font-style:italic">GENEL</td>';
-      html+='<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:600">'+item.rowCount+'</td>';
+      html+='<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:600">'+item.rowCount.toLocaleString('tr-TR')+'</td>';
+      if(_tbFcIdx>=0)html+='<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#059669;background:#ecfdf5">'+item.distinctN.toLocaleString('tr-TR')+'</td>';
       numCols.forEach(h=>{
         const s=item.stats[h];
         const isSortCol=(h===sortKey);
@@ -6486,7 +6728,8 @@ function renderTopBottomGroupData(){
         const bgSub=si%2===0?'#f8fafc':'#fff';
         html+='<tr style="background:'+bgSub+'">';
         html+='<td style="padding:4px 8px 4px 16px;border:1px solid #e2e8f0;font-size:12px">'+escHtml(sub.key)+'</td>';
-        html+='<td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:center;font-size:12px">'+sub.stats[numCols[0]].count+'</td>';
+        html+='<td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:center;font-size:12px">'+(sub.rowCount||sub.stats[numCols[0]].count).toLocaleString('tr-TR')+'</td>';
+        if(_tbFcIdx>=0)html+='<td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:center;font-size:12px;color:#059669;background:#ecfdf5">'+(sub.distinctN||0).toLocaleString('tr-TR')+'</td>';
         numCols.forEach(h=>{
           const s=sub.stats[h];
           const parentMetric=item.stats[h].metric;
@@ -6515,7 +6758,7 @@ function renderTopBottomGroupData(){
     html+='<table style="width:100%;border-collapse:collapse;font-size:12px" id="topBottomGrpDetail_'+cls+'"><thead><tr>';
     html+='<th style="position:sticky;top:0;background:#e2e8f0;padding:5px 8px;border:1px solid #cbd5e1;font-weight:700">'+escHtml(indepVar)+'</th>';
     numCols.forEach(h=>{
-      ['Ort.','Med.','Min','Maks','Top.','Std.S.','N'].forEach(lbl=>{
+      ['Ort.','Med.','Min','Maks','Top.','Std.S.','Frekans'].forEach(lbl=>{
         html+='<th style="position:sticky;top:0;background:#e2e8f0;padding:4px 5px;border:1px solid #cbd5e1;text-align:right;font-size:10px;white-space:nowrap">'+escHtml(h)+'<br>'+lbl+'</th>';
       });
     });
@@ -6604,7 +6847,7 @@ function renderQuickView(){
     let html=filterBanner+'<table style="width:100%;border-collapse:collapse;font-size:12px" id="quickviewTbl"><thead><tr>';
     html+='<th class="sortable-th" data-sort-col="0" data-tbl="quickviewTbl" onclick="sortSummaryTable(this)" style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;cursor:pointer;user-select:none">Değişken <span class="sort-icon">⇅</span></th>';
     html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center">Tür</th>';
-    html+='<th class="sortable-th" data-sort-col="2" data-tbl="quickviewTbl" onclick="sortSummaryTable(this)" style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center;cursor:pointer;user-select:none">Dolu (N) <span class="sort-icon">⇅</span></th>';
+    html+='<th class="sortable-th" data-sort-col="2" data-tbl="quickviewTbl" onclick="sortSummaryTable(this)" style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center;cursor:pointer;user-select:none">Dolu (Frekans) <span class="sort-icon">⇅</span></th>';
     html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center">Boş</th>';
     html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center">Benzersiz</th>';
     html+='<th class="sortable-th" data-sort-col="5" data-tbl="quickviewTbl" onclick="sortSummaryTable(this)" style="position:sticky;top:0;background:#dbeafe;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center;cursor:pointer;user-select:none">Toplam <span class="sort-icon">⇅</span></th>';
@@ -6670,6 +6913,8 @@ function populateSummaryDropdowns(){
     else{const o=document.createElement('option');o.value=h;o.textContent=h;numSel.appendChild(o)}
   });
   catSel.value=prevCat;numSel.value=prevNum;
+  _initSearchableSelects(catSel.closest('.dash-section')||catSel.parentNode);
+  _initSearchableSelects(numSel.closest('.dash-section')||numSel.parentNode);
 }
 
 function renderSummaryStatsTable(){
@@ -6938,7 +7183,7 @@ function renderDetailedStats(){
     const globalVar=s.sumSq/s.numCount-globalMean*globalMean;
     const globalStd=Math.sqrt(Math.max(0,globalVar));
     html+='<div style="margin-top:12px;padding:10px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:12px;color:#0369a1">';
-    html+='<strong>Özet:</strong> Ort='+globalMean.toFixed(2)+' | Medyan='+(typeof median!=='undefined'?median.toFixed(2):'-')+' | Std='+globalStd.toFixed(2)+' | N='+s.numCount.toLocaleString('tr-TR');
+    html+='<strong>Özet:</strong> Ort='+globalMean.toFixed(2)+' | Medyan='+(typeof median!=='undefined'?median.toFixed(2):'-')+' | Std='+globalStd.toFixed(2)+' | Frekans='+s.numCount.toLocaleString('tr-TR');
     html+='</div>';
   }else{
     // Categorical: freq + ratio (percentage of filled rows)
@@ -7474,6 +7719,7 @@ function onLLMGroupColChange(){
   if(!col||!colStats[col]||!colStats[col].freq)return;
   const entries=Object.entries(colStats[col].freq).sort((a,b)=>b[1]-a[1]);
   entries.forEach(([v,c])=>{sel.innerHTML+='<option value="'+escHtml(v)+'">'+escHtml(v)+' (n='+c+')</option>'});
+  if(sel.classList.contains('searchable-select'))_initSearchableSelects(sel.parentNode);
 }
 
 function onLLMBatchModeChange(){
@@ -8008,7 +8254,7 @@ async function generateAPA7PDF(){
       const topE=Object.entries(s.freq).sort((a,b)=>b[1]-a[1])[0];
       return[h,isNum?'Sayısal':'Kategorik',String(filled),isNum?String(s.min):'-',isNum?String(s.max):'-',isNum?(s.sum/s.numCount).toFixed(2):'-',medV,stdV,topE?topE[0].substring(0,15):'-'];
     });
-    doc.autoTable({startY:y,head:[[_pt('Değişken'),_pt('Tip'),'N','Min',_pt('Maks'),_pt('Ort.'),_pt('Medyan'),'SS','Mod']],body:statsRows.map(r=>r.map(_pt)),styles:{fontSize:7,cellPadding:2,font:_pdfFN},headStyles:{fillColor:[59,130,246],font:_pdfFN},margin:{left:mg,right:mg},theme:'grid'});
+    doc.autoTable({startY:y,head:[[_pt('Değişken'),_pt('Tip'),_pt('Frekans'),'Min',_pt('Maks'),_pt('Ort.'),_pt('Medyan'),'SS','Mod']],body:statsRows.map(r=>r.map(_pt)),styles:{fontSize:7,cellPadding:2,font:_pdfFN},headStyles:{fillColor:[59,130,246],font:_pdfFN},margin:{left:mg,right:mg},theme:'grid'});
     y=doc.lastAutoTable.finalY+12;
 
     // ======= CHARTS WITH LLM INTERPRETATIONS =======
@@ -8136,7 +8382,18 @@ function showSmartReportModal(){
   } else {
     warnDiv.classList.add('hidden');
   }
+  // Populate frequency criterion dropdown for report
+  const fcSel=document.getElementById('smartFreqCriterion');
+  if(fcSel){
+    fcSel.innerHTML='<option value="">Satır Sayısı (Varsayılan)</option>';
+    outHeaders.forEach(h=>{
+      const s=colStats[h];
+      const uniq=s&&s.freq?Object.keys(s.freq).length:'?';
+      fcSel.innerHTML+='<option value="'+escHtml(h)+'">'+escHtml(h)+' (benzersiz: '+uniq+')</option>';
+    });
+  }
   document.getElementById('smartReportModal').classList.remove('hidden');
+  setTimeout(()=>_initSearchableSelects(document.getElementById('smartReportModal')),50);
 }
 
 function onSmartIndepChange(){
@@ -8148,6 +8405,7 @@ function onSmartIndepChange(){
   if(!s||!s.freq)return;
   const keys=Object.entries(s.freq).sort((a,b)=>b[1]-a[1]);
   keys.forEach(([v,c])=>{sel.innerHTML+='<option value="'+escHtml(v)+'">'+escHtml(v)+' (n='+c+')</option>'});
+  if(sel.classList.contains('searchable-select'))_initSearchableSelects(sel.parentNode);
 }
 
 function onSmartSubGroupChange(){
@@ -8179,7 +8437,8 @@ async function generateFullSmartReport(){
   const incComp=document.getElementById('smartIncComp').checked;
   const incRec=document.getElementById('smartIncRec').checked;
   const incSummary=document.getElementById('smartIncSummaryTable').checked;
-  const reportOpts={incStats,incDist,incComp,incRec,incSummary,subGroupVar};
+  const smartFC=document.getElementById('smartFreqCriterion')?document.getElementById('smartFreqCriterion').value:'';
+  const reportOpts={incStats,incDist,incComp,incRec,incSummary,subGroupVar,freqCriterionCol:smartFC};
   // Filter warning
   const afSmart=_getActiveFilterSummary();
   if(afSmart){
@@ -8301,6 +8560,11 @@ async function buildGroupSection(indepVar,groupVal,depVars,model,endpoint,onProg
   const charts=[];
   const subGroupVar=opts.subGroupVar||null;
   const sgIdx=subGroupVar?outHeaders.indexOf(subGroupVar):-1;
+  // Frequency criterion for report
+  const _rptFcCol=opts.freqCriterionCol||'';
+  const _rptFcIdx=_rptFcCol?outHeaders.indexOf(_rptFcCol):-1;
+  let _rptDistinctN=0;
+  if(_rptFcIdx>=0){const _dset=new Set();groupRows.forEach(r=>{const v=(r[_rptFcIdx]||'').trim();if(v)_dset.add(v)});_rptDistinctN=_dset.size}
 
   // === ALT GRUPLAMA VARSA: Ders/Dönem bazlı analiz ===
   if(subGroupVar&&sgIdx>=0){
@@ -8382,7 +8646,7 @@ async function buildGroupSection(indepVar,groupVal,depVars,model,endpoint,onProg
       charts.push({depVar,imgData:null,interpretation,stats:overallStats});
       if(onProgress)onProgress((di+1)/depVars.length);
     }
-    return{groupVal,n:groupRows.length,charts,subGroupVar,subGroups,summaryTable,subGroupCharts};
+    return{groupVal,n:groupRows.length,distinctN:_rptDistinctN,freqCriterionCol:_rptFcCol,charts,subGroupVar,subGroups,summaryTable,subGroupCharts};
   }
 
   // === ALT GRUPLAMA YOKSA: Mevcut davranış (tek değişken histogramları) ===
@@ -8419,7 +8683,7 @@ async function buildGroupSection(indepVar,groupVal,depVars,model,endpoint,onProg
     charts.push({depVar,imgData,interpretation,stats});
     if(onProgress)onProgress((di+1)/depVars.length);
   }
-  return{groupVal,n:groupRows.length,charts};
+  return{groupVal,n:groupRows.length,distinctN:_rptDistinctN,freqCriterionCol:_rptFcCol,charts};
 }
 
 function buildSmartReportPDF(doc,indepVar,sections,partNum,totalParts,opts){
@@ -8450,12 +8714,18 @@ function buildSmartReportPDF(doc,indepVar,sections,partNum,totalParts,opts){
     doc.setFontSize(28);doc.setFont(_pdfFN,'bold');
     doc.text(_pt(groupNames[0]),pw/2,y,{align:'center'});y+=14;
     doc.setFontSize(12);doc.setFont(_pdfFN,'normal');doc.setTextColor(80);
-    doc.text(_pt('(n='+sections[0].n+' gözlem)'),pw/2,y,{align:'center'});y+=10;
+    let _nLine='(n='+sections[0].n+' satır)';
+    if(sections[0].freqCriterionCol&&sections[0].distinctN)_nLine='('+sections[0].n+' satır | Benzersiz '+sections[0].freqCriterionCol+': '+sections[0].distinctN+')';
+    doc.text(_pt(_nLine),pw/2,y,{align:'center'});y+=10;
   }else{
     doc.setFontSize(22);doc.setFont(_pdfFN,'bold');
     doc.text(_pt(indepVar+' Bazlı Analiz Raporu'),pw/2,y,{align:'center'});y+=12;
     doc.setFontSize(14);doc.setFont(_pdfFN,'normal');doc.setTextColor(5,150,105);
-    const grpLine=groupNames.map((g,i)=>g+' (n='+sections[i].n+')').join('  |  ');
+    const grpLine=groupNames.map((g,i)=>{
+      let lbl=g+' (n='+sections[i].n;
+      if(sections[i].freqCriterionCol&&sections[i].distinctN)lbl+=' | '+sections[i].freqCriterionCol+': '+sections[i].distinctN;
+      return lbl+')';
+    }).join('  |  ');
     const grpLines=doc.splitTextToSize(_pt(grpLine),cw);
     grpLines.forEach(l=>{doc.text(l,pw/2,y,{align:'center'});y+=6});
     y+=4;
@@ -8486,7 +8756,7 @@ function buildSmartReportPDF(doc,indepVar,sections,partNum,totalParts,opts){
   doc.text(_pt('Kullanılan Kısaltmalar'),pw/2,y,{align:'center'});y+=5;
   doc.setFont(_pdfFN,'normal');
   const abbrData=[
-    ['N',_pt('Gözlem sayısı (örneklem büyüklüğü)')],
+    [_pt('Frekans'),_pt('Veritabanında kaç kez geçtiği (gözlem sayısı)')],
     [_pt('Ort.'),_pt('Aritmetik ortalama (tüm değerlerin toplamı / gözlem sayısı)')],
     [_pt('Medyan'),_pt('Ortanca değer (sıralandığında tam ortadaki değer)')],
     ['SS',_pt('Standart sapma (verilerin ortalamadan sapma ölçüsü)')],
@@ -8513,8 +8783,43 @@ function buildSmartReportPDF(doc,indepVar,sections,partNum,totalParts,opts){
 
     // H2 heading — Grup başlığı
     doc.setFontSize(16);doc.setFont(_pdfFN,'bold');doc.setTextColor(5,150,105);
-    doc.text(_pt(sec.groupVal+' (n='+sec.n+')'),mg,y);
+    let _secTitle=sec.groupVal+' (n='+sec.n+' satır';
+    if(sec.freqCriterionCol&&sec.distinctN)_secTitle+=' | Benzersiz '+sec.freqCriterionCol+': '+sec.distinctN;
+    _secTitle+=')';
+    doc.text(_pt(_secTitle),mg,y);
     doc.setTextColor(0);y+=10;
+
+    // === DEĞIŞKEN FREKANS ÖZETİ TABLOSU (her grubun başında) ===
+    {
+      const _vfBody=[];
+      _vfBody.push([_pt('Toplam Satır Sayısı'),String(sec.n)]);
+      if(sec.freqCriterionCol&&sec.distinctN){
+        _vfBody.push([_pt('Benzersiz '+sec.freqCriterionCol),String(sec.distinctN)]);
+      }
+      // Her sütun için benzersiz değer sayısı
+      const _visibleCols=sec.charts?sec.charts.map(c=>c.depVar):[];
+      const _allReportCols=[indepVar,..._visibleCols];
+      if(opts.subGroupVar)_allReportCols.push(opts.subGroupVar);
+      const _uniqueReportCols=[...new Set(_allReportCols)];
+      _uniqueReportCols.forEach(h=>{
+        const s=colStats[h];
+        if(s&&s.freq){
+          _vfBody.push([_pt(h+' (benzersiz)'),String(Object.keys(s.freq).length)]);
+        }
+      });
+      if(_vfBody.length>1){
+        doc.setFontSize(10);doc.setFont(_pdfFN,'bold');
+        doc.text(_pt('Değişken Frekans Özeti'),mg,y);y+=4;
+        doc.autoTable({
+          startY:y,head:[[_pt('Değişken / Ölçüt'),_pt('Değer')]],body:_vfBody,
+          styles:{fontSize:8,cellPadding:2,font:_pdfFN},
+          headStyles:{fillColor:[5,150,105],font:_pdfFN,textColor:255},
+          columnStyles:{0:{cellWidth:60},1:{cellWidth:30,halign:'center',fontStyle:'bold'}},
+          margin:{left:mg,right:pw-mg-90},theme:'grid'
+        });
+        y=doc.lastAutoTable.finalY+8;
+      }
+    }
 
     // === ALT GRUPLAMA ÖZET TABLOSU ===
     if(sec.summaryTable&&sec.summaryTable.length>0&&opts.incSummary!==false){
@@ -8524,7 +8829,7 @@ function buildSmartReportPDF(doc,indepVar,sections,partNum,totalParts,opts){
 
       // Tablo: Alt Grup | N | depVar1 Ort | depVar1 SS | depVar2 Ort | depVar2 SS ...
       const depVarNames=Object.keys(sec.summaryTable[0].vars);
-      const head=[_pt(sec.subGroupVar),'N'];
+      const head=[_pt(sec.subGroupVar),_pt('Frekans')];
       depVarNames.forEach(dv=>{head.push(_pt(dv+' Ort.'));head.push(_pt(dv+' SS'))});
 
       const body=sec.summaryTable.map(row=>{
@@ -8578,7 +8883,7 @@ function buildSmartReportPDF(doc,indepVar,sections,partNum,totalParts,opts){
 
         // Stats for histogram type
         if(sgc.type==='histogram'&&sgc.stats){
-          doc.autoTable({startY:y,head:[['N',_pt('Ort.'),_pt('Medyan'),'SS','Min',_pt('Maks'),'Q1','Q3']],body:[[sgc.stats.n,sgc.stats.mean.toFixed(2),sgc.stats.median.toFixed(2),sgc.stats.std.toFixed(2),sgc.stats.min.toFixed(2),sgc.stats.max.toFixed(2),sgc.stats.q1.toFixed(2),sgc.stats.q3.toFixed(2)]],styles:{fontSize:7,cellPadding:2,font:_pdfFN},headStyles:{fillColor:[59,130,246],font:_pdfFN},margin:{left:mg,right:mg},theme:'grid'});
+          doc.autoTable({startY:y,head:[[_pt('Frekans'),_pt('Ort.'),_pt('Medyan'),'SS','Min',_pt('Maks'),'Q1','Q3']],body:[[sgc.stats.n,sgc.stats.mean.toFixed(2),sgc.stats.median.toFixed(2),sgc.stats.std.toFixed(2),sgc.stats.min.toFixed(2),sgc.stats.max.toFixed(2),sgc.stats.q1.toFixed(2),sgc.stats.q3.toFixed(2)]],styles:{fontSize:7,cellPadding:2,font:_pdfFN},headStyles:{fillColor:[59,130,246],font:_pdfFN},margin:{left:mg,right:mg},theme:'grid'});
           y=doc.lastAutoTable.finalY+4;
         }
         y+=6;
@@ -8602,7 +8907,7 @@ function buildSmartReportPDF(doc,indepVar,sections,partNum,totalParts,opts){
 
       // Stats mini table (alt gruplama yokken göster)
       if(ch.stats&&opts.incStats!==false&&!sec.summaryTable){
-        doc.autoTable({startY:y,head:[['N',_pt('Ort.'),_pt('Medyan'),'SS','Min',_pt('Maks'),'Q1','Q3']],body:[[ch.stats.n,ch.stats.mean.toFixed(2),ch.stats.median.toFixed(2),ch.stats.std.toFixed(2),ch.stats.min.toFixed(2),ch.stats.max.toFixed(2),ch.stats.q1.toFixed(2),ch.stats.q3.toFixed(2)]],styles:{fontSize:7,cellPadding:2,font:_pdfFN},headStyles:{fillColor:[5,150,105],font:_pdfFN},margin:{left:mg,right:mg},theme:'grid'});
+        doc.autoTable({startY:y,head:[[_pt('Frekans'),_pt('Ort.'),_pt('Medyan'),'SS','Min',_pt('Maks'),'Q1','Q3']],body:[[ch.stats.n,ch.stats.mean.toFixed(2),ch.stats.median.toFixed(2),ch.stats.std.toFixed(2),ch.stats.min.toFixed(2),ch.stats.max.toFixed(2),ch.stats.q1.toFixed(2),ch.stats.q3.toFixed(2)]],styles:{fontSize:7,cellPadding:2,font:_pdfFN},headStyles:{fillColor:[5,150,105],font:_pdfFN},margin:{left:mg,right:mg},theme:'grid'});
         y=doc.lastAutoTable.finalY+4;
       }
 
@@ -8700,7 +9005,7 @@ async function generatePDF(){
     doc.setFontSize(11);doc.setFont(_pdfFN,'bold');doc.text(_pt('Kullanılan Kısaltmalar'),15,y);y+=6;
     doc.setFont(_pdfFN,'normal');
     const abbrRows=[
-      ['N',_pt('Gözlem sayısı (örneklem büyüklüğü)')],
+      [_pt('Frekans'),_pt('Veritabanında kaç kez geçtiği (gözlem sayısı)')],
       [_pt('Ort.'),_pt('Aritmetik ortalama')],
       [_pt('Medyan'),_pt('Ortanca değer (sıralandığında tam ortadaki)')],
       ['Std / SS',_pt('Standart sapma (verilerin ortalamadan sapması)')],
@@ -9160,7 +9465,7 @@ async function importSession(event){
           const s=colStats[h];if(!s)return;
           if(!val||val.trim()===''){s.empty++;return}
           s.count++;
-          if(s._freqSize<50000){s.freq[val]=(s.freq[val]||0)+1;if(!s.freq[val-1])s._freqSize++}
+          if(!(val in s.freq)){s.freq[val]=1;s._freqSize++}else{s.freq[val]++}
           s._uniqSet.add(val);
           if(s.isNumeric){
             const num=parseFloat(val.replace(',','.'));
@@ -10259,7 +10564,7 @@ function processQuestion(q){
   if(ql.match(/kisaltma|abbrevi|n nedir|ort nedir|ss nedir|q1 nedir|q3 nedir|medyan nedir|mod nedir/)){
     return '📖 <b>Kullanılan Kısaltmalar</b><br>'+
       '<table><tr><th>Kısaltma</th><th>Açıklama</th></tr>'+
-      '<tr><td><b>N</b></td><td>Gözlem sayısı (örneklem büyüklüğü)</td></tr>'+
+      '<tr><td><b>Frekans</b></td><td>Veritabanında kaç kez geçtiği (gözlem sayısı)</td></tr>'+
       '<tr><td><b>Ort.</b></td><td>Aritmetik ortalama (tüm değerlerin toplamı / gözlem sayısı)</td></tr>'+
       '<tr><td><b>Medyan</b></td><td>Ortanca değer (sıralandığında tam ortadaki değer)</td></tr>'+
       '<tr><td><b>SS / Std</b></td><td>Standart sapma (verilerin ortalamadan sapma ölçüsü)</td></tr>'+
@@ -10772,7 +11077,7 @@ function _buildContextSummary(){
         text+='Test: '+r.test+'\n';
         if(r.test==='ttest')text+='Gruplar: '+r.groups.join(' vs ')+'\nt = '+r.t.toFixed(4)+', p = '+r.p.toFixed(4)+'\nCohen d = '+r.cohensD.toFixed(3)+'\nEtki büyüklüğü: '+(Math.abs(r.cohensD)<0.2?'İhmal edilebilir':Math.abs(r.cohensD)<0.5?'Küçük':Math.abs(r.cohensD)<0.8?'Orta':'Büyük')+'\n';
         if(r.test==='anova'){text+='F = '+r.F.toFixed(4)+', p = '+r.p.toFixed(4)+', η² = '+r.etaSq.toFixed(3)+'\n';text+='Grup sayısı: '+r.groups.length+' ('+r.groups.join(', ')+')\n';
-          if(r.groupStats)r.groupStats.forEach(g=>{text+='- '+g.group+': N='+g.n+' Ort='+g.mean.toFixed(2)+' SS='+g.std.toFixed(2)+'\n'})}
+          if(r.groupStats)r.groupStats.forEach(g=>{text+='- '+g.group+': Frekans='+g.n+' Ort='+g.mean.toFixed(2)+' SS='+g.std.toFixed(2)+'\n'})}
         if(r.test==='chisquare')text+='χ² = '+r.chiSq.toFixed(4)+', p = '+r.p.toFixed(4)+', df = '+r.df+'\nCramer V = '+r.cramerV.toFixed(3)+'\n';
         if(r.test==='correlation')text+='Pearson r = '+r.pearsonR.toFixed(4)+', p = '+r.pearsonP.toFixed(4)+'\nSpearman ρ = '+r.spearmanR.toFixed(4)+', p = '+r.spearmanP.toFixed(4)+'\n';
         if(r.test==='regression')text+='R² = '+r.R2.toFixed(4)+', Düz. R² = '+r.adjR2.toFixed(4)+'\nF = '+r.F.toFixed(4)+', p = '+r.pF.toFixed(4)+'\n';
@@ -10914,6 +11219,7 @@ function initMapView(){
       metSel.innerHTML+='<option value="'+escHtml(h)+'">'+escHtml(h)+' [S]</option>';
     }
   });
+  _initSearchableSelects(document.getElementById('tabMapView'));
 }
 
 function onMapVarChange(){
@@ -11361,38 +11667,74 @@ function advStatsRefreshIfActive(){
 // --- Helper: get filtered numeric values for a column ---
 function _getFilteredNumericValues(colName){
   const ci=outHeaders.indexOf(colName);if(ci<0)return[];
-  const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
   const vals=[];
-  for(const row of rows){
-    let skip=false;
-    for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){
-      if(colFilters[outHeaders[fi]]&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
+  const _MAX_VALS=50000000; // 50M values max for memory safety
+  const hasFilters=Object.keys(colFilters).some(k=>colFilters[k]);
+  let total=0;
+  streamOutputRows(row=>{
+    if(hasFilters){
+      let skip=false;
+      for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){
+        if(colFilters[outHeaders[fi]]&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
+      }
+      if(skip)return;
     }
-    if(skip)continue;
     const v=parseFloat((row[ci]||'').replace(',','.'));
-    if(!isNaN(v)&&isFinite(v))vals.push(v);
-  }
+    if(!isNaN(v)&&isFinite(v)){
+      total++;
+      if(vals.length<_MAX_VALS){vals.push(v)}
+      else{const j=Math.floor(Math.random()*total);if(j<_MAX_VALS)vals[j]=v}
+    }
+  });
   return vals;
 }
 
 // --- Helper: get filtered rows as objects ---
 function _getFilteredRowObjects(){
-  const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
+  // Stream ALL rows for accurate statistics — reservoir sampling for very large datasets to prevent OOM
+  const _MAX_ROW_OBJS=50000000; // 50M row objects max in memory
   const result=[];
-  for(let ri=0;ri<rows.length;ri++){
-    const row=rows[ri];
+  let ri=0,totalPassed=0;
+  const hasFilters=Object.keys(colFilters).some(k=>colFilters[k]);
+  streamOutputRows(row=>{
     // Outlier exclusion check
-    if(outlierFilter.enabled && outlierFilter.excludedRows.has(ri)) continue;
-    let skip=false;
-    for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){
-      if(colFilters[outHeaders[fi]]&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
+    if(outlierFilter.enabled && outlierFilter.excludedRows.has(ri)){ri++;return}
+    if(hasFilters){
+      let skip=false;
+      for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){
+        if(colFilters[outHeaders[fi]]&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
+      }
+      if(skip){ri++;return}
     }
-    if(skip)continue;
+    totalPassed++;
     const obj={};
     outHeaders.forEach((h,i)=>obj[h]=row[i]||'');
-    result.push(obj);
-  }
+    if(result.length<_MAX_ROW_OBJS){
+      result.push(obj);
+    }else{
+      // Reservoir sampling for datasets beyond limit
+      const j=Math.floor(Math.random()*totalPassed);
+      if(j<_MAX_ROW_OBJS)result[j]=obj;
+    }
+    ri++;
+  });
   return result;
+}
+// Memory-efficient streaming: extract only needed columns without building full row objects
+function _streamFilteredValues(cols,callback){
+  const colIdxs=cols.map(c=>outHeaders.indexOf(c));
+  const hasFilters=Object.keys(colFilters).some(k=>colFilters[k]);
+  streamOutputRows(row=>{
+    if(hasFilters){
+      let skip=false;
+      for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){
+        if(colFilters[outHeaders[fi]]&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
+      }
+      if(skip)return;
+    }
+    const vals=colIdxs.map(idx=>idx>=0?(row[idx]||''):'');
+    callback(vals);
+  });
 }
 
 // --- Helper: get numeric & categorical columns ---
@@ -11552,37 +11894,37 @@ function advStatsShowTest(testId){
   // Build form based on test type
   if(testId==='ttest'||testId==='anova'||testId==='mannwhitney'||testId==='kruskalwallis'){
     html+='<div class="flex gap-16 flex-wrap mb-12">';
-    html+='<div><label class="text-sm" style="font-weight:600">Gruplama Değişkeni (Kategorik)</label><br><select id="advGroup" class="dash-select" style="width:220px"><option value="">--Seçin--</option>';
-    catCols.forEach(c=>{const u=colStats[c]?Object.keys(colStats[c].freq).length:0;html+='<option value="'+c+'">'+c+' ('+u+' grup)</option>'});
+    html+='<div><label class="text-sm" style="font-weight:600">Gruplama Değişkeni (Kategorik)</label><br><select id="advGroup" class="dash-select searchable-select" style="width:220px"><option value="">--Seçin--</option>';
+    catCols.sort((a,b)=>a.localeCompare(b,'tr')).forEach(c=>{const u=colStats[c]?Object.keys(colStats[c].freq).length:0;html+='<option value="'+c+'">'+c+' ('+u+' grup)</option>'});
     html+='</select></div>';
-    html+='<div><label class="text-sm" style="font-weight:600">Test Değişkeni (Sayısal)</label><br><select id="advDepVar" class="dash-select" style="width:220px"><option value="">--Seçin--</option>';
+    html+='<div><label class="text-sm" style="font-weight:600">Test Değişkeni (Sayısal)</label><br><select id="advDepVar" class="dash-select searchable-select" style="width:220px"><option value="">--Seçin--</option>';
     numCols.forEach(c=>html+='<option value="'+c+'">'+c+'</option>');
     html+='</select></div>';
     html+='<div style="align-self:flex-end"><button class="btn btn-primary btn-sm" onclick="advStatsRun(\''+testId+'\')" style="background:'+d.color+'">Testi Çalıştır</button></div>';
     html+='</div>';
   }else if(testId==='chisquare'){
     html+='<div class="flex gap-16 flex-wrap mb-12">';
-    html+='<div><label class="text-sm" style="font-weight:600">Satır Değişkeni</label><br><select id="advChiRow" class="dash-select" style="width:220px"><option value="">--Seçin--</option>';
+    html+='<div><label class="text-sm" style="font-weight:600">Satır Değişkeni</label><br><select id="advChiRow" class="dash-select searchable-select" style="width:220px"><option value="">--Seçin--</option>';
     catCols.forEach(c=>html+='<option value="'+c+'">'+c+'</option>');
     html+='</select></div>';
-    html+='<div><label class="text-sm" style="font-weight:600">Sütun Değişkeni</label><br><select id="advChiCol" class="dash-select" style="width:220px"><option value="">--Seçin--</option>';
+    html+='<div><label class="text-sm" style="font-weight:600">Sütun Değişkeni</label><br><select id="advChiCol" class="dash-select searchable-select" style="width:220px"><option value="">--Seçin--</option>';
     catCols.forEach(c=>html+='<option value="'+c+'">'+c+'</option>');
     html+='</select></div>';
     html+='<div style="align-self:flex-end"><button class="btn btn-primary btn-sm" onclick="advStatsRun(\'chisquare\')" style="background:'+d.color+'">Testi Çalıştır</button></div>';
     html+='</div>';
   }else if(testId==='pairedttest'||testId==='wilcoxon'){
     html+='<div class="flex gap-16 flex-wrap mb-12">';
-    html+='<div><label class="text-sm" style="font-weight:600">1. Ölçüm (Ön-test / Önceki)</label><br><select id="advPaired1" class="dash-select" style="width:220px"><option value="">--Seçin--</option>';
+    html+='<div><label class="text-sm" style="font-weight:600">1. Ölçüm (Ön-test / Önceki)</label><br><select id="advPaired1" class="dash-select searchable-select" style="width:220px"><option value="">--Seçin--</option>';
     numCols.forEach(c=>html+='<option value="'+c+'">'+c+'</option>');
     html+='</select></div>';
-    html+='<div><label class="text-sm" style="font-weight:600">2. Ölçüm (Son-test / Sonraki)</label><br><select id="advPaired2" class="dash-select" style="width:220px"><option value="">--Seçin--</option>';
+    html+='<div><label class="text-sm" style="font-weight:600">2. Ölçüm (Son-test / Sonraki)</label><br><select id="advPaired2" class="dash-select searchable-select" style="width:220px"><option value="">--Seçin--</option>';
     numCols.forEach(c=>html+='<option value="'+c+'">'+c+'</option>');
     html+='</select></div>';
     html+='<div style="align-self:flex-end"><button class="btn btn-primary btn-sm" onclick="advStatsRun(\''+testId+'\')" style="background:'+d.color+'">Testi Çalıştır</button></div>';
     html+='</div>';
   }else if(testId==='normality'||testId==='zscore'||testId==='distribution'){
     html+='<div class="flex gap-16 flex-wrap mb-12">';
-    html+='<div><label class="text-sm" style="font-weight:600">Sayısal Değişken</label><br><select id="advNumVar" class="dash-select" style="width:220px"><option value="">--Seçin--</option>';
+    html+='<div><label class="text-sm" style="font-weight:600">Sayısal Değişken</label><br><select id="advNumVar" class="dash-select searchable-select" style="width:220px"><option value="">--Seçin--</option>';
     numCols.forEach(c=>html+='<option value="'+c+'">'+c+'</option>');
     html+='</select></div>';
     const btnLabel=testId==='zscore'?'Hesapla':testId==='distribution'?'Analiz Et':'Testi Çalıştır';
@@ -11591,11 +11933,11 @@ function advStatsShowTest(testId){
   }else if(testId==='boxplot'){
     html+='<div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">';
     html+='<div><b>Sayısal Değişken</b><br>';
-    html+='<select id="boxplotVar" style="padding:6px;border-radius:6px;border:1px solid #ccc">';
+    html+='<select id="boxplotVar" class="searchable-select" style="padding:6px;border-radius:6px;border:1px solid #ccc">';
     numCols.forEach(c=>html+='<option value="'+c+'">'+c+'</option>');
     html+='</select></div>';
     html+='<div><b>Grup Değişkeni (opsiyonel)</b><br>';
-    html+='<select id="boxplotGroup" style="padding:6px;border-radius:6px;border:1px solid #ccc">';
+    html+='<select id="boxplotGroup" class="searchable-select" style="padding:6px;border-radius:6px;border:1px solid #ccc">';
     html+='<option value="">-- Grupsuz --</option>';
     catCols.forEach(c=>html+='<option value="'+c+'">'+c+'</option>');
     html+='</select></div>';
@@ -11603,17 +11945,17 @@ function advStatsShowTest(testId){
     html+='</div>';
   }else if(testId==='correlation'){
     html+='<div class="flex gap-16 flex-wrap mb-12">';
-    html+='<div><label class="text-sm" style="font-weight:600">Değişken 1</label><br><select id="advCorrX" class="dash-select" style="width:220px"><option value="">--Seçin--</option>';
+    html+='<div><label class="text-sm" style="font-weight:600">Değişken 1</label><br><select id="advCorrX" class="dash-select searchable-select" style="width:220px"><option value="">--Seçin--</option>';
     numCols.forEach(c=>html+='<option value="'+c+'">'+c+'</option>');
     html+='</select></div>';
-    html+='<div><label class="text-sm" style="font-weight:600">Değişken 2</label><br><select id="advCorrY" class="dash-select" style="width:220px"><option value="">--Seçin--</option>';
+    html+='<div><label class="text-sm" style="font-weight:600">Değişken 2</label><br><select id="advCorrY" class="dash-select searchable-select" style="width:220px"><option value="">--Seçin--</option>';
     numCols.forEach(c=>html+='<option value="'+c+'">'+c+'</option>');
     html+='</select></div>';
     html+='<div style="align-self:flex-end"><button class="btn btn-primary btn-sm" onclick="advStatsRun(\'correlation\')" style="background:'+d.color+'">Testi Çalıştır</button></div>';
     html+='</div>';
   }else if(testId==='regression'){
     html+='<div class="flex gap-16 flex-wrap mb-12">';
-    html+='<div><label class="text-sm" style="font-weight:600">Bağımlı Değişken (Y)</label><br><select id="advRegY" class="dash-select" style="width:220px"><option value="">--Seçin--</option>';
+    html+='<div><label class="text-sm" style="font-weight:600">Bağımlı Değişken (Y)</label><br><select id="advRegY" class="dash-select searchable-select" style="width:220px"><option value="">--Seçin--</option>';
     numCols.forEach(c=>html+='<option value="'+c+'">'+c+'</option>');
     html+='</select></div>';
     html+='<div><label class="text-sm" style="font-weight:600">Bağımsız Değişken(ler) (X)</label><br><div style="max-height:120px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:6px;padding:6px;width:240px" id="advRegXList">';
@@ -11628,11 +11970,11 @@ function advStatsShowTest(testId){
     numCols.forEach(c=>html+='<label style="display:block;font-size:12px;padding:2px 0;cursor:pointer"><input type="checkbox" value="'+c+'" class="advEfaVarCheck" checked> '+c+'</label>');
     html+='</div></div>';
     html+='<div><label class="text-sm" style="font-weight:600">Faktör Sayısı</label><br>';
-    html+='<select id="advEfaNumFactors" class="dash-select" style="width:120px"><option value="auto">Otomatik (öz değer>1)</option>';
+    html+='<select id="advEfaNumFactors" class="dash-select searchable-select" style="width:120px"><option value="auto">Otomatik (öz değer>1)</option>';
     for(let i=1;i<=10;i++) html+='<option value="'+i+'">'+i+' faktör</option>';
     html+='</select></div>';
     html+='<div><label class="text-sm" style="font-weight:600">Rotasyon</label><br>';
-    html+='<select id="advEfaRotation" class="dash-select" style="width:140px"><option value="varimax">Varimax</option><option value="none">Rotasyonsuz</option></select></div>';
+    html+='<select id="advEfaRotation" class="dash-select searchable-select" style="width:140px"><option value="varimax">Varimax</option><option value="none">Rotasyonsuz</option></select></div>';
     html+='<div style="align-self:flex-end"><button class="btn btn-primary btn-sm" onclick="advStatsRun(\'efa\')" style="background:'+d.color+'">Analiz Et</button></div>';
     html+='</div>';
   }else if(testId==='cfa'){
@@ -11663,6 +12005,7 @@ function advStatsShowTest(testId){
     setTimeout(()=>{_addSemLatent();_addSemLatent();_addSemPath()},50);
   }
   panel.innerHTML=html;
+  _initSearchableSelects(panel);
 }
 
 // --- CFA Factor Builder ---
@@ -11753,16 +12096,16 @@ function advStatsRun(testId){
     const rows=_getFilteredRowObjects();
     const groups={};
     rows.forEach(r=>{const g=r[groupCol];const v=parseFloat((r[depCol]||'').replace(',','.'));if(g&&!isNaN(v)){if(!groups[g])groups[g]=[];groups[g].push(v)}});
-    const gKeys=Object.keys(groups);
+    const gKeys=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr'));
     if(gKeys.length!==2){
       if(gKeys.length>2){
         let selHtml='<div style="padding:12px;background:#fef3c7;border:1px solid #f59e0b;border-radius:8px">';
         selHtml+='<p style="margin:0 0 8px;font-size:13px;color:#92400e"><b>⚠️ '+gKeys.length+' grup bulundu.</b> t-Testi için 2 grup gereklidir. Karşılaştırmak istediğiniz 2 grubu seçin:</p>';
         selHtml+='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">';
-        selHtml+='<div><label style="font-size:11px;font-weight:600;color:#92400e">Grup 1:</label><select id="ttestGroup1" class="dash-select" style="min-width:120px;margin-top:2px">';
+        selHtml+='<div><label style="font-size:11px;font-weight:600;color:#92400e">Grup 1:</label><select id="ttestGroup1" class="dash-select searchable-select" style="min-width:120px;margin-top:2px">';
         gKeys.forEach((g,i)=>{selHtml+='<option value="'+escHtml(g)+'"'+(i===0?' selected':'')+'>'+escHtml(g)+' (n='+groups[g].length+')</option>'});
         selHtml+='</select></div>';
-        selHtml+='<div><label style="font-size:11px;font-weight:600;color:#92400e">Grup 2:</label><select id="ttestGroup2" class="dash-select" style="min-width:120px;margin-top:2px">';
+        selHtml+='<div><label style="font-size:11px;font-weight:600;color:#92400e">Grup 2:</label><select id="ttestGroup2" class="dash-select searchable-select" style="min-width:120px;margin-top:2px">';
         gKeys.forEach((g,i)=>{selHtml+='<option value="'+escHtml(g)+'"'+(i===1?' selected':'')+'>'+escHtml(g)+' (n='+groups[g].length+')</option>'});
         selHtml+='</select></div>';
         selHtml+='<button class="btn btn-sm" onclick="_runTTestWithSelectedGroups()" style="background:#3b82f6;color:#fff;border:none;padding:6px 14px">▶ Karşılaştır</button>';
@@ -11772,6 +12115,7 @@ function advStatsRun(testId){
         resTable.innerHTML=selHtml;
         // Store groups data for later use
         window._ttestGroupsData=groups;window._ttestGroupCol=groupCol;window._ttestDepCol=depCol;
+        _initSearchableSelects(resTable);
       } else {
         resTable.innerHTML='<p style="color:#ef4444">t-Testi için en az 2 grup gereklidir. Mevcut: '+gKeys.length+' grup.</p>';
       }
@@ -11787,8 +12131,8 @@ function advStatsRun(testId){
     resultData={test:'ttest',groupCol,depCol,groups:gKeys,n1,n2,m1,m2,s1,s2,t,df,p,cohensD};
     html='<table class="stat-table" style="font-size:12px;width:100%;border-collapse:collapse">';
     html+='<tr style="background:#f8fafc"><th style="padding:6px 10px;text-align:left;border:1px solid #e2e8f0">İstatistik</th><th style="padding:6px 10px;border:1px solid #e2e8f0">Değer</th></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 1:</strong> '+gKeys[0]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">N='+n1+', Ort='+m1.toFixed(3)+', SS='+s1.toFixed(3)+'</td></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 2:</strong> '+gKeys[1]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">N='+n2+', Ort='+m2.toFixed(3)+', SS='+s2.toFixed(3)+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 1:</strong> '+gKeys[0]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">Frekans='+n1+', Ort='+m1.toFixed(3)+', SS='+s1.toFixed(3)+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 2:</strong> '+gKeys[1]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">Frekans='+n2+', Ort='+m2.toFixed(3)+', SS='+s2.toFixed(3)+'</td></tr>';
     html+='<tr style="background:#eff6ff"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>t değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700">'+t.toFixed(4)+'</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Serbestlik derecesi (df)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+df+'</td></tr>';
     html+='<tr style="background:'+(p<0.05?'#fef2f2':'#f0fdf4')+'"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>p değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700;color:'+(p<0.05?'#dc2626':'#16a34a')+'">'+(p<0.001?'<0.001':p.toFixed(4))+(p<0.05?' ✱ Anlamlı':' Anlamsız')+'</td></tr>';
@@ -11802,7 +12146,7 @@ function advStatsRun(testId){
     const rows=_getFilteredRowObjects();
     const groups={};
     rows.forEach(r=>{const g=r[groupCol];const v=parseFloat((r[depCol]||'').replace(',','.'));if(g&&!isNaN(v)){if(!groups[g])groups[g]=[];groups[g].push(v)}});
-    const gKeys=Object.keys(groups);
+    const gKeys=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr'));
     if(gKeys.length<2){resTable.innerHTML='<p style="color:#ef4444">ANOVA için en az 2 grup gerekli.</p>';return}
     const allVals=gKeys.flatMap(k=>groups[k]);
     const grandMean=_mean(allVals);
@@ -11853,7 +12197,7 @@ function advStatsRun(testId){
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Serbestlik derecesi (df)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+df+'</td></tr>';
     html+='<tr style="background:'+(p<0.05?'#fef2f2':'#f0fdf4')+'"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>p değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700;color:'+(p<0.05?'#dc2626':'#16a34a')+'">'+(p<0.001?'<0.001':p.toFixed(4))+(p<0.05?' ✱ Anlamlı':' Anlamsız')+'</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Cramer\'s V</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+cramerV.toFixed(3)+' ('+(cramerV<0.1?'İhmal edilebilir':cramerV<0.3?'Zayıf':cramerV<0.5?'Orta':'Güçlü')+')</td></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Toplam gözlem (N)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+N+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Toplam gözlem (Frekans)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+N+'</td></tr>';
     html+='</table>';
     html+=_buildTestExplanation('chisquare',resultData);
   }else if(testId==='normality'){
@@ -11920,16 +12264,16 @@ function advStatsRun(testId){
     const rows=_getFilteredRowObjects();
     const groups={};
     rows.forEach(r=>{const g=r[groupCol];const v=parseFloat((r[depCol]||'').replace(',','.'));if(g&&!isNaN(v)){if(!groups[g])groups[g]=[];groups[g].push(v)}});
-    const gKeys=Object.keys(groups);
+    const gKeys=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr'));
     if(gKeys.length!==2){
       if(gKeys.length>2){
         let selHtml='<div style="padding:12px;background:#fef3c7;border:1px solid #f59e0b;border-radius:8px">';
         selHtml+='<p style="margin:0 0 8px;font-size:13px;color:#92400e"><b>⚠️ '+gKeys.length+' grup bulundu.</b> Mann-Whitney U için 2 grup gereklidir. Karşılaştırmak istediğiniz 2 grubu seçin:</p>';
         selHtml+='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">';
-        selHtml+='<div><label style="font-size:11px;font-weight:600;color:#92400e">Grup 1:</label><select id="mwGroup1" class="dash-select" style="min-width:120px;margin-top:2px">';
+        selHtml+='<div><label style="font-size:11px;font-weight:600;color:#92400e">Grup 1:</label><select id="mwGroup1" class="dash-select searchable-select" style="min-width:120px;margin-top:2px">';
         gKeys.forEach((g,i)=>{selHtml+='<option value="'+escHtml(g)+'"'+(i===0?' selected':'')+'>'+escHtml(g)+' (n='+groups[g].length+')</option>'});
         selHtml+='</select></div>';
-        selHtml+='<div><label style="font-size:11px;font-weight:600;color:#92400e">Grup 2:</label><select id="mwGroup2" class="dash-select" style="min-width:120px;margin-top:2px">';
+        selHtml+='<div><label style="font-size:11px;font-weight:600;color:#92400e">Grup 2:</label><select id="mwGroup2" class="dash-select searchable-select" style="min-width:120px;margin-top:2px">';
         gKeys.forEach((g,i)=>{selHtml+='<option value="'+escHtml(g)+'"'+(i===1?' selected':'')+'>'+escHtml(g)+' (n='+groups[g].length+')</option>'});
         selHtml+='</select></div>';
         selHtml+='<button class="btn btn-sm" onclick="_runMWWithSelectedGroups()" style="background:#be185d;color:#fff;border:none;padding:6px 14px">▶ Karşılaştır</button>';
@@ -11938,6 +12282,7 @@ function advStatsRun(testId){
         selHtml+='</div>';
         resTable.innerHTML=selHtml;
         window._mwGroupsData=groups;window._mwGroupCol=groupCol;window._mwDepCol=depCol;
+        _initSearchableSelects(resTable);
       } else {
         resTable.innerHTML='<p style="color:#ef4444">Mann-Whitney U için en az 2 grup gereklidir.</p>';
       }
@@ -11973,8 +12318,8 @@ function advStatsRun(testId){
       med1:_median(g1),med2:_median(g2),mean1:_mean(g1),mean2:_mean(g2)};
     html='<table class="stat-table" style="font-size:12px;width:100%;border-collapse:collapse">';
     html+='<tr style="background:#f8fafc"><th style="padding:6px 10px;text-align:left;border:1px solid #e2e8f0">İstatistik</th><th style="padding:6px 10px;border:1px solid #e2e8f0">Değer</th></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 1:</strong> '+gKeys[0]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">N='+n1+', Medyan='+_median(g1).toFixed(3)+', Sıra Ort='+((R1/n1).toFixed(2))+'</td></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 2:</strong> '+gKeys[1]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">N='+n2+', Medyan='+_median(g2).toFixed(3)+', Sıra Ort='+((R2/n2).toFixed(2))+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 1:</strong> '+gKeys[0]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">Frekans='+n1+', Medyan='+_median(g1).toFixed(3)+', Sıra Ort='+((R1/n1).toFixed(2))+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Grup 2:</strong> '+gKeys[1]+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">Frekans='+n2+', Medyan='+_median(g2).toFixed(3)+', Sıra Ort='+((R2/n2).toFixed(2))+'</td></tr>';
     html+='<tr style="background:#fdf2f8"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Mann-Whitney U</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700">'+U.toFixed(1)+'</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Z değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+zU.toFixed(4)+'</td></tr>';
     html+='<tr style="background:'+(pU<0.05?'#fef2f2':'#f0fdf4')+'"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>p değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700;color:'+(pU<0.05?'#dc2626':'#16a34a')+'">'+(pU<0.001?'<0.001':pU.toFixed(4))+(pU<0.05?' ✱ Anlamlı':' Anlamsız')+'</td></tr>';
@@ -11989,7 +12334,7 @@ function advStatsRun(testId){
     const rows=_getFilteredRowObjects();
     const groups={};
     rows.forEach(r=>{const g=r[groupCol];const v=parseFloat((r[depCol]||'').replace(',','.'));if(g&&!isNaN(v)){if(!groups[g])groups[g]=[];groups[g].push(v)}});
-    const gKeys=Object.keys(groups);
+    const gKeys=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr'));
     if(gKeys.length<2){resTable.innerHTML='<p style="color:#ef4444">Kruskal-Wallis için en az 2 grup gerekli.</p>';return}
     // Combine and rank all values
     const combined2=[];
@@ -12061,7 +12406,7 @@ function advStatsRun(testId){
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Serbestlik derecesi (df)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+df+'</td></tr>';
     html+='<tr style="background:'+(p<0.05?'#fef2f2':'#f0fdf4')+'"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>p değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700;color:'+(p<0.05?'#dc2626':'#16a34a')+'">'+(p<0.001?'<0.001':p.toFixed(4))+(p<0.05?' ✱ Anlamlı':' Anlamsız')+'</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Cohen\'s d</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+cohensD.toFixed(3)+' ('+(Math.abs(cohensD)<0.2?'Küçük':Math.abs(cohensD)<0.5?'Küçük-Orta':Math.abs(cohensD)<0.8?'Orta':'Büyük')+')</td></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>N (çift sayısı)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+n+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Frekans (çift sayısı)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+n+'</td></tr>';
     html+='</table>';
     html+=_buildTestExplanation('pairedttest',resultData);
   }else if(testId==='wilcoxon'){
@@ -12106,7 +12451,7 @@ function advStatsRun(testId){
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Z değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+zW.toFixed(4)+'</td></tr>';
     html+='<tr style="background:'+(pW<0.05?'#fef2f2':'#f0fdf4')+'"><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>p değeri</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700;color:'+(pW<0.05?'#dc2626':'#16a34a')+'">'+(pW<0.001?'<0.001':pW.toFixed(4))+(pW<0.05?' ✱ Anlamlı':' Anlamsız')+'</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Etki büyüklüğü (r)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+rEff.toFixed(3)+' ('+(rEff<0.1?'İhmal edilebilir':rEff<0.3?'Küçük':rEff<0.5?'Orta':'Büyük')+')</td></tr>';
-    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>N (çift sayısı)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+n+'</td></tr>';
+    html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Frekans (çift sayısı)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+n+'</td></tr>';
     html+='</table>';
     html+=_buildTestExplanation('wilcoxon',resultData);
   }else if(testId==='correlation'){
@@ -12126,7 +12471,7 @@ function advStatsRun(testId){
     const rStr=r=>(Math.abs(r)<0.1?'İhmal edilebilir':Math.abs(r)<0.3?'Zayıf':Math.abs(r)<0.5?'Orta':Math.abs(r)<0.7?'Güçlü':'Çok Güçlü');
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Pearson (r)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700">'+pr.r.toFixed(4)+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0;color:'+(pr.p<0.05?'#dc2626':'#16a34a')+'">'+(pr.p<0.001?'<0.001':pr.p.toFixed(4))+(pr.p<0.05?' ✱':'')+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+rStr(pr.r)+'</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Spearman (ρ)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700">'+sr.r.toFixed(4)+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0;color:'+(sr.p<0.05?'#dc2626':'#16a34a')+'">'+(sr.p<0.001?'<0.001':sr.p.toFixed(4))+(sr.p<0.05?' ✱':'')+'</td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+rStr(sr.r)+'</td></tr>';
-    html+='<tr style="background:#f8fafc"><td colspan="4" style="padding:6px 10px;border:1px solid #e2e8f0;font-size:11px;color:#64748b">N='+paired.length+' çift gözlem | R²='+Math.pow(pr.r,2).toFixed(4)+' (varyansın %'+Math.round(Math.pow(pr.r,2)*100)+'\'i açıklanıyor)</td></tr>';
+    html+='<tr style="background:#f8fafc"><td colspan="4" style="padding:6px 10px;border:1px solid #e2e8f0;font-size:11px;color:#64748b">Frekans='+paired.length+' çift gözlem | R²='+Math.pow(pr.r,2).toFixed(4)+' (varyansın %'+Math.round(Math.pow(pr.r,2)*100)+'\'i açıklanıyor)</td></tr>';
     html+='</table>';
     html+=_buildTestExplanation('correlation',resultData);
   }else if(testId==='regression'){
@@ -12138,7 +12483,7 @@ function advStatsRun(testId){
     // Simple/Multiple linear regression using normal equations
     const data=[];
     rows.forEach(r=>{const y=parseFloat((r[yCol]||'').replace(',','.'));if(isNaN(y))return;const xs=xCols.map(c=>parseFloat((r[c]||'').replace(',','.')));if(xs.some(v=>isNaN(v)))return;data.push({y,xs})});
-    if(data.length<xCols.length+2){resTable.innerHTML='<p style="color:#ef4444">Yeterli gözlem yok (N='+data.length+', en az '+(xCols.length+2)+' gerekli).</p>';return}
+    if(data.length<xCols.length+2){resTable.innerHTML='<p style="color:#ef4444">Yeterli gözlem yok (Frekans='+data.length+', en az '+(xCols.length+2)+' gerekli).</p>';return}
     const n=data.length,p2=xCols.length+1;
     // Build X matrix (with intercept) and Y vector
     const X=data.map(d=>[1,...d.xs]);const Y=data.map(d=>d.y);
@@ -12862,14 +13207,14 @@ function _buildTestExplanation(testId, resultData){
     html+='<p style="margin:0 0 8px"><strong>χ² İstatistiği ('+resultData.chiSq.toFixed(4)+'):</strong> Gözlenen ve beklenen frekanslar arasındaki fark. Yüksek χ² değeri kategorik değişkenler arası <b>güçlü ilişkiye</b> işaret eder.</p>';
     html+='<p style="margin:0 0 8px"><strong>p Değeri ('+(resultData.p<0.001?'&lt;0.001':resultData.p.toFixed(4))+'):</strong> '+(resultData.p<0.05?'<b style="color:#16a34a">&lt;0.05 — Kategorik değişkenler arasında <b>anlamlı ilişki</b> vardır.</b>':'<b style="color:#dc2626">≥0.05 — Anlamlı ilişki <b>yoktur</b>.</b>')+'</p>';
     html+='<p style="margin:0 0 8px"><strong>Cramer\'s V ('+resultData.cramerV.toFixed(3)+'):</strong> İlişki gücü (bağımsızlık ölçüsü). &lt;0.1 <b>İhmal Edilebilir</b>, 0.1–0.3 <b>Zayıf</b>, 0.3–0.5 <b>Orta</b>, &gt;0.5 <b>Güçlü</b>. Mevcut: <b>'+(resultData.cramerV<0.1?'İhmal':resultData.cramerV<0.3?'Zayıf':resultData.cramerV<0.5?'Orta':'Güçlü')+'</b> ilişki.</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> N='+resultData.N+' gözlemde iki kategorik değişken analiz edilmiştir (df='+resultData.df+').</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> Frekans='+resultData.N+' gözlemde iki kategorik değişken analiz edilmiştir (df='+resultData.df+').</p>';
   }
   else if(testId==='normality'){
     html+='<p style="margin:0 0 8px"><strong>Shapiro-Wilk W ('+resultData.W.toFixed(4)+'):</strong> Normallik testi. W=1 ise mükemmel normal dağılım. W&lt;0.95 genellikle normallikten sapma gösterir.</p>';
     html+='<p style="margin:0 0 8px"><strong>p Değeri ('+(resultData.p<0.001?'&lt;0.001':resultData.p.toFixed(4))+'):</strong> '+(resultData.p>=0.05?'<b style="color:#16a34a">≥0.05 — Veri <b>normal dağılıma uyuyor</b>.</b> Parametrik testler uygulanabilir.':'<b style="color:#dc2626">&lt;0.05 — Veri <b>normal dağılıma uymuyor</b>.</b> Non-parametrik testler önerilir.')+'</p>';
     html+='<p style="margin:0 0 8px"><strong>Çarpıklık ('+resultData.skewness.toFixed(4)+'):</strong> Dağılım şekli. 0=Simetrik, &gt;0=Sağa Çarpık, &lt;0=Sola Çarpık. |değer|&lt;1 kabul edilebilir. Mevcut: <b>'+(Math.abs(resultData.skewness)<0.5?'Simetrik':resultData.skewness>0?'Sağa Çarpık':'Sola Çarpık')+'</b>.</p>';
     html+='<p style="margin:0 0 8px"><strong>Basıklık ('+resultData.kurtosis.toFixed(4)+'):</strong> Kuyruk ağırlığı. 0=Normal, &gt;0=Sivri (Leptokurtik), &lt;0=Basık (Platikurtik). |değer|&lt;2 kabul edilebilir.</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> N='+resultData.n+' gözlemde normallik analiz edilmiştir. Ort='+resultData.mean.toFixed(3)+', SS='+resultData.std.toFixed(3)+'.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> Frekans='+resultData.n+' gözlemde normallik analiz edilmiştir. Ort='+resultData.mean.toFixed(3)+', SS='+resultData.std.toFixed(3)+'.</p>';
   }
   else if(testId==='mannwhitney'){
     html+='<p style="margin:0 0 8px"><strong>Mann-Whitney U ('+resultData.U.toFixed(1)+'):</strong> Sıralama tabanlı karşılaştırma (t-testi\'nin non-parametrik hali). Düşük U = gruplar <b>daha farklı</b>. U1='+resultData.U1.toFixed(1)+', U2='+resultData.U2.toFixed(1)+'.</p>';
@@ -12882,46 +13227,46 @@ function _buildTestExplanation(testId, resultData){
     html+='<p style="margin:0 0 8px"><strong>Kruskal-Wallis H ('+resultData.H.toFixed(4)+'):</strong> Non-parametrik ANOVA. Chi-kare dağılımına yaklaşır (df='+resultData.df+'). Yüksek H = gruplar <b>daha farklı</b>.</p>';
     html+='<p style="margin:0 0 8px"><strong>p Değeri ('+(resultData.p<0.001?'&lt;0.001':resultData.p.toFixed(4))+'):</strong> '+(resultData.p<0.05?'<b style="color:#16a34a">&lt;0.05 — '+resultData.groups.length+' grup arasında <b>anlamlı fark</b> vardır.</b>':'<b style="color:#dc2626">≥0.05 — Gruplar arasında <b>anlamlı fark yoktur</b>.</b>')+'</p>';
     html+='<p style="margin:0 0 8px"><strong>η² (Eta-kare, '+resultData.etaSq.toFixed(3)+'):</strong> Etki büyüklüğü. &lt;0.01 <b>Çok Küçük</b>, 0.01–0.06 <b>Orta</b>, &gt;0.14 <b>Büyük</b>. Mevcut: <b>'+(resultData.etaSq<0.01?'Çok Küçük':resultData.etaSq<0.06?'Orta':'Büyük')+'</b>.</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> Non-parametrik test, normal dağılım varsayımı gerekli <b>değildir</b>. '+resultData.groups.length+' grup (N='+resultData.N+') karşılaştırılmıştır. Normal dağılmayan veriler için tercih edilir.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> Non-parametrik test, normal dağılım varsayımı gerekli <b>değildir</b>. '+resultData.groups.length+' grup (Frekans='+resultData.N+') karşılaştırılmıştır. Normal dağılmayan veriler için tercih edilir.</p>';
   }
   else if(testId==='pairedttest'){
     html+='<p style="margin:0 0 8px"><strong>t İstatistiği ('+resultData.t.toFixed(4)+'):</strong> Eşleştirilmiş (bağımlı) gruplar t-testi. Aynı bireyler iki farklı anda veya koşulda ölçülmüştür. |t|&gt;2 genellikle anlamlıdır.</p>';
     html+='<p style="margin:0 0 8px"><strong>p Değeri ('+(resultData.p<0.001?'&lt;0.001':resultData.p.toFixed(4))+'):</strong> '+(resultData.p<0.05?'<b style="color:#16a34a">&lt;0.05 — İki ölçüm arasında <b>anlamlı fark</b> vardır.</b>':'<b style="color:#dc2626">≥0.05 — Anlamlı fark <b>yoktur</b>.</b>')+'</p>';
     html+='<p style="margin:0 0 8px"><strong>Cohen\'s d ('+resultData.cohensD.toFixed(3)+'):</strong> Etki büyüklüğü. |d|&lt;0.2 <b>Küçük</b>, 0.2–0.5 <b>Küçük-Orta</b>, 0.5–0.8 <b>Orta</b>, &gt;0.8 <b>Büyük</b>. Mevcut: <b>'+(Math.abs(resultData.cohensD)<0.2?'Küçük':Math.abs(resultData.cohensD)<0.5?'Küçük-Orta':Math.abs(resultData.cohensD)<0.8?'Orta':'Büyük')+'</b>.</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> N='+resultData.n+' eşleştirilmiş çift (ön-test/son-test veya iki ölçüm). Ortalama fark='+resultData.dMean.toFixed(3)+', SS='+resultData.dStd.toFixed(3)+'.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> Frekans='+resultData.n+' eşleştirilmiş çift (ön-test/son-test veya iki ölçüm). Ortalama fark='+resultData.dMean.toFixed(3)+', SS='+resultData.dStd.toFixed(3)+'.</p>';
   }
   else if(testId==='wilcoxon'){
     html+='<p style="margin:0 0 8px"><strong>W İstatistiği ('+resultData.W.toFixed(1)+'):</strong> Wilcoxon işaret-sıra testi. Pozitif (W+='+resultData.Wp.toFixed(1)+') ve negatif (W−='+resultData.Wn.toFixed(1)+') sıra toplamlarından <b>küçük olan</b>.</p>';
     html+='<p style="margin:0 0 8px"><strong>Z Değeri ('+resultData.z.toFixed(4)+'):</strong> Normal yaklaşımdan hesaplanan istatistik. |Z|&gt;1.96 genellikle anlamlı (α=0.05).</p>';
     html+='<p style="margin:0 0 8px"><strong>p Değeri ('+(resultData.p<0.001?'&lt;0.001':resultData.p.toFixed(4))+'):</strong> '+(resultData.p<0.05?'<b style="color:#16a34a">&lt;0.05 — İki ölçüm arasında <b>anlamlı fark</b> vardır.</b>':'<b style="color:#dc2626">≥0.05 — Anlamlı fark <b>yoktur</b>.</b>')+'</p>';
     html+='<p style="margin:0 0 8px"><strong>Etki Büyüklüğü r ('+resultData.rEffect.toFixed(3)+'):</strong> &lt;0.1 <b>İhmal</b>, 0.1–0.3 <b>Küçük</b>, 0.3–0.5 <b>Orta</b>, &gt;0.5 <b>Büyük</b>. Mevcut: <b>'+(resultData.rEffect<0.1?'İhmal':resultData.rEffect<0.3?'Küçük':resultData.rEffect<0.5?'Orta':'Büyük')+'</b>.</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> Non-parametrik eşleştirilmiş test. N='+resultData.n+' çift. Medyan ön-test='+resultData.med1.toFixed(3)+', Medyan son-test='+resultData.med2.toFixed(3)+'.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> Non-parametrik eşleştirilmiş test. Frekans='+resultData.n+' çift. Medyan ön-test='+resultData.med1.toFixed(3)+', Medyan son-test='+resultData.med2.toFixed(3)+'.</p>';
   }
   else if(testId==='correlation'){
     html+='<p style="margin:0 0 8px"><strong>Pearson r ('+resultData.pearsonR.toFixed(4)+'):</strong> Doğrusal ilişki katsayısı [−1, +1]. 0=İlişki yok, ±0.3 <b>Zayıf</b>, ±0.5 <b>Orta</b>, ±0.7 <b>Güçlü</b>, ±0.9+ <b>Çok Güçlü</b>. Mevcut: <b>'+(Math.abs(resultData.pearsonR)<0.3?'Zayıf/Yok':Math.abs(resultData.pearsonR)<0.5?'Zayıf-Orta':Math.abs(resultData.pearsonR)<0.7?'Orta':Math.abs(resultData.pearsonR)<0.9?'Güçlü':'Çok Güçlü')+'</b>.</p>';
     html+='<p style="margin:0 0 8px"><strong>p (Pearson, '+(resultData.pearsonP<0.001?'&lt;0.001':resultData.pearsonP.toFixed(4))+'):</strong> '+(resultData.pearsonP<0.05?'<b style="color:#16a34a">&lt;0.05 — Korelasyon <b>istatistiksel olarak anlamlıdır</b>.</b>':'<b style="color:#dc2626">≥0.05 — Korelasyon <b>anlamsızdır</b>.</b>')+'</p>';
     html+='<p style="margin:0 0 8px"><strong>Spearman ρ ('+resultData.spearmanR.toFixed(4)+', p='+(resultData.spearmanP<0.001?'&lt;0.001':resultData.spearmanP.toFixed(4))+'):</strong> Non-parametrik ilişki (sıralama tabanlı). Normallik varsayımı gerektirmez. Sonuç: '+(resultData.spearmanP<0.05?'<b>Anlamlı</b>':'<b>Anlamsız</b>')+'.</p>';
     html+='<p style="margin:0 0 8px"><strong>R² ('+Math.pow(resultData.pearsonR,2).toFixed(4)+'):</strong> Açıklanan varyans oranı. Bağımsız değişken, bağımlı değişken varyansının <b>%'+Math.round(Math.pow(resultData.pearsonR,2)*100)+'</b>\'ini açıklıyor.</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> N='+resultData.n+' çift gözlem. Pearson: Doğrusal ilişki, normal dağılım varsayımı gerekli. Spearman: Monotonik ilişki, normal dağılım varsayımı yok.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> Frekans='+resultData.n+' çift gözlem. Pearson: Doğrusal ilişki, normal dağılım varsayımı gerekli. Spearman: Monotonik ilişki, normal dağılım varsayımı yok.</p>';
   }
   else if(testId==='regression'){
     html+='<p style="margin:0 0 8px"><strong>R² ('+resultData.R2.toFixed(4)+'):</strong> Model açıklayıcılığı. Bağımlı değişkendeki varyansın <b>%'+Math.round(resultData.R2*100)+'</b>\'i model tarafından açıklanıyor. 0–1 arası; 0.5+ iyi kabul edilir. Mevcut: <b>'+(resultData.R2<0.3?'Düşük':resultData.R2<0.6?'Orta':'Yüksek')+'</b>.</p>';
     html+='<p style="margin:0 0 8px"><strong>F ('+resultData.F.toFixed(4)+'):</strong> Model anlamlılık testi. df=('+( resultData.xCols.length)+', '+(resultData.n-resultData.xCols.length-1)+').</p>';
     html+='<p style="margin:0 0 8px"><strong>p (Model, '+(resultData.pF<0.001?'&lt;0.001':resultData.pF.toFixed(4))+'):</strong> '+(resultData.pF<0.05?'<b style="color:#16a34a">&lt;0.05 — Model <b>istatistiksel olarak anlamlıdır</b>.</b>':'<b style="color:#dc2626">≥0.05 — Model <b>anlamsızdır</b>.</b>')+'</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> Lineer regresyon modeli oluşturulmuştur. Bağımlı: '+resultData.yCol+'; Bağımsız: '+resultData.xCols.join(', ')+' ('+resultData.xCols.length+' değişken). N='+resultData.n+'.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> Lineer regresyon modeli oluşturulmuştur. Bağımlı: '+resultData.yCol+'; Bağımsız: '+resultData.xCols.join(', ')+' ('+resultData.xCols.length+' değişken). Frekans='+resultData.n+'.</p>';
   }
   else if(testId==='zscore'){
     html+='<p style="margin:0 0 8px"><strong>Z-Skoru Formülü:</strong> Z = (X − μ) / σ. Standartlaştırılmış değer, ortalamadan kaç standart sapma uzak olduğunu gösterir.</p>';
     html+='<p style="margin:0 0 8px"><strong>Aykırı Değerler (|Z|&gt;2):</strong> '+resultData.outliers2+' gözlem <b>('+((resultData.outliers2/resultData.n)*100).toFixed(1)+'%)</b>. Orta ölçüde aykırı değerler, ancak normal dağılımda beklenir.</p>';
     html+='<p style="margin:0 0 8px"><strong>Uç Değerler (|Z|&gt;3):</strong> '+resultData.outliers3+' gözlem <b>('+((resultData.outliers3/resultData.n)*100).toFixed(1)+'%)</b>. Normal dağılımda nadir. <b>İnceleme önerilir.</b></p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> '+resultData.col+': Ort='+resultData.mean.toFixed(3)+', SS='+resultData.std.toFixed(3)+', N='+resultData.n+'. Z-skoru outlier tespiti için kullanılır.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> '+resultData.col+': Ort='+resultData.mean.toFixed(3)+', SS='+resultData.std.toFixed(3)+', Frekans='+resultData.n+'. Z-skoru outlier tespiti için kullanılır.</p>';
   }
   else if(testId==='distribution'){
     html+='<p style="margin:0 0 8px"><strong>Ortalama ('+resultData.mean.toFixed(4)+') vs Medyan ('+resultData.median.toFixed(4)+'):</strong> Ortalama ≈ Medyan ise dağılım simetrik. Fark varsa çarpık dağılım gösterir.</p>';
     html+='<p style="margin:0 0 8px"><strong>Çarpıklık ('+resultData.skewness.toFixed(4)+'):</strong> 0=Simetrik, &gt;0=Sağa Çarpık, &lt;0=Sola Çarpık. |değer|&lt;1 kabul edilebilir. Mevcut: <b>'+(Math.abs(resultData.skewness)<0.5?'Simetrik':resultData.skewness>0?'Sağa Çarpık':'Sola Çarpık')+'</b>.</p>';
     html+='<p style="margin:0 0 8px"><strong>Basıklık ('+resultData.kurtosis.toFixed(4)+'):</strong> 0=Normal, &gt;0=Sivri (Leptokurtik), &lt;0=Basık (Platikurtik). |değer|&lt;2 kabul edilebilir.</p>';
     html+='<p style="margin:0 0 8px"><strong>Shapiro-Wilk p ('+(resultData.pNorm<0.001?'&lt;0.001':resultData.pNorm.toFixed(4))+'):</strong> '+(resultData.pNorm>=0.05?'<b style="color:#16a34a">≥0.05 — Normal dağılıma uyuyor</b>.':'<b style="color:#dc2626">&lt;0.05 — Normal dağılıma uymuyor</b>. Non-parametrik testler önerilir.')+'</p>';
-    html+='<p style="margin:0"><strong>Yorum:</strong> '+resultData.col+': N='+resultData.n+', Min='+resultData.min.toFixed(2)+', Max='+resultData.max.toFixed(2)+', IQR='+resultData.iqr.toFixed(2)+'. Dağılım şekli incelenmiştir.</p>';
+    html+='<p style="margin:0"><strong>Yorum:</strong> '+resultData.col+': Frekans='+resultData.n+', Min='+resultData.min.toFixed(2)+', Max='+resultData.max.toFixed(2)+', IQR='+resultData.iqr.toFixed(2)+'. Dağılım şekli incelenmiştir.</p>';
   }
   else if(testId==='boxplot'){
     html+='<p style="margin:0 0 8px"><strong>Box Plot (Kutu-Bıyık Grafiği):</strong> Beş sayılı özet (Min, Q1, Medyan, Q3, Max) görselleştirilir. Aykırı değerler noktalar olarak gösterilir.</p>';
@@ -13247,7 +13592,7 @@ function advStatsSuggestTests(){
               title:'Mann-Whitney U: "'+cc+'" × "'+nc+'"',
               desc:'<b>Non-parametrik</b>: İki grubun (<b>'+gi.groups.join('</b> vs <b>')+'</b>) <b>'+nc+'</b> sıra ortalamalarını karşılaştırır.',
               howto:'<b>Gruplama:</b> '+cc+' &nbsp;→&nbsp; <b>Test Değişkeni:</b> '+nc,
-              note:'⚠ '+nc+' normal dağılmıyor → Mann-Whitney U önerilir. (N='+ni.n+')',
+              note:'⚠ '+nc+' normal dağılmıyor → Mann-Whitney U önerilir. (Frekans='+ni.n+')',
               vars:{group:cc,dep:nc}
             });
           }
@@ -13466,14 +13811,14 @@ async function advStatsPDF(){
   const rows=[];
   if(r.test==='ttest'){rows.push([_pt('Gruplar'),_pt(r.groups.join(' vs '))],[_pt('t istatistiği'),r.t.toFixed(4)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('Cohen d'),r.cohensD.toFixed(3)],[_pt('N1 / N2'),r.n1+' / '+r.n2],[_pt('Ort1 / Ort2'),r.m1.toFixed(2)+' / '+r.m2.toFixed(2)])}
   if(r.test==='anova'){rows.push(['F',r.F.toFixed(4)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('η² (Etki büyüklüğü)'),r.etaSq.toFixed(4)],[_pt('Grup sayısı'),String(r.groupData.length)])}
-  if(r.test==='chisquare'){rows.push([_pt('χ² değeri'),r.chiSq.toFixed(4)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('Cramer V'),r.cramerV.toFixed(4)],['N',String(r.N)],['df',String(r.df)])}
+  if(r.test==='chisquare'){rows.push([_pt('χ² değeri'),r.chiSq.toFixed(4)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('Cramer V'),r.cramerV.toFixed(4)],[_pt('Frekans'),String(r.N)],['df',String(r.df)])}
   if(r.test==='normality'){rows.push([_pt('Shapiro-Wilk W'),r.W.toFixed(4)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('Çarpıklık'),r.skewness.toFixed(4)],[_pt('Basıklık'),r.kurtosis.toFixed(4)])}
   if(r.test==='correlation'){rows.push([_pt('Pearson r'),r.pearsonR.toFixed(4)],[_pt('Pearson p'),r.pearsonP.toFixed(6)],[_pt('Spearman ρ'),r.spearmanR.toFixed(4)],[_pt('Spearman p'),r.spearmanP.toFixed(6)],[_pt('R²'),r.R2.toFixed(4)])}
   if(r.test==='regression'){rows.push([_pt('R²'),r.R2.toFixed(4)],[_pt('Düzeltilmiş R²'),r.adjR2.toFixed(4)],['F',r.F.toFixed(4)],[_pt('p değeri'),r.pF.toFixed(6)])}
   if(r.test==='zscore'){rows.push([_pt('Ortalama'),r.mean.toFixed(4)],[_pt('Standart Sapma'),r.std.toFixed(4)],[_pt('|Z|>2 Aykırı'),String(r.outliers2)],[_pt('|Z|>3 Aykırı'),String(r.outliers3)])}
   if(r.test==='distribution'){rows.push([_pt('Ortalama'),r.mean.toFixed(4)],[_pt('Medyan'),r.median.toFixed(4)],[_pt('Standart Sapma'),r.std.toFixed(4)],[_pt('Çarpıklık'),r.skewness.toFixed(4)],[_pt('Basıklık'),r.kurtosis.toFixed(4)],[_pt('S-W p (normallik)'),r.pNorm.toFixed(6)])}
   if(r.test==='mannwhitney'){rows.push([_pt('Gruplar'),_pt(r.groups.join(' vs '))],[_pt('Mann-Whitney U'),r.U.toFixed(1)],[_pt('Z değeri'),r.z.toFixed(4)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('Etki büyüklüğü (r)'),r.rEffect.toFixed(3)],[_pt('N1 / N2'),r.n1+' / '+r.n2],[_pt('Medyan1 / Medyan2'),r.med1.toFixed(2)+' / '+r.med2.toFixed(2)])}
-  if(r.test==='kruskalwallis'){rows.push([_pt('Kruskal-Wallis H'),r.H.toFixed(4)],[_pt('df'),String(r.df)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('η² (Etki büyüklüğü)'),r.etaSq.toFixed(3)],['N',String(r.N)],[_pt('Grup sayısı'),String(r.groups.length)])}
+  if(r.test==='kruskalwallis'){rows.push([_pt('Kruskal-Wallis H'),r.H.toFixed(4)],[_pt('df'),String(r.df)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('η² (Etki büyüklüğü)'),r.etaSq.toFixed(3)],[_pt('Frekans'),String(r.N)],[_pt('Grup sayısı'),String(r.groups.length)])}
   if(r.test==='pairedttest'){rows.push([_pt('Değişkenler'),_pt(r.var1+' vs '+r.var2)],[_pt('t istatistiği'),r.t.toFixed(4)],[_pt('df'),String(r.df)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('Cohen d'),r.cohensD.toFixed(3)],[_pt('Fark Ortalaması'),r.dMean.toFixed(4)],[_pt('N (çift)'),String(r.n)])}
   if(r.test==='wilcoxon'){rows.push([_pt('Değişkenler'),_pt(r.var1+' vs '+r.var2)],[_pt('W'),r.W.toFixed(1)],[_pt('Z değeri'),r.z.toFixed(4)],[_pt('p değeri'),r.p.toFixed(6)],[_pt('Etki büyüklüğü (r)'),r.rEffect.toFixed(3)],[_pt('N (çift)'),String(r.n)])}
   if(rows.length){
@@ -13572,12 +13917,12 @@ function _generateRuleBasedInterpretation(r){
     html+='<em>Not: Anlamlı çıktığında post-hoc (Tukey/Bonferroni) ile hangi gruplar arasında fark olduğu belirlenmelidir.</em>';
   }else if(r.test==='chisquare'){
     html+='<strong>Ki-Kare Bağımsızlık Testi:</strong> "'+r.rowCol+'" ile "'+r.colCol+'" arasındaki ilişki incelenmiştir.<br>';
-    html+='χ²('+r.df+')='+r.chiSq.toFixed(3)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+', N='+r.N+'.<br>';
+    html+='χ²('+r.df+')='+r.chiSq.toFixed(3)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+', Frekans='+r.N+'.<br>';
     if(r.p<0.05){html+='<span style="color:#dc2626;font-weight:600">✱ İki değişken arasında anlamlı bir ilişki bulunmuştur.</span><br>';}
     else{html+='<span style="color:#16a34a;font-weight:600">İki değişken birbirinden bağımsızdır (anlamlı ilişki yok).</span><br>';}
     html+='Cramer\'s V='+r.cramerV.toFixed(3)+' olup etki büyüklüğü '+(r.cramerV<0.1?'ihmal edilebilir':r.cramerV<0.3?'zayıf':r.cramerV<0.5?'orta':'güçlü')+' düzeydedir.';
   }else if(r.test==='normality'){
-    html+='<strong>Normallik Testi (Shapiro-Wilk):</strong> "'+r.col+'" değişkeni incelenmiştir (N='+r.n+').<br>';
+    html+='<strong>Normallik Testi (Shapiro-Wilk):</strong> "'+r.col+'" değişkeni incelenmiştir (Frekans='+r.n+').<br>';
     html+='W='+r.W.toFixed(4)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+'.<br>';
     if(r.p>=0.05){html+='<span style="color:#16a34a;font-weight:600">✅ Veriler normal dağılıma uymaktadır (p>0.05). Parametrik testler kullanılabilir.</span><br>';}
     else{html+='<span style="color:#dc2626;font-weight:600">❌ Veriler normal dağılıma uymamaktadır (p<0.05). Parametrik olmayan testler (Mann-Whitney, Kruskal-Wallis) önerilir.</span><br>';}
@@ -13585,34 +13930,34 @@ function _generateRuleBasedInterpretation(r){
     html+='Basıklık='+r.kurtosis.toFixed(3)+' ('+(Math.abs(r.kurtosis)<1?'normal':r.kurtosis>0?'sivri':'basık')+').';
   }else if(r.test==='mannwhitney'){
     html+='<strong>Mann-Whitney U Testi:</strong> "'+r.depCol+'" değişkeni "'+r.groupCol+'" gruplarına göre karşılaştırılmıştır.<br>';
-    html+='Gruplar: '+r.groups[0]+' (N='+r.n1+', Medyan='+r.med1.toFixed(2)+') vs '+r.groups[1]+' (N='+r.n2+', Medyan='+r.med2.toFixed(2)+').<br>';
+    html+='Gruplar: '+r.groups[0]+' (Frekans='+r.n1+', Medyan='+r.med1.toFixed(2)+') vs '+r.groups[1]+' (Frekans='+r.n2+', Medyan='+r.med2.toFixed(2)+').<br>';
     html+='U='+r.U.toFixed(1)+', Z='+r.z.toFixed(3)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+'.<br>';
     if(r.p<0.05){html+='<span style="color:#dc2626;font-weight:600">✱ İki grup arasında istatistiksel olarak anlamlı fark bulunmuştur (p<0.05).</span><br>';}
     else{html+='<span style="color:#16a34a;font-weight:600">İki grup arasında anlamlı fark bulunmamıştır (p≥0.05).</span><br>';}
     html+='Etki büyüklüğü r='+r.rEffect.toFixed(3)+' ('+(r.rEffect<0.1?'ihmal edilebilir':r.rEffect<0.3?'küçük':r.rEffect<0.5?'orta':'büyük')+').';
   }else if(r.test==='kruskalwallis'){
     html+='<strong>Kruskal-Wallis H Testi:</strong> "'+r.depCol+'" değişkeni "'+r.groupCol+'" gruplarına göre karşılaştırılmıştır ('+r.groups.length+' grup).<br>';
-    html+='H('+r.df+')='+r.H.toFixed(3)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+', N='+r.N+'.<br>';
+    html+='H('+r.df+')='+r.H.toFixed(3)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+', Frekans='+r.N+'.<br>';
     if(r.p<0.05){html+='<span style="color:#dc2626;font-weight:600">✱ En az iki grup arasında anlamlı fark bulunmuştur (p<0.05).</span><br>';
       html+='Post-hoc karşılaştırma için Mann-Whitney U testini her iki grup için ayrı ayrı uygulayabilirsiniz.<br>';}
     else{html+='<span style="color:#16a34a;font-weight:600">Gruplar arasında anlamlı fark bulunmamıştır (p≥0.05).</span><br>';}
     html+='Etki büyüklüğü η²='+r.etaSq.toFixed(3)+' ('+(r.etaSq<0.01?'ihmal edilebilir':r.etaSq<0.06?'küçük':r.etaSq<0.14?'orta':'büyük')+').';
   }else if(r.test==='pairedttest'){
-    html+='<strong>Eşleştirilmiş t-Testi:</strong> "'+r.var1+'" ile "'+r.var2+'" değişkenleri karşılaştırılmıştır (N='+r.n+' çift).<br>';
+    html+='<strong>Eşleştirilmiş t-Testi:</strong> "'+r.var1+'" ile "'+r.var2+'" değişkenleri karşılaştırılmıştır (Frekans='+r.n+' çift).<br>';
     html+=r.var1+': Ort='+r.mean1.toFixed(2)+', SS='+r.std1.toFixed(2)+' | '+r.var2+': Ort='+r.mean2.toFixed(2)+', SS='+r.std2.toFixed(2)+'.<br>';
     html+='Fark ortalaması d̄='+r.dMean.toFixed(3)+', t('+r.df+')='+r.t.toFixed(3)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+'.<br>';
     if(r.p<0.05){html+='<span style="color:#dc2626;font-weight:600">✱ İki ölçüm arasında istatistiksel olarak anlamlı fark bulunmuştur.</span><br>';}
     else{html+='<span style="color:#16a34a;font-weight:600">İki ölçüm arasında anlamlı fark bulunmamıştır.</span><br>';}
     html+='Cohen\'s d='+r.cohensD.toFixed(3)+' ('+(Math.abs(r.cohensD)<0.2?'küçük':Math.abs(r.cohensD)<0.5?'küçük-orta':Math.abs(r.cohensD)<0.8?'orta':'büyük')+' etki).';
   }else if(r.test==='wilcoxon'){
-    html+='<strong>Wilcoxon İşaret-Sıra Testi:</strong> "'+r.var1+'" ile "'+r.var2+'" değişkenleri karşılaştırılmıştır (N='+r.n+' çift).<br>';
+    html+='<strong>Wilcoxon İşaret-Sıra Testi:</strong> "'+r.var1+'" ile "'+r.var2+'" değişkenleri karşılaştırılmıştır (Frekans='+r.n+' çift).<br>';
     html+=r.var1+': Medyan='+r.med1.toFixed(2)+' | '+r.var2+': Medyan='+r.med2.toFixed(2)+'.<br>';
     html+='W='+r.W.toFixed(1)+', Z='+r.z.toFixed(3)+', p='+(r.p<0.001?'<.001':r.p.toFixed(3))+'.<br>';
     if(r.p<0.05){html+='<span style="color:#dc2626;font-weight:600">✱ İki ölçüm arasında istatistiksel olarak anlamlı fark bulunmuştur.</span><br>';}
     else{html+='<span style="color:#16a34a;font-weight:600">İki ölçüm arasında anlamlı fark bulunmamıştır.</span><br>';}
     html+='Etki büyüklüğü r='+r.rEffect.toFixed(3)+' ('+(r.rEffect<0.1?'ihmal edilebilir':r.rEffect<0.3?'küçük':r.rEffect<0.5?'orta':'büyük')+').';
   }else if(r.test==='correlation'){
-    html+='<strong>Korelasyon Analizi:</strong> "'+r.xCol+'" ile "'+r.yCol+'" arasındaki ilişki incelenmiştir (N='+r.n+').<br>';
+    html+='<strong>Korelasyon Analizi:</strong> "'+r.xCol+'" ile "'+r.yCol+'" arasındaki ilişki incelenmiştir (Frekans='+r.n+').<br>';
     html+='<strong>Pearson r='+r.pearsonR.toFixed(3)+'</strong> (p='+(r.pearsonP<0.001?'<.001':r.pearsonP.toFixed(3))+') → '+(Math.abs(r.pearsonR)<0.1?'ilişki yok':Math.abs(r.pearsonR)<0.3?'zayıf':Math.abs(r.pearsonR)<0.5?'orta':Math.abs(r.pearsonR)<0.7?'güçlü':'çok güçlü')+' '+(r.pearsonR>0?'pozitif':'negatif')+' ilişki.<br>';
     html+='<strong>Spearman ρ='+r.spearmanR.toFixed(3)+'</strong> (p='+(r.spearmanP<0.001?'<.001':r.spearmanP.toFixed(3))+').<br>';
     html+='R²='+Math.pow(r.pearsonR,2).toFixed(3)+' → Bir değişken diğerindeki varyansın %'+Math.round(Math.pow(r.pearsonR,2)*100)+'\'ini açıklamaktadır.';
@@ -13632,7 +13977,7 @@ function _generateRuleBasedInterpretation(r){
     else if(r.outliers2>0){html+='<span style="color:#d97706;font-weight:600">⚠️ Bazı aykırı değerler mevcuttur ancak ciddi düzeyde değildir.</span>';}
     else{html+='<span style="color:#16a34a;font-weight:600">✅ Ciddi aykırı değer bulunmamaktadır.</span>';}
   }else if(r.test==='distribution'){
-    html+='<strong>Dağılım Analizi:</strong> "'+r.col+'" değişkeni incelenmiştir (N='+r.n+').<br>';
+    html+='<strong>Dağılım Analizi:</strong> "'+r.col+'" değişkeni incelenmiştir (Frekans='+r.n+').<br>';
     html+='Ortalama='+r.mean.toFixed(2)+', Medyan='+r.median.toFixed(2)+', SS='+r.std.toFixed(2)+'.<br>';
     html+='Çarpıklık='+r.skewness.toFixed(3)+' → '+(Math.abs(r.skewness)<0.5?'Dağılım yaklaşık simetrik.':r.skewness>0?'Sağa çarpık dağılım (kuyruk sağda uzun).':'Sola çarpık dağılım (kuyruk solda uzun).')+'<br>';
     html+='Basıklık='+r.kurtosis.toFixed(3)+' → '+(Math.abs(r.kurtosis)<1?'Normal basıklık (mesokurtik).':r.kurtosis>0?'Sivri dağılım (leptokurtik) — merkez etrafında yoğunlaşma var.':'Basık dağılım (platikurtik) — gözlemler daha yayılmış.')+'<br>';
@@ -13970,7 +14315,7 @@ function _generateRuleBasedInterpretation(r){
 
 <footer style="text-align:center;padding:18px 12px 14px;margin-top:30px;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px">
   <div>&copy; Sefa Emre Öncü, 2026 — Açık Analiz</div>
-  <div style="margin-top:4px">Sürüm v1.3</div>
+  <div style="margin-top:4px">Sürüm v1.4</div>
 <!-- Smart Report Modal -->
 <div id="smartReportModal" class="grp-modal-overlay hidden" style="z-index:10001">
   <div class="grp-modal" style="width:520px;max-height:90vh;overflow-y:auto">
@@ -13981,14 +14326,14 @@ function _generateRuleBasedInterpretation(r){
     <div style="padding:16px">
       <div id="smartFilterWarning" class="hidden" style="padding:8px 12px;margin-bottom:12px;background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;font-size:11px;color:#92400e">⚠️ <b>Aktif filtreler mevcut!</b> Rapor filtreli veriye göre oluşturulacaktır. <span id="smartFilterList"></span></div>
       <label style="font-size:12px;font-weight:600;color:#047857">Bağımsız Değişken (Gruplama):</label>
-      <select id="smartIndepVar" class="dash-select" style="width:100%;margin-top:4px" onchange="onSmartIndepChange()"></select>
+      <select id="smartIndepVar" class="dash-select searchable-select" style="width:100%;margin-top:4px" onchange="onSmartIndepChange()"></select>
 
       <!-- Alt Gruplama (Opsiyonel) -->
       <div style="margin-top:10px;padding:8px 10px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px">
         <label style="font-size:11px;font-weight:600;color:#0369a1;display:flex;align-items:center;gap:4px">
           📂 Alt Gruplama Değişkeni <span style="font-weight:400;color:#64748b">(opsiyonel — ör: Ders, Dönem)</span>
         </label>
-        <select id="smartSubGroup" class="dash-select" style="width:100%;margin-top:4px;font-size:11px" onchange="onSmartSubGroupChange()">
+        <select id="smartSubGroup" class="dash-select searchable-select" style="width:100%;margin-top:4px;font-size:11px" onchange="onSmartSubGroupChange()">
           <option value="">— Yok (alt gruplama yapılmasın) —</option>
         </select>
         <div id="smartSubGroupInfo" class="hidden" style="margin-top:4px;font-size:10px;color:#0369a1;background:#e0f2fe;padding:4px 8px;border-radius:4px">
@@ -14005,7 +14350,7 @@ function _generateRuleBasedInterpretation(r){
         </label>
       </div>
       <div id="smartSingleGroupDiv" style="margin-top:8px">
-        <select id="smartGroupValue" class="dash-select" style="width:100%"></select>
+        <select id="smartGroupValue" class="dash-select searchable-select" style="width:100%"></select>
       </div>
       <div id="smartAllGroupDiv" class="hidden" style="margin-top:8px;padding:8px;background:#fefce8;border-radius:6px;border:1px solid #fde68a">
         <label style="font-size:11px;font-weight:600;color:#92400e;display:block;margin-bottom:6px">Çıktı Formatı:</label>
@@ -14019,7 +14364,7 @@ function _generateRuleBasedInterpretation(r){
         </div>
         <div id="smartMergedOptions">
           <label style="font-size:11px;font-weight:600;color:#92400e">PDF başına maks. grup:</label>
-          <select id="smartMaxPerPDF" class="dash-select" style="width:100%;margin-top:2px;font-size:11px">
+          <select id="smartMaxPerPDF" class="dash-select searchable-select" style="width:100%;margin-top:2px;font-size:11px">
             <option value="10">10</option><option value="20">20</option><option value="50" selected>50</option><option value="0">Hepsi tek PDF</option>
           </select>
         </div>
@@ -14039,6 +14384,16 @@ function _generateRuleBasedInterpretation(r){
           <label style="font-size:10px;display:flex;align-items:center;gap:3px"><input type="checkbox" id="smartIncRec" checked> LLM/Otomatik Yorum</label>
           <label style="font-size:10px;display:flex;align-items:center;gap:3px"><input type="checkbox" id="smartIncSummaryTable" checked> Özet Tablo (Ders×Not)</label>
         </div>
+      </div>
+      <!-- Frekans Ölçütü (Rapor) -->
+      <div style="margin-top:12px;padding:8px 10px;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:6px">
+        <label style="font-size:11px;font-weight:600;color:#047857;display:flex;align-items:center;gap:4px">
+          📊 Frekans Ölçütü <span style="font-weight:400;color:#64748b">(raporda neyin sayılacağını seçin)</span>
+        </label>
+        <p style="font-size:10px;color:#059669;margin:4px 0 6px 0">Varsayılan: satır sayısı. Bir sütun seçerseniz raporda "benzersiz X sayısı" da gösterilir.</p>
+        <select id="smartFreqCriterion" class="dash-select searchable-select" style="width:100%;font-size:11px">
+          <option value="">Satır Sayısı (Varsayılan)</option>
+        </select>
       </div>
       <button class="btn btn-primary" onclick="generateFullSmartReport()" title="Seçilen değişkenler için otomatik rapor oluştur" style="width:100%;margin-top:14px;background:#059669;border-color:#059669;font-size:13px;padding:10px">📊 Rapor Oluştur</button>
       <div id="smartProgress" class="hidden" style="margin-top:10px">
