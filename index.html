@@ -2485,7 +2485,8 @@ async function startProcessing(){
       // Free HLL to save RAM
       if(st._uniqSet){st._uniqSet=null;delete st._uniqSet}
       // Pre-compute median from freq map (EXACT — uses ALL data, not sampled)
-      if(st.isNumeric&&st.numCount>0){
+      // NOTE: compute for ANY column with numCount>0 (mixed cols like "GİRMEDİ"+scores)
+      if(st.numCount>0){
         const numE=[];
         Object.entries(st.freq).forEach(([val,cnt])=>{const n=parseFloat(String(val).replace(',','.'));if(!isNaN(n)&&isFinite(n))numE.push({v:n,c:cnt})});
         if(numE.length>0){
@@ -2501,7 +2502,7 @@ async function startProcessing(){
         }
       }
       // Fallback: use allVals if freq-based computation failed
-      if(st.isNumeric&&st._median===undefined&&st.allVals&&st.allVals.length>0){
+      if(st.numCount>0&&st._median===undefined&&st.allVals&&st.allVals.length>0){
         const nums=st.allVals.map(v=>parseFloat(String(v).replace(',','.'))).filter(v=>!isNaN(v)).sort((a,b)=>a-b);
         const mid=Math.floor(nums.length/2);
         st._median=nums.length%2?nums[mid]:((nums[mid-1]+nums[mid])/2);
@@ -3306,6 +3307,15 @@ function toggleColType(idx){
     });
     if(numCount>0){
       s.isNumeric=true;s.numCount=numCount;s.sum=sum;s.sumSq=sumSq;s.min=mn;s.max=mx;
+      // Recompute median/Q1/Q3 from freq (exact)
+      const numE2=[];
+      Object.entries(s.freq).forEach(([v,c])=>{const n=parseFloat(v.replace(',','.'));if(!isNaN(n)&&isFinite(n))numE2.push({v:n,c})});
+      if(numE2.length>0){
+        numE2.sort((a,b)=>a.v-b.v);
+        const tN2=numE2.reduce((a,e)=>a+e.c,0);
+        let cum2=0;s._median=undefined;s._p25=undefined;s._p75=undefined;
+        for(const e of numE2){cum2+=e.c;if(s._p25===undefined&&cum2>=tN2*0.25)s._p25=e.v;if(s._median===undefined&&cum2>=tN2*0.5)s._median=e.v;if(s._p75===undefined&&cum2>=tN2*0.75){s._p75=e.v;break}}
+      }
     }else{
       s._forceType=null;
       return; // Can't convert — no numeric values at all
@@ -5880,7 +5890,7 @@ function _computeFilteredColStats(){
   // Stream ALL rows for accurate counts — no sampling
   const stats={};
   outHeaders.forEach(h=>{
-    stats[h]={count:0,empty:0,numCount:0,sum:0,sumSq:0,min:Infinity,max:-Infinity,freq:{},isNumeric:colStats[h]&&colStats[h].isNumeric,uniqueCount:0,_median:0};
+    stats[h]={count:0,empty:0,numCount:0,sum:0,sumSq:0,min:Infinity,max:-Infinity,freq:{},isNumeric:colStats[h]&&colStats[h].isNumeric,uniqueCount:0,_median:undefined};
   });
   streamOutputRows(row=>{
     let skip=false;
@@ -5894,13 +5904,11 @@ function _computeFilteredColStats(){
       if(!val||val.trim()===''){s.empty++;return}
       s.count++;
       s.freq[val]=(s.freq[val]||0)+1;
-      if(s.isNumeric){
-        const num=parseFloat(val.replace(',','.'));
-        if(!isNaN(num)&&isFinite(num)){
-          s.numCount++;s.sum+=num;s.sumSq+=num*num;
-          if(num<s.min)s.min=num;if(num>s.max)s.max=num;
-          // sum, sumSq, min, max already accumulated above — no sampling needed
-        }
+      // Always try numeric parsing (mixed cols like scores+"GİRMEDİ" need numeric stats)
+      const num=parseFloat(val.replace(',','.'));
+      if(!isNaN(num)&&isFinite(num)){
+        s.numCount++;s.sum+=num;s.sumSq+=num*num;
+        if(num<s.min)s.min=num;if(num>s.max)s.max=num;
       }
     });
   });
@@ -5908,8 +5916,8 @@ function _computeFilteredColStats(){
   outHeaders.forEach(h=>{
     const s=stats[h];
     s.uniqueCount=Object.keys(s.freq).length;
-    // Exact median from complete filtered freq distribution
-    if(s.isNumeric&&s.numCount>0){
+    // Exact median from complete filtered freq distribution (ANY col with numeric values)
+    if(s.numCount>0){
       const numE=[];
       Object.entries(s.freq).forEach(([val,cnt])=>{const n=parseFloat(String(val).replace(',','.'));if(!isNaN(n)&&isFinite(n))numE.push({v:n,c:cnt})});
       if(numE.length>0){
@@ -6988,10 +6996,10 @@ function renderQuickView(){
         const avg=s.numCount>0?s.sum/s.numCount:0;
         const variance=s.numCount>1?(s.sumSq/s.numCount-avg*avg):0;
         const std=Math.sqrt(Math.max(0,variance));
-        const median=s._median||0;
+        const median=s._median;
         html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;font-weight:600">'+s.sum.toLocaleString('tr-TR',{maximumFractionDigits:2})+'</td>';
         html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;font-weight:600;color:#2563eb">'+avg.toFixed(2)+'</td>';
-        html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center">'+median.toFixed(2)+'</td>';
+        html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center">'+(median!==undefined&&median!==null?median.toFixed(2):'\u2014')+'</td>';
         html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;color:#64748b">'+std.toFixed(2)+'</td>';
         html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center">'+s.min.toLocaleString('tr-TR',{maximumFractionDigits:2})+'</td>';
         html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center">'+s.max.toLocaleString('tr-TR',{maximumFractionDigits:2})+'</td>';
@@ -10583,7 +10591,7 @@ function processQuestion(q){
     numH.forEach(h=>{
       const s=colStats[h];
       const avg=s.sum/s.numCount;
-      const med=s._median||avg;
+      const med=s._median!==undefined?s._median:avg;
       const hint=avg>med*1.05?'Sağa çarpık (pozitif)':(avg<med*0.95?'Sola çarpık (negatif)':'Yaklaşık simetrik');
       info+=escHtml(h)+': Ort='+avg.toFixed(1)+', Med='+Number(med).toFixed(1)+' → <b>'+hint+'</b><br>';
     });
