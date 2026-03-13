@@ -1590,9 +1590,8 @@ class HyperLogLog{
   add(val){this._count++;const h=this._hash(String(val));const j=h>>>(32-this.b);
     // Count leading zeros in the remaining (32-b) bits + 1
     let w=(h<<this.b)>>>0;
-    let rho=1;
-    let mask=1<<31;
-    while(mask>0&&(w&mask)===0){rho++;mask>>>=1}
+    // Math.clz32 is the correct way to count leading zeros in JS (no signed int pitfall)
+    let rho=w===0?(33-this.b):Math.clz32(w)+1;
     if(rho>this.M[j])this.M[j]=rho}
   count(){let Z=0;let V=0;for(let i=0;i<this.m;i++){Z+=Math.pow(2,-this.M[i]);if(this.M[i]===0)V++}
     let E=this._alpha*this.m*this.m/Z;
@@ -2353,7 +2352,7 @@ async function startProcessing(){
   const BATCH=isLargeData?20000:5000;
   const MAX_FREQ=Infinity; // Sınırsız — tüm frekanslar tam olarak tutulur
   _ALLVALS_LIM=isLargeData?10000000:2000000; // 10M for large data — reservoir sampling ensures representativeness
-  _UNIQSET_LIM=isLargeData?0:10000000; // HLL handles unique count for large data
+  _UNIQSET_LIM=isLargeData?30000000:10000000; // Set benzersiz sayımı — 30M'a kadar destekle
   // Try OPFS for large data streaming output
   let opfsActive=false;
   if(isLargeData){opfsActive=await _initOPFS()}
@@ -2471,11 +2470,16 @@ async function startProcessing(){
     else noteEl.textContent='';
     outHeaders.forEach(h=>{
       const st=colStats[h];if(!st)return;
-      // Use HLL for large data (always accurate), freq map size for small data
-      if(st._useHLL&&st._uniqSet instanceof HyperLogLog){st.uniqueCount=st._uniqSet.count()}
-      else if(st._uniqSet&&st._uniqSet.size!==undefined){st.uniqueCount=st._uniqSet.size}
-      else if(st._freqSize>0){st.uniqueCount=st._freqSize}
-      else{st.uniqueCount=Object.keys(st.freq).length}
+      // ALWAYS use exact freq map size for uniqueCount (MAX_FREQ=Infinity → all values tracked)
+      // freq map is the ground truth — HLL is only a fallback if freq was somehow capped
+      if(st._freqSize>0){st.uniqueCount=st._freqSize}
+      else{
+        const fLen=Object.keys(st.freq).length;
+        if(fLen>0){st.uniqueCount=fLen}
+        else if(st._useHLL&&st._uniqSet instanceof HyperLogLog){st.uniqueCount=st._uniqSet.count()}
+        else if(st._uniqSet&&st._uniqSet.size!==undefined){st.uniqueCount=st._uniqSet.size}
+        else{st.uniqueCount=0}
+      }
       // Log high-cardinality columns but keep ALL freq data (zero data loss)
       if(st._freqSize>1000000){console.info('ℹ️ Sütun "'+h+'": '+st._freqSize.toLocaleString()+' benzersiz değer — freq haritası tam olarak korunuyor')}
       // Free HLL to save RAM
@@ -4864,7 +4868,6 @@ function computeMultiAgg(xCol,yCols,aggType){
     return result;
   }
 
-  const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
   const yIndices=yCols.map(y=>{
     // Handle calculated fields
     const idx=outHeaders.indexOf(y);
@@ -4876,17 +4879,18 @@ function computeMultiAgg(xCol,yCols,aggType){
   const _fcIdx=_fcCol?outHeaders.indexOf(_fcCol):-1;
   const _useDistinct=aggType==='count'&&_fcIdx>=0;
 
-  // Groups: {xVal: {count, yData: [{sum,sumSq,min,max,vals}], _dset?:Set}}
+  // Groups: {xVal: {count, yData: [{sum,sumSq,min,max,n,numFreq}], _dset?:Set}}
+  // Uses streamOutputRows for EXACT computation over ALL rows — zero sampling
   const groups={};
-  for(const row of rows){
+  streamOutputRows(row=>{
     const xv=row[xi]||'';
     let skip=false;
     for(let ci=0;ci<Math.min(outHeaders.length,row.length);ci++){
       if(colFilters[outHeaders[ci]]&&!passesFilter(outHeaders[ci],row[ci]||'')){skip=true;break}
     }
-    if(skip)continue;
+    if(skip)return;
     if(!groups[xv]){
-      groups[xv]={count:0,yData:yIndices.map(()=>({sum:0,sumSq:0,min:Infinity,max:-Infinity,vals:[]}))};
+      groups[xv]={count:0,yData:yIndices.map(()=>({sum:0,sumSq:0,min:Infinity,max:-Infinity,n:0,numFreq:{}}))};
       if(_useDistinct)groups[xv]._dset=new Set();
     }
     const g=groups[xv];
@@ -4912,11 +4916,12 @@ function computeMultiAgg(xCol,yCols,aggType){
         num=parseFloat((row[yi.idx]||'').replace(',','.'));
       }
       if(!isNaN(num)&&isFinite(num)){
-        const d=g.yData[di];d.sum+=num;d.sumSq+=num*num;
-        if(num<d.min)d.min=num;if(num>d.max)d.max=num;d.vals.push(num);
+        const d=g.yData[di];d.sum+=num;d.sumSq+=num*num;d.n++;
+        if(num<d.min)d.min=num;if(num>d.max)d.max=num;
+        const vk=String(num);d.numFreq[vk]=(d.numFreq[vk]||0)+1;
       }
     });
-  }
+  });
 
   // Sort & Limit
   const sortMode=document.getElementById('dashSort')?document.getElementById('dashSort').value:'desc';
@@ -4937,21 +4942,24 @@ function computeMultiAgg(xCol,yCols,aggType){
   const labels=sorted.map(e=>e[0].length>25?e[0].substring(0,23)+'..':e[0]);
 
   function extractAgg(yData,agg){
-    if(agg==='count')return yData.vals?yData.vals.length:0;
+    if(agg==='count')return yData.n||0;
     if(agg==='sum')return yData.sum;
-    if(agg==='avg'||agg==='mean')return yData.vals.length?+(yData.sum/yData.vals.length).toFixed(2):0;
+    if(agg==='avg'||agg==='mean')return yData.n?+(yData.sum/yData.n).toFixed(2):0;
     if(agg==='min')return yData.min===Infinity?0:yData.min;
     if(agg==='max')return yData.max===-Infinity?0:yData.max;
     if(agg==='std'){
-      if(yData.vals.length<2)return 0;
-      const mean=yData.sum/yData.vals.length;
-      return +Math.sqrt(Math.max(0,yData.sumSq/yData.vals.length-mean*mean)).toFixed(2);
+      if(yData.n<2)return 0;
+      const mean=yData.sum/yData.n;
+      return +Math.sqrt(Math.max(0,yData.sumSq/yData.n-mean*mean)).toFixed(2);
     }
     if(agg==='median'){
-      if(!yData.vals.length)return 0;
-      const s=yData.vals.slice().sort((a,b)=>a-b);
-      const mid=Math.floor(s.length/2);
-      return s.length%2?s[mid]:+((s[mid-1]+s[mid])/2).toFixed(2);
+      if(!yData.n)return 0;
+      // EXACT median from complete freq distribution
+      const numE=[];
+      Object.entries(yData.numFreq).forEach(([vk,cnt])=>{const v=parseFloat(vk);if(!isNaN(v))numE.push({v,c:cnt})});
+      numE.sort((a,b)=>a.v-b.v);
+      let cum=0;for(const e of numE){cum+=e.c;if(cum>=yData.n*0.5)return +e.v.toFixed(2)}
+      return 0;
     }
     return 0;
   }
@@ -5071,7 +5079,6 @@ function computeMultiSubPivot(xCol,subGroups,yCols,aggType){
   const cacheKey='pivot:'+xCol+'|'+subGroups.join(',')+':'+yCols.join(',')+':'+aggType+':'+filterHash()+':'+drillStack.length+':fc='+_fcCol2;
   if(_aggCache[cacheKey])return _aggCache[cacheKey];
 
-  const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
   const xi=outHeaders.indexOf(xCol);
   const sgIndices=subGroups.map(sg=>outHeaders.indexOf(sg));
   const yIndices=yCols.map(y=>outHeaders.indexOf(y));
@@ -5080,16 +5087,16 @@ function computeMultiSubPivot(xCol,subGroups,yCols,aggType){
   const _fcIdx2=_fcCol2?outHeaders.indexOf(_fcCol2):-1;
   const _useDistinct2=aggType==='count'&&_fcIdx2>=0;
 
-  // Build nested data: {xVal: {sgKey: {count,sum,vals...}}}
+  // Build nested data via streamOutputRows — EXACT over ALL rows
   const data={};
   const sgValueSets=subGroups.map(()=>new Set());
 
-  for(const row of rows){
+  streamOutputRows(row=>{
     let skip=false;
     for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){
       if(colFilters[outHeaders[fi]]&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
     }
-    if(skip)continue;
+    if(skip)return;
 
     const xv=row[xi]||'(boş)';
     const sgVals=sgIndices.map((si,idx)=>{
@@ -5100,7 +5107,7 @@ function computeMultiSubPivot(xCol,subGroups,yCols,aggType){
     const sgKey=sgVals.join('|||');
 
     if(!data[xv])data[xv]={};
-    if(!data[xv][sgKey]){data[xv][sgKey]={count:0,sums:{},vals:{}};if(_useDistinct2)data[xv][sgKey]._dset=new Set()}
+    if(!data[xv][sgKey]){data[xv][sgKey]={count:0,sums:{},sumSqs:{},ns:{},mins:{},maxs:{},numFreqs:{}};if(_useDistinct2)data[xv][sgKey]._dset=new Set()}
     const g=data[xv][sgKey];
     if(_useDistinct2){const fv=row[_fcIdx2]||'';if(fv)g._dset.add(fv);g.count=g._dset.size}else{g.count++}
 
@@ -5108,10 +5115,18 @@ function computeMultiSubPivot(xCol,subGroups,yCols,aggType){
       if(yi<0)return;
       const num=parseFloat((row[yi]||'').replace(',','.'));
       if(!g.sums[yIdx])g.sums[yIdx]=0;
-      if(!g.vals[yIdx])g.vals[yIdx]=[];
-      if(!isNaN(num)&&isFinite(num)){g.sums[yIdx]+=num;g.vals[yIdx].push(num)}
+      if(!g.sumSqs[yIdx])g.sumSqs[yIdx]=0;
+      if(!g.ns[yIdx])g.ns[yIdx]=0;
+      if(!g.mins[yIdx])g.mins[yIdx]=Infinity;
+      if(!g.maxs[yIdx])g.maxs[yIdx]=-Infinity;
+      if(!g.numFreqs[yIdx])g.numFreqs[yIdx]={};
+      if(!isNaN(num)&&isFinite(num)){
+        g.sums[yIdx]+=num;g.sumSqs[yIdx]+=num*num;g.ns[yIdx]++;
+        if(num<g.mins[yIdx])g.mins[yIdx]=num;if(num>g.maxs[yIdx])g.maxs[yIdx]=num;
+        const vk=String(num);g.numFreqs[yIdx][vk]=(g.numFreqs[yIdx][vk]||0)+1;
+      }
     });
-  }
+  });
 
   // Sort X labels
   const sortMode=document.getElementById('dashSort')?document.getElementById('dashSort').value:'desc';
@@ -5133,15 +5148,21 @@ function computeMultiSubPivot(xCol,subGroups,yCols,aggType){
   function extractVal(g,yIdx,agg){
     if(!g)return 0;
     if(agg==='count')return g.count;
-    const vals=g.vals[yIdx]||[];
-    if(!vals.length)return 0;
+    const n=g.ns[yIdx]||0;
+    if(!n)return 0;
     const sum=g.sums[yIdx]||0;
     if(agg==='sum')return +(sum).toFixed(2);
-    if(agg==='avg'||agg==='mean')return +(sum/vals.length).toFixed(2);
-    if(agg==='min')return Math.min(...vals);
-    if(agg==='max')return Math.max(...vals);
-    if(agg==='median'){const s=vals.slice().sort((a,b)=>a-b);const m=Math.floor(s.length/2);return s.length%2?s[m]:+((s[m-1]+s[m])/2).toFixed(2)}
-    if(agg==='std'){if(vals.length<2)return 0;const mn=sum/vals.length;const v=vals.reduce((s,x)=>s+(x-mn)*(x-mn),0)/vals.length;return +Math.sqrt(v).toFixed(2)}
+    if(agg==='avg'||agg==='mean')return +(sum/n).toFixed(2);
+    if(agg==='min')return g.mins[yIdx]===Infinity?0:g.mins[yIdx];
+    if(agg==='max')return g.maxs[yIdx]===-Infinity?0:g.maxs[yIdx];
+    if(agg==='median'){
+      const numE=[];
+      Object.entries(g.numFreqs[yIdx]||{}).forEach(([vk,cnt])=>{const v=parseFloat(vk);if(!isNaN(v))numE.push({v,c:cnt})});
+      numE.sort((a,b)=>a.v-b.v);
+      let cum=0;for(const e of numE){cum+=e.c;if(cum>=n*0.5)return +e.v.toFixed(2)}
+      return 0;
+    }
+    if(agg==='std'){if(n<2)return 0;const mn=sum/n;const v=(g.sumSqs[yIdx]||0)/n-mn*mn;return +Math.sqrt(Math.max(0,v)).toFixed(2)}
     return g.count;
   }
 
@@ -5273,29 +5294,32 @@ function computeMultiSubPivot(xCol,subGroups,yCols,aggType){
 
 // Box Plot data computation: returns {labels, boxes: [{min,q1,median,q3,max}]} per X group
 function computeBoxPlotData(xCol,yCol,colorCol){
-  const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
   const xi=outHeaders.indexOf(xCol);
   const yi=yCol?outHeaders.indexOf(yCol):-1;
   const ci=colorCol?outHeaders.indexOf(colorCol):-1;
   if(xi<0||yi<0)return{labels:[],datasets:[]};
 
-  // Group values
-  const groups={};// {xVal: {color: [values]}}
+  // Group values — EXACT via streamOutputRows, uses freq maps for percentiles
+  const groups={};// {xVal: {color: {numFreq:{}, n:0, sum:0, min:Inf, max:-Inf}}}
   const colorSet=new Set();
-  for(const row of rows){
+  streamOutputRows(row=>{
     const xv=row[xi]||'';
     const cv=ci>=0?(row[ci]||'(boş)'):'_all';
     let skip=false;
     for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){
       if(colFilters[outHeaders[fi]]&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
     }
-    if(skip)continue;
+    if(skip)return;
     colorSet.add(cv);
     if(!groups[xv])groups[xv]={};
-    if(!groups[xv][cv])groups[xv][cv]=[];
+    if(!groups[xv][cv])groups[xv][cv]={numFreq:{},n:0,sum:0,min:Infinity,max:-Infinity};
     const num=parseFloat((row[yi]||'').replace(',','.'));
-    if(!isNaN(num)&&isFinite(num))groups[xv][cv].push(num);
-  }
+    if(!isNaN(num)&&isFinite(num)){
+      const d=groups[xv][cv];d.n++;d.sum+=num;
+      if(num<d.min)d.min=num;if(num>d.max)d.max=num;
+      const vk=String(num);d.numFreq[vk]=(d.numFreq[vk]||0)+1;
+    }
+  });
 
   // Sort X
   const sortMode=document.getElementById('dashSort')?document.getElementById('dashSort').value:'desc';
@@ -5304,22 +5328,27 @@ function computeBoxPlotData(xCol,yCol,colorCol){
   if(sortMode==='alpha')xKeys.sort((a,b)=>a.localeCompare(b,'tr'));
   else{
     xKeys.sort((a,b)=>{
-      const aVals=Object.values(groups[a]).flat();
-      const bVals=Object.values(groups[b]).flat();
-      const aAvg=aVals.length?aVals.reduce((s,v)=>s+v,0)/aVals.length:0;
-      const bAvg=bVals.length?bVals.reduce((s,v)=>s+v,0)/bVals.length:0;
+      const aSum=Object.values(groups[a]).reduce((s,d)=>s+d.sum,0);
+      const aN=Object.values(groups[a]).reduce((s,d)=>s+d.n,0);
+      const bSum=Object.values(groups[b]).reduce((s,d)=>s+d.sum,0);
+      const bN=Object.values(groups[b]).reduce((s,d)=>s+d.n,0);
+      const aAvg=aN?aSum/aN:0;const bAvg=bN?bSum/bN:0;
       return sortMode==='asc'?aAvg-bAvg:bAvg-aAvg;
     });
   }
   xKeys=xKeys.slice(0,limitVal);
   const labels=xKeys.map(k=>k.length>25?k.substring(0,23)+'..':k);
 
-  function percentile(arr,p){
-    if(!arr.length)return 0;
-    const sorted=arr.slice().sort((a,b)=>a-b);
-    const idx=p*(sorted.length-1);
-    const lo=Math.floor(idx),hi=Math.ceil(idx);
-    return lo===hi?sorted[lo]:sorted[lo]+(sorted[hi]-sorted[lo])*(idx-lo);
+  // EXACT percentile from freq distribution
+  function percentile(freqData,p){
+    if(!freqData.n)return 0;
+    const numE=[];
+    Object.entries(freqData.numFreq).forEach(([vk,cnt])=>{const v=parseFloat(vk);if(!isNaN(v))numE.push({v,c:cnt})});
+    numE.sort((a,b)=>a.v-b.v);
+    const target=freqData.n*p;
+    let cum=0;
+    for(const e of numE){cum+=e.c;if(cum>=target)return e.v}
+    return numE.length?numE[numE.length-1].v:0;
   }
 
   let colorVals=[...colorSet];
@@ -5331,12 +5360,12 @@ function computeBoxPlotData(xCol,yCol,colorCol){
   colorVals.forEach((cv,cIdx)=>{
     const color=CHART_COLORS[cIdx%CHART_COLORS.length];
     const boxData=xKeys.map(xv=>{
-      const vals=(groups[xv]&&groups[xv][cv])||[];
-      if(!vals.length)return{min:0,q1:0,median:0,q3:0,max:0,n:0};
+      const fd=(groups[xv]&&groups[xv][cv])||{numFreq:{},n:0,min:0,max:0};
+      if(!fd.n)return{min:0,q1:0,median:0,q3:0,max:0,n:0};
       return{
-        min:percentile(vals,0),q1:percentile(vals,0.25),
-        median:percentile(vals,0.5),q3:percentile(vals,0.75),
-        max:percentile(vals,1),n:vals.length
+        min:fd.min,q1:percentile(fd,0.25),
+        median:percentile(fd,0.5),q3:percentile(fd,0.75),
+        max:fd.max,n:fd.n
       };
     });
     const labelPrefix=cv==='_all'?'':cv+' — ';
@@ -5946,68 +5975,32 @@ function updateKPICardsFiltered(){
   const row=document.getElementById('kpiRow');if(!row)return;
   row.innerHTML='';
   const kpis=[];
-  // Count filtered rows
-  const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
-  let filteredCount=0;
-  const filteredYSums={};
-  const filteredYCounts={};
-  selectedYCols.forEach(y=>{filteredYSums[y]=0;filteredYCounts[y]=0});
-  for(const r of rows){
-    let skip=false;
-    for(let ci2=0;ci2<Math.min(outHeaders.length,r.length);ci2++){
-      if(colFilters[outHeaders[ci2]]&&!passesFilter(outHeaders[ci2],r[ci2]||'')){skip=true;break}
-    }
-    if(skip)continue;
-    filteredCount++;
-    selectedYCols.forEach(yCol=>{
-      const yi=outHeaders.indexOf(yCol);
-      if(yi>=0){
-        const num=parseFloat((r[yi]||'').replace(',','.'));
-        if(!isNaN(num)){filteredYSums[yCol]+=num;filteredYCounts[yCol]++}
-      }
-    });
-  }
   const anyFilter=outHeaders.some(h=>hasActiveFilter(h));
-  // Total rows — use real totalRows when no filter, otherwise use colStats or sample-based count
-  let displayTotal=totalRows;
-  if(anyFilter){
-    // Try colStats for accurate filtered count
-    const firstH=outHeaders[0];
-    if(colStats[firstH]&&colStats[firstH].count>0){
-      // colStats has full data stats, but no filter-aware count — use sample-based filteredCount scaled
-      const sampleRatio=totalRows/rows.length;
-      displayTotal=rows.length>=totalRows?filteredCount:Math.round(filteredCount*sampleRatio);
-    }else{displayTotal=filteredCount}
-  }
+  // Use EXACT stats: colStats for unfiltered, _computeFilteredColStats for filtered
+  let stats=colStats;
+  if(anyFilter){stats=_computeFilteredColStats()}
+  // Total rows — EXACT from stats
+  let displayTotal=0;
+  const firstH=outHeaders[0];
+  if(stats[firstH]){displayTotal=stats[firstH].count+stats[firstH].empty}
+  if(!anyFilter)displayTotal=totalRows;
   const displayStr=_formatCells(displayTotal);
   kpis.push({val:displayStr,label:anyFilter?'Filtrelenmiş Satır':'Toplam Satır',cls:'kpi-blue'});
-  // X unique values
+  // X unique values — EXACT from freq map
   const xCol=document.getElementById('xVar')?document.getElementById('xVar').value:'';
-  if(xCol&&colStats[xCol]){
-    // Count unique X values in filtered data
-    if(anyFilter){
-      const xIdx=outHeaders.indexOf(xCol);
-      const uniq=new Set();
-      for(const r of rows){
-        let skip=false;
-        for(let ci2=0;ci2<Math.min(outHeaders.length,r.length);ci2++){
-          if(colFilters[outHeaders[ci2]]&&!passesFilter(outHeaders[ci2],r[ci2]||'')){skip=true;break}
-        }
-        if(!skip&&xIdx>=0)uniq.add(r[xIdx]||'');
-      }
-      kpis.push({val:uniq.size.toLocaleString('tr-TR'),label:xCol+' (Benzersiz)',cls:'kpi-purple'});
-    }else{
-      kpis.push({val:Object.keys(colStats[xCol].freq).length.toLocaleString('tr-TR'),label:xCol+' (Benzersiz)',cls:'kpi-purple'});
-    }
+  if(xCol&&stats[xCol]){
+    const uniqCount=stats[xCol].uniqueCount||Object.keys(stats[xCol].freq).length;
+    kpis.push({val:uniqCount.toLocaleString('tr-TR'),label:xCol+' (Benzersiz)',cls:'kpi-purple'});
   }
   // Active filters count
   const af=outHeaders.filter(h=>hasActiveFilter(h)).length;
   if(af>0)kpis.push({val:af,label:'Aktif Filtre',cls:'kpi-orange'});
-  // Y column summaries (filtered)
+  // Y column summaries — EXACT from stats
   const colors=['kpi-green','kpi-red','kpi-purple','kpi-orange','kpi-blue'];
   selectedYCols.slice(0,4).forEach((yCol,i)=>{
-    if(filteredYCounts[yCol]>0){
-      const mean=(filteredYSums[yCol]/filteredYCounts[yCol]).toFixed(1);
+    const ySt=stats[yCol];
+    if(ySt&&ySt.numCount>0){
+      const mean=(ySt.sum/ySt.numCount).toFixed(1);
       kpis.push({val:mean,label:yCol+' (Ort.)',cls:colors[i%colors.length]});
     }
   });
@@ -7056,7 +7049,6 @@ function renderSummaryStatsTable(){
   area.innerHTML='<div style="text-align:center;padding:20px;color:#64748b"><span class="computing-spinner"></span> Hesaplanıyor...</div>';
 
   setTimeout(()=>{
-    const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
     // Build index maps
     const catIndices=catCols.map(h=>({col:h,idx:outHeaders.indexOf(h)})).filter(c=>c.idx>=0);
     const numIndices=numCols.map(h=>({col:h,idx:outHeaders.indexOf(h)})).filter(c=>c.idx>=0);
@@ -7064,28 +7056,30 @@ function renderSummaryStatsTable(){
     // For each categorical column, build group stats
     let html='';
     catIndices.forEach(({col:catCol,idx:ci})=>{
-      // Collect: {catVal: {_freq, numCol: {sum,sumSq,count,vals}}}
+      // Collect: {catVal: {_freq, numCol: {sum,sumSq,count,min,max,numFreq:{}}}}
+      // Uses streamOutputRows for EXACT computation over ALL rows — zero sampling
       const groups={};
       const catFreqFromStats=colStats[catCol]?colStats[catCol].freq:null; // full-dataset freq
-      for(const row of rows){
+      streamOutputRows(row=>{
         // Apply global filters
         let skip=false;
         for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){
           if(colFilters[outHeaders[fi]]&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
         }
-        if(skip)continue;
+        if(skip)return;
         const catVal=row[ci]||'(Boş)';
         if(!groups[catVal]){groups[catVal]={_freq:0}}
         groups[catVal]._freq++;
         numIndices.forEach(({col:numCol,idx:ni})=>{
-          if(!groups[catVal][numCol])groups[catVal][numCol]={sum:0,sumSq:0,count:0,vals:[]};
+          if(!groups[catVal][numCol])groups[catVal][numCol]={sum:0,sumSq:0,count:0,min:Infinity,max:-Infinity,numFreq:{}};
           const v=parseFloat((row[ni]||'').replace(',','.'));
           if(!isNaN(v)&&isFinite(v)){
             const d=groups[catVal][numCol];d.sum+=v;d.sumSq+=v*v;d.count++;
-            if(d.vals.length<100000)d.vals.push(v);
+            if(v<d.min)d.min=v;if(v>d.max)d.max=v;
+            const vk=String(v);d.numFreq[vk]=(d.numFreq[vk]||0)+1;
           }
         });
-      }
+      });
 
       const sortedKeys=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr'));
 
@@ -7132,12 +7126,18 @@ function renderSummaryStatsTable(){
             return;
           }
           const avg=d.sum/d.count;
-          const sorted=d.vals.slice().sort((a,b)=>a-b);
-          const mid=Math.floor(sorted.length/2);
-          const median=sorted.length%2?sorted[mid]:((sorted[mid-1]+sorted[mid])/2);
+          // EXACT median from complete freq distribution (no sampling)
+          const numE=[];
+          Object.entries(d.numFreq).forEach(([vk,cnt])=>{const n=parseFloat(vk);if(!isNaN(n))numE.push({v:n,c:cnt})});
+          numE.sort((a,b)=>a.v-b.v);
+          let median=avg;
+          if(numE.length>0){
+            const tN=numE.reduce((a,e)=>a+e.c,0);
+            let cum=0;for(const e of numE){cum+=e.c;if(cum>=tN*0.5){median=e.v;break}}
+          }
           const variance=d.count>1?(d.sumSq/d.count-avg*avg):0;
           const std=Math.sqrt(Math.max(0,variance));
-          const mn=Math.min(...d.vals),mx=Math.max(...d.vals);
+          const mn=d.min,mx=d.max;
 
           // Heatmap color for avg
           const gs=globalStats[numCol];
@@ -7158,23 +7158,29 @@ function renderSummaryStatsTable(){
         html+='</tr>';
       });
 
-      // TOPLAM row
+      // TOPLAM row — EXACT from accumulated stats across all groups
       html+='<tr style="font-weight:700;background:#f1f5f9"><td style="padding:6px 10px;border:1px solid #e2e8f0">TOPLAM / GENEL</td>';
       const totalN=Object.values(groups).reduce((s,g)=>s+(g._freq||0),0);
       html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center">'+totalN.toLocaleString('tr-TR')+'</td>';
       numIndices.forEach(({col:numCol})=>{
-        let allVals=[];
-        Object.values(groups).forEach(g=>{const d=g[numCol];if(d)allVals=allVals.concat(d.vals)});
-        if(!allVals.length){html+='<td style="padding:6px;border:1px solid #e2e8f0;text-align:center">—</td>'.repeat(4);return}
-        const tSum=allVals.reduce((a,b)=>a+b,0);
-        const tAvg=tSum/allVals.length;
-        const tSorted=allVals.slice().sort((a,b)=>a-b);
-        const tMid=Math.floor(tSorted.length/2);
-        const tMedian=tSorted.length%2?tSorted[tMid]:((tSorted[tMid-1]+tSorted[tMid])/2);
-        const tSumSq=allVals.reduce((a,b)=>a+b*b,0);
-        const tVar=allVals.length>1?(tSumSq/allVals.length-tAvg*tAvg):0;
+        let tSum=0,tSumSq=0,tCount=0,tMn=Infinity,tMx=-Infinity;
+        const mergedFreq={};
+        Object.values(groups).forEach(g=>{
+          const d=g[numCol];if(!d||!d.count)return;
+          tSum+=d.sum;tSumSq+=d.sumSq;tCount+=d.count;
+          if(d.min<tMn)tMn=d.min;if(d.max>tMx)tMx=d.max;
+          Object.entries(d.numFreq).forEach(([vk,cnt])=>{mergedFreq[vk]=(mergedFreq[vk]||0)+cnt});
+        });
+        if(!tCount){html+='<td style="padding:6px;border:1px solid #e2e8f0;text-align:center">—</td>'.repeat(4);return}
+        const tAvg=tSum/tCount;
+        // EXACT median from merged freq distribution
+        const numE=[];
+        Object.entries(mergedFreq).forEach(([vk,cnt])=>{const n=parseFloat(vk);if(!isNaN(n))numE.push({v:n,c:cnt})});
+        numE.sort((a,b)=>a.v-b.v);
+        let tMedian=tAvg;
+        if(numE.length>0){let cum=0;for(const e of numE){cum+=e.c;if(cum>=tCount*0.5){tMedian=e.v;break}}}
+        const tVar=tCount>1?(tSumSq/tCount-tAvg*tAvg):0;
         const tStd=Math.sqrt(Math.max(0,tVar));
-        const tMn=tSorted[0],tMx=tSorted[tSorted.length-1];
         html+='<td style="padding:6px;border:1px solid #e2e8f0;text-align:center;font-weight:700">'+tAvg.toFixed(2)+'</td>';
         html+='<td style="padding:6px;border:1px solid #e2e8f0;text-align:center;font-weight:700">'+tMedian.toFixed(2)+'</td>';
         html+='<td style="padding:6px;border:1px solid #e2e8f0;text-align:center;font-weight:700">'+tStd.toFixed(2)+'</td>';
@@ -7336,20 +7342,19 @@ function computeCorrelationMatrix(){
     const anyFilter=outHeaders.some(h=>hasActiveFilter(h));
     const numCols=outHeaders.filter(h=>colStats[h]&&colStats[h].isNumeric&&colStats[h].numCount>0);
     if(numCols.length<2){area.innerHTML='<p class="text-sm text-muted">En az 2 sayısal sütun gerekli.</p>';return}
-    const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
     const indices=numCols.map(h=>outHeaders.indexOf(h));
-    // Collect numeric arrays
-    const arrays=indices.map(()=>({vals:[],sum:0,sumSq:0,n:0}));
+    // Collect running sums for EXACT Pearson correlation — streams ALL rows
+    const arrays=indices.map(()=>({sum:0,sumSq:0,n:0}));
     const pairSums={};
     let filteredRowCount=0;
-    for(const row of rows){
+    streamOutputRows(row=>{
       // Apply filters
-      if(anyFilter){let skip=false;for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){if(colFilters[outHeaders[fi]]&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}}if(skip)continue}
+      if(anyFilter){let skip=false;for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){if(colFilters[outHeaders[fi]]&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}}if(skip)return}
       filteredRowCount++;
       const nums=indices.map(idx=>{const v=(row[idx]||'').replace(',','.');return parseFloat(v)});
       for(let a=0;a<nums.length;a++){
         if(isNaN(nums[a]))continue;
-        arrays[a].vals.push(nums[a]);arrays[a].sum+=nums[a];arrays[a].sumSq+=nums[a]*nums[a];arrays[a].n++;
+        arrays[a].sum+=nums[a];arrays[a].sumSq+=nums[a]*nums[a];arrays[a].n++;
       }
       for(let a=0;a<nums.length;a++){
         for(let b=a+1;b<nums.length;b++){
@@ -7359,7 +7364,7 @@ function computeCorrelationMatrix(){
           const p=pairSums[key];p.sumXY+=nums[a]*nums[b];p.n++;p.sumX+=nums[a];p.sumY+=nums[b];p.sumX2+=nums[a]*nums[a];p.sumY2+=nums[b]*nums[b];
         }
       }
-    }
+    });
     // Build matrix
     const matrix=Array.from({length:numCols.length},()=>Array(numCols.length).fill(1));
     for(let a=0;a<numCols.length;a++){
@@ -8091,17 +8096,16 @@ async function sendSmartLLM(){
   if(isSingleBatch&&!singleGroupVal){noteEl.textContent='Tek grup değeri seçin.';noteEl.style.color='#dc2626';return}
 
   const maxGroups=isSingleBatch?0:(parseInt(document.getElementById('llmMaxGroups').value)||0);
-  const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
   const gi=outHeaders.indexOf(groupCol);
   if(gi<0)return;
 
-  // Group rows
+  // Group ALL rows — EXACT via streamOutputRows
   const groupMap={};
-  for(const row of rows){
+  streamOutputRows(row=>{
     const gv=row[gi]||'(boş)';
     if(!groupMap[gv])groupMap[gv]=[];
     groupMap[gv].push(row);
-  }
+  });
 
   let groupNames;
   if(isSingleBatch){
@@ -8187,11 +8191,11 @@ function showRuleBasedReport(){
     const singleGroupVal=isSingleBatch?document.getElementById('llmSingleGroupVal').value:'';
     if(isSingleBatch&&!singleGroupVal){const n=document.getElementById('pdfNote');if(n){n.textContent='Tek grup değeri seçin.';n.style.color='#dc2626'}return}
     const maxGroups=isSingleBatch?0:(parseInt(document.getElementById('llmMaxGroups').value)||0);
-    const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
     const gi=outHeaders.indexOf(groupCol);
     if(gi<0)return;
+    // Group ALL rows — EXACT via streamOutputRows
     const groupMap={};
-    for(const row of rows){const gv=row[gi]||'(boş)';if(!groupMap[gv])groupMap[gv]=[];groupMap[gv].push(row)}
+    streamOutputRows(row=>{const gv=row[gi]||'(boş)';if(!groupMap[gv])groupMap[gv]=[];groupMap[gv].push(row)});
     let groupNames;
     if(isSingleBatch){
       groupNames=[singleGroupVal];
@@ -8680,8 +8684,9 @@ async function _buildOffscreenChart(config){
 async function buildGroupSection(indepVar,groupVal,depVars,model,endpoint,onProgress,opts){
   opts=opts||{};
   const ci=outHeaders.indexOf(indepVar);
-  const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
-  const groupRows=rows.filter(r=>(r[ci]||'')===groupVal);
+  // Collect ALL rows for this group — EXACT via streamOutputRows
+  const groupRows=[];
+  streamOutputRows(row=>{if((row[ci]||'')===groupVal)groupRows.push(row)});
   const charts=[];
   const subGroupVar=opts.subGroupVar||null;
   const sgIdx=subGroupVar?outHeaders.indexOf(subGroupVar):-1;
