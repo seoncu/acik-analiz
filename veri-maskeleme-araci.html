@@ -2375,10 +2375,10 @@ async function startProcessing(){
   }
 
   const headerLine=outHeaders.map(h=>'"'+h.replace(/"/g,'""')+'"').join(outDelim)+'\n';
-  // Helper: write batch to OPFS (streaming) or outputChunks (RAM)
+  // Helper: ALWAYS push to outputChunks (for streamOutputRows computation) + OPFS for export
   async function _flushBatch(text){
+    outputChunks.push(text);
     if(opfsActive){await _writeToOPFS(text)}
-    else{outputChunks.push(text)}
   }
   await _flushBatch(headerLine);
 
@@ -2513,24 +2513,22 @@ async function startProcessing(){
     });
     // Free joined data after processing
     if(joinedOutput){joinedOutput.rows=null;joinedOutput=null}
-    // For large datasets: finalize OPFS or convert outputChunks to Blob
+    // For large datasets: finalize OPFS and/or create Blob for EXPORT only
+    // CRITICAL: outputChunks must NEVER be freed — streamOutputRows needs them for exact computation
     if(opfsActive){
       try{
         const opfsFile=await _finalizeOPFS();
         if(opfsFile){
           window._outputBlob=opfsFile;
           window._outputBlobReady=true;
-          outputChunks=[''];
-          console.log('OPFS streaming tamamlandı: '+(_opfsBytesWritten/(1024*1024)).toFixed(0)+' MB disk yazıldı, RAM serbest');
+          console.log('OPFS streaming tamamlandı: '+(_opfsBytesWritten/(1024*1024)).toFixed(0)+' MB disk yazıldı. outputChunks korunuyor (hesaplama için).');
         }
       }catch(e){console.warn('OPFS finalize başarısız:',e)}
     }else if(rowCount>LARGE_DATA_THRESHOLD&&outputChunks.length>10){
       try{
         window._outputBlob=new Blob(outputChunks,{type:'text/csv;charset=utf-8'});
         window._outputBlobReady=true;
-        const freedMB=Math.round(outputChunks.reduce((s,c)=>s+c.length,0)/(1024*1024));
-        outputChunks=[''];
-        console.log('Büyük veri: outputChunks→Blob dönüştürüldü, ~'+freedMB+' MB RAM serbest bırakıldı');
+        console.log('Büyük veri: export Blob oluşturuldu. outputChunks korunuyor (hesaplama için).');
       }catch(e){console.warn('Blob dönüşümü başarısız:',e)}
     }
     renderSummaryStats();
