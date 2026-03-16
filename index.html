@@ -714,12 +714,8 @@
     <!-- Devam Et Butonu -->
     <div style="margin-top:24px;text-align:center">
       <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;transition:all .2s" id="step0ConfirmLabel">
-          <input type="checkbox" id="step0ConfirmCheck" style="width:20px;height:20px;accent-color:#059669;cursor:pointer" onchange="_onStep0ConfirmChange(this.checked)">
-          <span style="font-size:13px;color:#334155;font-weight:600">Yukarıdaki bilgileri okudum, çalışma modumu seçtim.</span>
-        </label>
-        <button class="btn btn-success" id="step0ContinueBtn" onclick="_step0Continue()" style="font-size:15px;padding:12px 40px;border-radius:12px;font-weight:700;opacity:0.4;cursor:not-allowed;transition:all .3s" disabled>Dosya Yüklemeye Geç →</button>
-        <p id="step0Hint" style="font-size:11px;color:#94a3b8;margin:0;transition:all .3s">Devam etmek için yukarıdaki onay kutusunu işaretleyin.</p>
+        <button class="btn btn-success" id="step0ContinueBtn" onclick="_step0Continue()" style="font-size:16px;padding:14px 48px;border-radius:12px;font-weight:700;transition:all .3s;box-shadow:0 4px 14px rgba(5,150,105,0.3)">Dosya Yüklemeye Geç →</button>
+        <p id="step0Hint" style="font-size:11px;color:#94a3b8;margin:0;transition:all .3s"></p>
       </div>
     </div>
   </div>
@@ -1790,29 +1786,8 @@ function _hideBusy(){const o=document.getElementById('globalBusyOverlay');if(o)o
 
 // === ENGINE MODE SELECTION ===
 window._selectedEngineMode='browser';
-function _onStep0ConfirmChange(checked){
-  const btn=document.getElementById('step0ContinueBtn');
-  const hint=document.getElementById('step0Hint');
-  const lbl=document.getElementById('step0ConfirmLabel');
-  if(checked){
-    btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';
-    hint.textContent='✓ Hazırsınız! Devam edebilirsiniz.';hint.style.color='#059669';
-    lbl.style.borderColor='#86efac';lbl.style.background='#f0fdf4';
-  }else{
-    btn.disabled=true;btn.style.opacity='0.4';btn.style.cursor='not-allowed';
-    hint.textContent='Devam etmek için yukarıdaki onay kutusunu işaretleyin.';hint.style.color='#94a3b8';
-    lbl.style.borderColor='#e2e8f0';lbl.style.background='#f8fafc';
-  }
-}
 function _step0Continue(){
-  const chk=document.getElementById('step0ConfirmCheck');
-  if(!chk||!chk.checked){
-    // Shake the label
-    const lbl=document.getElementById('step0ConfirmLabel');
-    if(lbl){lbl.style.animation='shake .4s';setTimeout(()=>lbl.style.animation='',500)}
-    return;
-  }
-  // If Python mode selected but backend not active, show final warning
+  // Python modu seçili ama motor aktif değilse uyar
   if(window._selectedEngineMode==='python'&&!window._BACKEND_ACTIVE){
     if(!confirm('Python Veri Motoru seçtiniz ancak motor henüz çalışmıyor.\n\nDevam ederseniz tarayıcı modunda çalışacaksınız.\nMotoru başlatmak için AcikAnaliz-Baslat dosyasını çalıştırın.\n\nYine de devam etmek istiyor musunuz?'))return;
   }
@@ -1878,15 +1853,9 @@ window._updateEngineModeUI=function _updateEngineModeUI(){
       // Yeniden Bağlan butonunu gizle (bağlı olduğumuz için)
       var reconnBtn=document.getElementById('btnReconnectPython');
       if(reconnBtn){reconnBtn.textContent='✓ Bağlı';reconnBtn.style.background='#059669';reconnBtn.disabled=true}
-      // Onay kutusunu ve devam butonunu otomatik aktifleştir
-      var chk0=document.getElementById('step0ConfirmCheck');
-      var btn0=document.getElementById('step0ContinueBtn');
+      // Hint mesajını güncelle
       var hint0=document.getElementById('step0Hint');
-      var lbl0=document.getElementById('step0ConfirmLabel');
-      if(chk0&&!chk0.checked){chk0.checked=true}
-      if(btn0){btn0.disabled=false;btn0.style.opacity='1';btn0.style.cursor='pointer'}
       if(hint0){hint0.textContent='✓ Python Motor bağlı — devam edebilirsiniz!';hint0.style.color='#059669'}
-      if(lbl0){lbl0.style.borderColor='#86efac';lbl0.style.background='#f0fdf4'}
     }else{
       if(sub){sub.textContent='Motor Bağlı Değil';sub.style.color='#dc2626'}
       if(badge)badge.innerHTML='<span style="display:inline-block;padding:4px 12px;background:#fef3c7;color:#92400e;border-radius:20px;font-size:11px;font-weight:600">⚠ Başlatılmadı</span>';
