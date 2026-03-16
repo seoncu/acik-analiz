@@ -103,8 +103,9 @@
   .ss-wrap{position:relative;display:block;min-width:0;width:100%;box-sizing:border-box;flex:1 1 0;overflow:visible}
   .ss-input{width:100% !important;padding:9px 30px 9px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;line-height:1.4;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' fill='none' stroke='%2394a3b8' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 8px center;outline:none;cursor:pointer;box-sizing:border-box;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;display:block;font-family:inherit}
   .ss-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.18)}
-  .ss-list{position:absolute;z-index:999;top:100%;left:0;right:0;max-height:280px;overflow-y:auto;background:#fff;border:1px solid #c7d2fe;border-radius:8px;margin-top:3px;box-shadow:0 6px 20px rgba(0,0,0,.15);display:none}
+  .ss-list{position:absolute;z-index:10001;top:100%;left:0;right:0;max-height:280px;overflow-y:auto;background:#fff;border:1px solid #c7d2fe;border-radius:8px;margin-top:3px;box-shadow:0 6px 20px rgba(0,0,0,.15);display:none}
   .ss-list.open{display:block}
+  .ss-list.open-up{top:auto;bottom:100%;margin-top:0;margin-bottom:3px}
   .ss-item{padding:10px 14px;font-size:14px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid #f1f5f9}
   .ss-item:last-child{border-bottom:none}
   .ss-item:hover,.ss-item.highlighted{background:#eff6ff;color:#1e40af}
@@ -1149,7 +1150,6 @@
         <button class="tab-btn" data-tab="topbottom" onclick="switchAnalysisTab('topbottom',this)" title="Bağımlı değişkene göre en yüksek ve en düşük listeler">🏆 Kritik Listeler</button>
         <button class="tab-btn" data-tab="summary" onclick="switchAnalysisTab('summary',this)" title="Kategorik ve sayısal özet istatistikler">📋 Özet İstatistik</button>
         <button class="tab-btn" data-tab="stats" onclick="switchAnalysisTab('stats',this)" title="Her sütun için frekans dağılımı, histogram ve detaylı istatistikler">📈 Frekans Dağılımı</button>
-        <button class="tab-btn" data-tab="correlation" onclick="switchAnalysisTab('correlation',this)" title="Sayısal sütunlar arası korelasyon matrisi">🔗 Korelasyon</button>
         <button class="tab-btn" data-tab="crosstab" onclick="switchAnalysisTab('crosstab',this)" title="İki kategorik değişkenin çapraz tablosu">📑 Çapraz Tablo</button>
         <button class="tab-btn tab-btn-special" data-tab="mapview" onclick="switchAnalysisTab('mapview',this)" title="Kategorik değişkeni haritada görselleştirme">🗺️ Harita</button>
         <button class="tab-btn tab-btn-special tab-btn-adv" data-tab="advstats" onclick="switchAnalysisTab('advstats',this)" title="JASP benzeri ileri istatistik testleri">🔬 İleri İstatistik</button>
@@ -1636,7 +1636,8 @@
             <div>
               <h3 style="margin:0 0 4px 0;font-size:16px;color:#4c1d95">🔬 İleri İstatistik Testleri</h3>
               <p style="margin:0;font-size:12px;color:#6b21a8">JASP benzeri akademik istatistik analizleri. Filtreler otomatik uygulanır.</p>
-              <p style="margin:4px 0 0 0;font-size:10px;color:#7c3aed;line-height:1.5"><b>Not:</b> İstatistiksel sonuçlarda <b>n</b> (küçük harf) = alt grup gözlem sayısı, <b>N</b> (büyük harf) = toplam popülasyon büyüklüğü anlamındadır (APA7 standardı). UI tablolarında gözlem sayısı <b>n</b> (alt grup) veya <b>N</b> (toplam) olarak gösterilir. Büyük veri setlerinde (1M+ satır) testler biraz zaman alabilir — tüm veriler eksiksiz işlenir.</p>
+              <p style="margin:4px 0 0 0;font-size:10px;color:#7c3aed;line-height:1.5"><b>Not:</b> İstatistiksel sonuçlarda <b>n</b> (küçük harf) = alt grup gözlem sayısı, <b>N</b> (büyük harf) = toplam popülasyon büyüklüğü anlamındadır (APA7 standardı). UI tablolarında gözlem sayısı <b>n</b> (alt grup) veya <b>N</b> (toplam) olarak gösterilir.</p>
+              <div id="advStatsSamplingBanner" style="display:none;margin-top:6px;padding:6px 10px;background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;font-size:10px;color:#92400e;line-height:1.4">⚠️ <b>Akıllı Örneklem Modu:</b> Python Motor aktif olduğunda ileri istatistik testleri performans optimizasyonu için akıllı örneklem kullanır. Dashboard, Özet İstatistik, Çapraz Tablo, Korelasyon vb. temel analizler <b>tam veri</b> üzerinden hesaplanır.</div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <button class="btn btn-sm" onclick="advStatsSuggestTests()" style="background:#7c3aed;color:#fff;border:none;font-size:11px" title="Verinizdeki değişkenlere göre hangi testlerin yapılabileceğini öner">🤖 Hangi Test Yapılabilir?</button>
@@ -2126,9 +2127,21 @@ function _initSearchableSelects(root){
     }
     function syncVal(){const o=sel.options[sel.selectedIndex];inp.value=o?o.textContent:''}
     syncVal();
-    inp.addEventListener('focus',()=>{inp.select();buildItems('');list.classList.add('open')});
-    inp.addEventListener('input',()=>{buildItems(inp.value);list.classList.add('open')});
-    inp.addEventListener('blur',()=>{setTimeout(()=>{list.classList.remove('open');syncVal()},150)});
+    function _openList(){
+      list.classList.add('open');
+      // Sayfa altına yakınsa yukarı aç
+      const rect=wrap.getBoundingClientRect();
+      const spaceBelow=window.innerHeight-rect.bottom;
+      const spaceAbove=rect.top;
+      if(spaceBelow<300&&spaceAbove>300){
+        list.classList.add('open-up');
+      }else{
+        list.classList.remove('open-up');
+      }
+    }
+    inp.addEventListener('focus',()=>{inp.select();buildItems('');_openList()});
+    inp.addEventListener('input',()=>{buildItems(inp.value);_openList()});
+    inp.addEventListener('blur',()=>{setTimeout(()=>{list.classList.remove('open','open-up');syncVal()},150)});
     inp.addEventListener('keydown',e=>{
       const items=list.querySelectorAll('.ss-item');
       if(e.key==='ArrowDown'){e.preventDefault();hlIdx=Math.min(hlIdx+1,items.length-1);items.forEach((it,i)=>it.classList.toggle('highlighted',i===hlIdx));if(items[hlIdx])items[hlIdx].scrollIntoView({block:'nearest'})}
@@ -4131,7 +4144,12 @@ function switchAnalysisTab(tab,btn){
         try{renderCrossTab()}catch(e){console.warn('crosstab err',e)}
       }
       if(tab==='mapview'){try{initMapView()}catch(e){console.warn('mapview init err',e)}}
-      if(tab==='advstats'){try{advStatsInit()}catch(e){console.warn('advstats init err',e)}}
+      if(tab==='advstats'){
+        try{advStatsInit()}catch(e){console.warn('advstats init err',e)}
+        // Örneklem uyarı banner'ını göster/gizle
+        const _asBanner=document.getElementById('advStatsSamplingBanner');
+        if(_asBanner)_asBanner.style.display=(window._BACKEND_ACTIVE&&window._processedByBackend)?'block':'none';
+      }
     };
     if(isHeavy){
       _busyRun('Sekme hesaplanıyor...',renderTab).then(()=>{
@@ -6936,7 +6954,17 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
   // === BACKEND: If chart was built from JS sample, async-refresh with full backend data ===
   if(!_buildChart._noLoop && window._BACKEND_ACTIVE && typeof window._backendAggregate==='function' && type!=='scatter' && type!=='histogram' && type!=='bubble'){
     const _bid=id,_bxCol=xCol,_byCols=yCols.slice(),_bagg=agg,_bcolorCol=colorCol||'',_bsubGroups=subGroups.slice(),_btype=type;
-    computeMultiAggAsync(_bxCol,_byCols,_bagg).then(backendResult=>{
+    // Fetch from backend: supports colorCol for grouped charts
+    const _refreshPromise=_bcolorCol
+      ? window._backendAggregate(_bxCol,_byCols.length?_byCols:[],_bagg,'desc',200,_bcolorCol).then(r=>{
+          if(r&&r.labels){
+            // Cache color-grouped result for computeColorGroupAgg to find
+            const ck='color:'+_bxCol+'|'+_bcolorCol+'|'+(_byCols[0]||'')+':'+_bagg+':'+filterHash()+':'+drillStack.length;
+            r._fromBackend=true;_aggCache[ck]=r;return r;
+          }return null;
+        }).catch(()=>null)
+      : computeMultiAggAsync(_bxCol,_byCols,_bagg);
+    _refreshPromise.then(backendResult=>{
       if(backendResult&&backendResult._fromBackend){
         const ci=chartInstances.find(c=>c.id===_bid);
         if(ci&&ci.instance){try{ci.instance.destroy()}catch(e){}}
@@ -7830,35 +7858,75 @@ function renderTopBottomData(){
   // Gösterilecek sütunlar: sıralama değişkeni + seçilen ekstra sütunlar
   const displayCols=extraCols.length?extraCols:[...outHeaders];
   if(!displayCols.includes(sortVar))displayCols.unshift(sortVar);
+
+  // Backend modu: try backend first
+  if(window._BACKEND_ACTIVE){
+    (async ()=>{
+      try{
+        area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px"><span class="computing-spinner"></span> Python motorunda hesaplanıyor...</p>';
+        const result=await window._backendTopBottom(sortVar,count,direction,catVar,catVal,catVar2,catVal2,displayCols);
+        if(result&&result.rows){
+          return renderTopBottomDataJS(area,sortVar,count,direction,catVar,catVal,catVar2,catVal2,displayCols,result.rows,result.total);
+        }
+      }catch(e){
+        console.warn('[TopBottom] Backend hatası, JS fallback:',e);
+      }
+      // Fallback to JS
+      renderTopBottomDataJS(area,sortVar,count,direction,catVar,catVal,catVar2,catVal2,displayCols);
+    })();
+    return;
+  }
+
+  // JS modu: directly use JS implementation
+  renderTopBottomDataJS(area,sortVar,count,direction,catVar,catVal,catVar2,catVal2,displayCols);
+}
+
+function renderTopBottomDataJS(area,sortVar,count,direction,catVar,catVal,catVar2,catVal2,displayCols,backendRows,backendTotal){
   const sortIdx=outHeaders.indexOf(sortVar);
   if(sortIdx<0){area.innerHTML='<p class="text-sm text-muted">Sütun bulunamadı.</p>';return}
   const catIdx=catVar?outHeaders.indexOf(catVar):-1;
   const catIdx2=catVar2?outHeaders.indexOf(catVar2):-1;
-  // Veriyi oku ve filtrele — TÜM satırları stream et (sınırsız)
+  // Veriyi oku ve filtrele — TÜM satırları stream et (sınırsız) veya backendRows kullan
   let filtered=[];
   const _keepMax=Math.max(count*20,1000); // memory-efficient: periyodik budama
-  streamOutputRows(r=>{
-    // Global filtreler
-    let skip=false;
-    for(let ci=0;ci<Math.min(outHeaders.length,r.length);ci++){
-      if(colFilters[outHeaders[ci]]&&!passesFilter(outHeaders[ci],r[ci]||'')){skip=true;break}
-    }
-    if(skip)return;
-    // Kategori filtresi 1
-    if(catIdx>=0&&catVal&&(r[catIdx]||'')!==catVal)return;
-    // Kategori filtresi 2
-    if(catIdx2>=0&&catVal2&&(r[catIdx2]||'')!==catVal2)return;
-    const numVal=parseFloat((r[sortIdx]||'').replace(',','.'));
-    if(isNaN(numVal))return;
-    filtered.push({row:r,numVal});
-    // Periyodik budama: sadece en yüksek/düşük N kaydı tut (bellek optimizasyonu)
-    if(filtered.length>_keepMax*2){
-      if(direction==='top')filtered.sort((a,b)=>b.numVal-a.numVal);
-      else if(direction==='bottom')filtered.sort((a,b)=>a.numVal-b.numVal);
-      else filtered.sort((a,b)=>b.numVal-a.numVal); // both: keep top first
-      filtered.length=_keepMax;
-    }
-  });
+
+  // Backend sonuçları varsa, onları işle
+  if(backendRows&&backendRows.length){
+    // Backend sonuçları zaten sıralanmış ve filtrelenmiş
+    // Satırları {row: [...], numVal: n} formatına dönüştür
+    backendRows.forEach(backendRow=>{
+      const row=displayCols.map(c=>backendRow[c]||'');
+      const numVal=parseFloat((backendRow[sortVar]||'').toString().replace(',','.'));
+      if(!isNaN(numVal)){
+        filtered.push({row:row,numVal});
+      }
+    });
+  }else{
+    // JS modu: stream rows
+    streamOutputRows(r=>{
+      // Global filtreler
+      let skip=false;
+      for(let ci=0;ci<Math.min(outHeaders.length,r.length);ci++){
+        if(colFilters[outHeaders[ci]]&&!passesFilter(outHeaders[ci],r[ci]||'')){skip=true;break}
+      }
+      if(skip)return;
+      // Kategori filtresi 1
+      if(catIdx>=0&&catVal&&(r[catIdx]||'')!==catVal)return;
+      // Kategori filtresi 2
+      if(catIdx2>=0&&catVal2&&(r[catIdx2]||'')!==catVal2)return;
+      const numVal=parseFloat((r[sortIdx]||'').replace(',','.'));
+      if(isNaN(numVal))return;
+      filtered.push({row:r,numVal});
+      // Periyodik budama: sadece en yüksek/düşük N kaydı tut (bellek optimizasyonu)
+      if(filtered.length>_keepMax*2){
+        if(direction==='top')filtered.sort((a,b)=>b.numVal-a.numVal);
+        else if(direction==='bottom')filtered.sort((a,b)=>a.numVal-b.numVal);
+        else filtered.sort((a,b)=>b.numVal-a.numVal); // both: keep top first
+        filtered.length=_keepMax;
+      }
+    });
+  }
+
   if(!filtered.length){area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px">Seçilen kriterlere uygun veri bulunamadı.</p>';return}
   // Sırala
   let html='';
@@ -7956,6 +8024,34 @@ function renderTopBottomGroupData(){
   const sortCol=_grpSortColOverride||(document.getElementById('tbGrpDepVar')?document.getElementById('tbGrpDepVar').value:''); // boş = tümü
   const direction=document.getElementById('tbGrpDirection')?document.getElementById('tbGrpDirection').value:'top';
   const metric=document.getElementById('tbGrpMetric')?document.getElementById('tbGrpMetric').value:'mean';
+  const _tbFcCol=document.getElementById('tbGrpFreqCriterion')?document.getElementById('tbGrpFreqCriterion').value:'';
+
+  // Backend modu: try backend first
+  if(window._BACKEND_ACTIVE){
+    (async ()=>{
+      try{
+        area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px"><span class="computing-spinner"></span> Python motorunda hesaplanıyor...</p>';
+        const numCols=outHeaders.filter(h=>colStats[h]&&colStats[h].isNumeric);
+        const result=await window._backendGroupAnalysis(indepVar,subVar,numCols,metric,direction,20,_tbFcCol);
+        if(result&&result.groups){
+          return renderTopBottomGroupDataJS(area,indepVar,subVar,direction,metric,result);
+        }
+      }catch(e){
+        console.warn('[GroupAnalysis] Backend hatası, JS fallback:',e);
+      }
+      // Fallback to JS
+      renderTopBottomGroupDataJS(area,indepVar,subVar,direction,metric);
+    })();
+    return;
+  }
+
+  // JS modu: directly use JS implementation
+  renderTopBottomGroupDataJS(area,indepVar,subVar,direction,metric);
+}
+
+function renderTopBottomGroupDataJS(area,indepVar,subVar,direction,metric,backendResult){
+  const sortCol=_grpSortColOverride||(document.getElementById('tbGrpDepVar')?document.getElementById('tbGrpDepVar').value:'');
+  const _tbFcCol=document.getElementById('tbGrpFreqCriterion')?document.getElementById('tbGrpFreqCriterion').value:'';
   const indepIdx=outHeaders.indexOf(indepVar);
   const subIdx=subVar?outHeaders.indexOf(subVar):-1;
   if(indepIdx<0){area.innerHTML='<p class="text-sm text-muted">Sütun bulunamadı.</p>';return}
@@ -7986,61 +8082,95 @@ function renderTopBottomGroupData(){
   const _tbFcCol=document.getElementById('tbGrpFreqCriterion')?document.getElementById('tbGrpFreqCriterion').value:'';
   const _tbFcIdx=_tbFcCol?outHeaders.indexOf(_tbFcCol):-1;
 
-  // ── Veriyi grupla — TÜM satırları stream ederek (sınırsız) ──
-  // groups[indepVal] = {acc: makeAcc(), subs: {subVal: makeAcc()}}
-  area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px"><span class="computing-spinner"></span> Tüm veriler hesaplanıyor...</p>';
-  const groups={};
-  let _totalProcessed=0;
-  streamOutputRows(r=>{
-    let skip=false;
-    for(let ci=0;ci<Math.min(outHeaders.length,r.length);ci++){
-      if(colFilters[outHeaders[ci]]&&!passesFilter(outHeaders[ci],r[ci]||'')){skip=true;break}
-    }
-    if(skip)return;
-    _totalProcessed++;
-    const indepVal=r[indepIdx]||'(Boş)';
-    if(!groups[indepVal]){groups[indepVal]={acc:makeAcc(),subs:{}};if(_tbFcIdx>=0)groups[indepVal].acc._dset=new Set()}
-    const grp=groups[indepVal];
-    // Her sayısal sütun için değer topla
-    for(const h of numCols){
-      const v=parseFloat((r[numIdxMap[h]]||'').replace(',','.'));
-      if(!isNaN(v))pushVal(grp.acc,h,v);
-    }
-    grp.acc._n++;
-    // Distinct count for frequency criterion
-    if(_tbFcIdx>=0){const fv=r[_tbFcIdx]||'';if(fv)grp.acc._dset.add(fv);grp.acc._distinctN=grp.acc._dset.size}
-    // Alt kırılım
-    if(subIdx>=0){
-      const subVal=r[subIdx]||'(Boş)';
-      if(!grp.subs[subVal]){grp.subs[subVal]=makeAcc();if(_tbFcIdx>=0)grp.subs[subVal]._dset=new Set()}
-      const sg=grp.subs[subVal];
+  // ── Backend sonuçlarını kullan veya stream et ──
+  let groups={};
+  let entries=[];
+
+  if(backendResult&&backendResult.groups){
+    // Backend sonuçlarını entries'e dönüştür
+    const statRow=(s)=>({mean:s.mean||0,median:s.median||0,std:s.std||0,min:s.min||0,max:s.max||0,sum:s.sum||0,count:s.count||0,metric:s[metric]||0});
+
+    Object.entries(backendResult.groups).forEach(([key,g])=>{
+      const stats={};
+      numCols.forEach(h=>{
+        if(g[h]){
+          stats[h]=statRow(g[h]);
+        }
+      });
+
+      let subEntries=[];
+      if(g.subs&&Object.keys(g.subs).length>0){
+        subEntries=Object.entries(g.subs).map(([sk,sg])=>{
+          const ss={};
+          numCols.forEach(h=>{
+            if(sg[h]){
+              ss[h]=statRow(sg[h]);
+            }
+          });
+          return{key:sk,stats:ss,sortMetric:ss[numCols[0]]?.metric||0,rowCount:sg._freq||0,distinctN:sg._distinct_n||0};
+        });
+      }
+
+      const sortMetric=stats[numCols[0]]?.metric||0;
+      entries.push({key,stats,sortMetric:sortMetric,rowCount:g._freq||0,distinctN:g._distinct_n||0,subs:subEntries});
+    });
+  }else{
+    // JS modu: TÜM satırları stream ederek (sınırsız)
+    // groups[indepVal] = {acc: makeAcc(), subs: {subVal: makeAcc()}}
+    groups={};
+    let _totalProcessed=0;
+    streamOutputRows(r=>{
+      let skip=false;
+      for(let ci=0;ci<Math.min(outHeaders.length,r.length);ci++){
+        if(colFilters[outHeaders[ci]]&&!passesFilter(outHeaders[ci],r[ci]||'')){skip=true;break}
+      }
+      if(skip)return;
+      _totalProcessed++;
+      const indepVal=r[indepIdx]||'(Boş)';
+      if(!groups[indepVal]){groups[indepVal]={acc:makeAcc(),subs:{}};if(_tbFcIdx>=0)groups[indepVal].acc._dset=new Set()}
+      const grp=groups[indepVal];
+      // Her sayısal sütun için değer topla
       for(const h of numCols){
         const v=parseFloat((r[numIdxMap[h]]||'').replace(',','.'));
-        if(!isNaN(v))pushVal(sg,h,v);
+        if(!isNaN(v))pushVal(grp.acc,h,v);
       }
-      sg._n++;
-      if(_tbFcIdx>=0){const fv=r[_tbFcIdx]||'';if(fv)sg._dset.add(fv);sg._distinctN=sg._dset.size}
-    }
-  });
+      grp.acc._n++;
+      // Distinct count for frequency criterion
+      if(_tbFcIdx>=0){const fv=r[_tbFcIdx]||'';if(fv)grp.acc._dset.add(fv);grp.acc._distinctN=grp.acc._dset.size}
+      // Alt kırılım
+      if(subIdx>=0){
+        const subVal=r[subIdx]||'(Boş)';
+        if(!grp.subs[subVal]){grp.subs[subVal]=makeAcc();if(_tbFcIdx>=0)grp.subs[subVal]._dset=new Set()}
+        const sg=grp.subs[subVal];
+        for(const h of numCols){
+          const v=parseFloat((r[numIdxMap[h]]||'').replace(',','.'));
+          if(!isNaN(v))pushVal(sg,h,v);
+        }
+        sg._n++;
+        if(_tbFcIdx>=0){const fv=r[_tbFcIdx]||'';if(fv)sg._dset.add(fv);sg._distinctN=sg._dset.size}
+      }
+    });
+
+    // Entries oluştur
+    entries=Object.entries(groups).map(([key,g])=>{
+      const stats={};
+      numCols.forEach(h=>{stats[h]=statRow(g.acc[h])});
+      // Alt gruplar
+      let subEntries=[];
+      if(subIdx>=0){
+        subEntries=Object.entries(g.subs).map(([sk,sg])=>{
+          const ss={};numCols.forEach(h=>{ss[h]=statRow(sg[h])});
+          return{key:sk,stats:ss,sortMetric:ss[sortKey].metric,rowCount:sg._n,distinctN:sg._distinctN||0};
+        });
+      }
+      const _dn=g.acc._distinctN||0;
+      return{key,stats,sortMetric:stats[sortKey].metric,rowCount:g.acc._n,distinctN:_dn,subs:subEntries};
+    });
+  }
   // Sıralama sütununu belirle: seçili ise o, değilse ilk sayısal
   const sortKey=sortCol&&numCols.includes(sortCol)?sortCol:numCols[0];
   const metricLabel={mean:'Ort.',max:'Maks',min:'Min',median:'Med.',sum:'Top.',count:'Sayı (n)'}[metric]||'Ort.';
   const metricLabelFull={mean:'Ortalama',max:'Maksimum',min:'Minimum',median:'Medyan',sum:'Toplam',count:'Sayı (n)'}[metric]||'Ortalama';
-  // Entries oluştur
-  let entries=Object.entries(groups).map(([key,g])=>{
-    const stats={};
-    numCols.forEach(h=>{stats[h]=statRow(g.acc[h])});
-    // Alt gruplar
-    let subEntries=[];
-    if(subIdx>=0){
-      subEntries=Object.entries(g.subs).map(([sk,sg])=>{
-        const ss={};numCols.forEach(h=>{ss[h]=statRow(sg[h])});
-        return{key:sk,stats:ss,sortMetric:ss[sortKey].metric,rowCount:sg._n,distinctN:sg._distinctN||0};
-      });
-    }
-    const _dn=g.acc._distinctN||0;
-    return{key,stats,sortMetric:stats[sortKey].metric,rowCount:g.acc._n,distinctN:_dn,subs:subEntries};
-  });
   if(!entries.length){area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px">Seçilen kriterlere uygun veri bulunamadı.</p>';return}
   const fmt=(v)=>typeof v==='number'?v.toLocaleString('tr-TR',{maximumFractionDigits:2}):'—';
   let html='';
@@ -8322,6 +8452,123 @@ function renderSummaryStatsTable(){
 
   area.innerHTML='<div style="text-align:center;padding:20px;color:#64748b"><span class="computing-spinner"></span> Hesaplanıyor...</div>';
 
+  // === PYTHON MOTOR: Backend for summary stats ===
+  if(window._BACKEND_ACTIVE && typeof window._backendGroupStats==='function'){
+    (async()=>{
+      try{
+        // Sync filters
+        const anyF=outHeaders.some(h=>hasActiveFilter(h));
+        if(anyF&&typeof window._backendSetFilters==='function'){
+          const fObj=_getActiveFiltersObj();
+          await window._backendSetFilters(fObj);
+        }else if(!anyF&&typeof window._backendSetFilters==='function'){
+          await window._backendSetFilters({});
+        }
+
+        // Process each cat column
+        let html='';
+        for(const catCol of catCols){
+          const result=await window._backendGroupStats(catCol,numCols);
+          if(result&&result.groups){
+            const groups=result.groups;
+            const sortedKeys=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr'));
+
+            html+='<div style="margin-bottom:24px"><h3 style="font-size:15px;margin-bottom:8px;display:flex;align-items:center;gap:6px">'+escHtml(catCol)+' <span class="tag tag-cat" style="font-size:9px">K</span> <span style="font-size:11px;color:#64748b;font-weight:400">('+sortedKeys.length+' grup)</span></h3>';
+            const tblId='summTbl_'+catCol.replace(/[^a-zA-Z0-9]/g,'_');
+            html+='<div style="overflow-x:auto;max-height:600px;overflow-y:auto"><table id="'+tblId+'" style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>';
+            html+='<th class="sortable-th" data-sort-col="cat" data-tbl="'+tblId+'" style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;min-width:120px;cursor:pointer;user-select:none" onclick="sortSummaryTable(this)">'+escHtml(catCol)+' <span class="sort-icon">⇅</span></th>';
+            html+='<th class="sortable-th" data-sort-col="freq" data-tbl="'+tblId+'" style="position:sticky;top:0;background:#f1f5f9;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center;min-width:50px;cursor:pointer;user-select:none" onclick="sortSummaryTable(this)">n <span class="sort-icon">⇅</span></th>';
+            numCols.forEach(numCol=>{
+              html+='<th colspan="4" style="position:sticky;top:0;background:#dbeafe;z-index:2;padding:8px 10px;border:1px solid #e2e8f0;text-align:center">'+escHtml(numCol)+'</th>';
+            });
+            html+='</tr><tr>';
+            html+='<th style="position:sticky;top:28px;background:#f1f5f9;z-index:1;padding:4px 10px;border:1px solid #e2e8f0"></th>';
+            html+='<th style="position:sticky;top:28px;background:#f1f5f9;z-index:1;padding:4px 10px;border:1px solid #e2e8f0;text-align:center;font-size:10px">n</th>';
+            numCols.forEach((numCol,nIdx)=>{
+              html+='<th class="sortable-th" data-sort-col="avg_'+nIdx+'" data-tbl="'+tblId+'" style="position:sticky;top:28px;background:#e0f2fe;z-index:1;padding:4px 6px;border:1px solid #e2e8f0;text-align:center;font-size:10px;min-width:70px;cursor:pointer;user-select:none" onclick="sortSummaryTable(this)">Ort. <span class="sort-icon">⇅</span></th>';
+              html+='<th class="sortable-th" data-sort-col="med_'+nIdx+'" data-tbl="'+tblId+'" style="position:sticky;top:28px;background:#e0f2fe;z-index:1;padding:4px 6px;border:1px solid #e2e8f0;text-align:center;font-size:10px;min-width:70px;cursor:pointer;user-select:none" onclick="sortSummaryTable(this)">Medyan <span class="sort-icon">⇅</span></th>';
+              html+='<th style="position:sticky;top:28px;background:#e0f2fe;z-index:1;padding:4px 6px;border:1px solid #e2e8f0;text-align:center;font-size:10px;min-width:70px">Std.S.</th>';
+              html+='<th style="position:sticky;top:28px;background:#e0f2fe;z-index:1;padding:4px 6px;border:1px solid #e2e8f0;text-align:center;font-size:10px;min-width:70px">Min-Max</th>';
+            });
+            html+='</tr></thead><tbody>';
+
+            // Compute global min/max per numCol
+            const globalStats={};
+            numCols.forEach(numCol=>{
+              let allAvgs=[];
+              sortedKeys.forEach(k=>{const d=groups[k][numCol];if(d&&d.count>0)allAvgs.push(d.mean)});
+              const mn=Math.min(...allAvgs),mx=Math.max(...allAvgs);
+              globalStats[numCol]={min:mn,max:mx,range:mx-mn};
+            });
+
+            sortedKeys.forEach(catVal=>{
+              const g=groups[catVal];
+              const n=g._freq;
+              html+='<tr>';
+              html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:500;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis" title="'+escHtml(catVal)+'">'+escHtml(catVal)+'</td>';
+              html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;color:#64748b">'+n.toLocaleString('tr-TR')+'</td>';
+              numCols.forEach(numCol=>{
+                const d=g[numCol];
+                if(!d||d.count===0){
+                  html+='<td style="padding:6px;border:1px solid #e2e8f0;text-align:center;color:#cbd5e1">—</td>'.repeat(4);
+                  return;
+                }
+                const avg=d.mean||0,med=d.median||0,std=d.std||0,mn=d.min||0,mx=d.max||0;
+                const gs=globalStats[numCol];
+                let bgColor='#fff';
+                if(gs&&gs.range>0){
+                  const ratio=Math.max(0,Math.min(1,(avg-gs.min)/gs.range));
+                  let r,gr,b;
+                  if(ratio<0.5){const t=ratio/0.5;r=220;gr=Math.round(60+160*t);b=Math.round(60*t)}
+                  else{const t=(ratio-0.5)/0.5;r=Math.round(220-180*t);gr=Math.round(220-40*t);b=Math.round(60-20*t)}
+                  bgColor='rgba('+r+','+gr+','+b+',0.15)';
+                }
+                html+='<td style="padding:6px;border:1px solid #e2e8f0;text-align:center;background:'+bgColor+';font-weight:600">'+avg.toFixed(2)+'</td>';
+                html+='<td style="padding:6px;border:1px solid #e2e8f0;text-align:center">'+med.toFixed(2)+'</td>';
+                html+='<td style="padding:6px;border:1px solid #e2e8f0;text-align:center;color:#64748b">'+std.toFixed(2)+'</td>';
+                html+='<td style="padding:6px;border:1px solid #e2e8f0;text-align:center;font-size:10px;color:#94a3b8">'+mn.toFixed(1)+'—'+mx.toFixed(1)+'</td>';
+              });
+              html+='</tr>';
+            });
+
+            // TOPLAM row
+            html+='<tr style="font-weight:700;background:#f1f5f9"><td style="padding:6px 10px;border:1px solid #e2e8f0">TOPLAM / GENEL</td>';
+            const totalN=Object.values(groups).reduce((s,g)=>s+g._freq,0);
+            html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center">'+totalN.toLocaleString('tr-TR')+'</td>';
+            numCols.forEach(numCol=>{
+              let tSum=0,tSumSq=0,tCount=0,tMn=Infinity,tMx=-Infinity;
+              Object.values(groups).forEach(g=>{
+                const d=g[numCol];if(!d||!d.count)return;
+                tSum+=d.count*d.mean;tCount+=d.count;
+                if(d.min<tMn)tMn=d.min;if(d.max>tMx)tMx=d.max;
+              });
+              if(!tCount){html+='<td style="padding:6px;border:1px solid #e2e8f0;text-align:center">—</td>'.repeat(4);return}
+              const tAvg=tSum/tCount;
+              html+='<td style="padding:6px;border:1px solid #e2e8f0;text-align:center;font-weight:700">'+tAvg.toFixed(2)+'</td>';
+              html+='<td style="padding:6px;border:1px solid #e2e8f0;text-align:center;font-weight:700">—</td>';
+              html+='<td style="padding:6px;border:1px solid #e2e8f0;text-align:center;font-weight:700">—</td>';
+              html+='<td style="padding:6px;border:1px solid #e2e8f0;text-align:center;font-size:10px;font-weight:700">'+tMn.toFixed(1)+'—'+tMx.toFixed(1)+'</td>';
+            });
+            html+='</tr></tbody></table></div></div>';
+          }
+        }
+
+        if(!html)html='<p class="text-sm text-muted">Sonuç bulunamadı.</p>';
+        area.innerHTML=html;
+      }catch(e){
+        console.warn('[SUMMARY] Backend hatası, JS fallback:',e);
+        _renderSummaryStatsJS(catCols,numCols);
+      }
+    })();
+    return;
+  }
+
+  // Fallback to JS
+  _renderSummaryStatsJS(catCols,numCols);
+}
+
+function _renderSummaryStatsJS(catCols,numCols){
+  const area=document.getElementById('summaryStatsTableArea');
   setTimeout(()=>{
     // Build index maps
     const catIndices=catCols.map(h=>({col:h,idx:outHeaders.indexOf(h)})).filter(c=>c.idx>=0);
@@ -8620,17 +8867,90 @@ function computeCorrelationMatrix(){
   const area=document.getElementById('corrMatrixArea');
   if(!_hasOutputData()){area.innerHTML=_noDataHTML();return}
   area.innerHTML='<p class="text-sm" style="color:#3b82f6">Hesaplanıyor...</p>';
+
+  // === PYTHON MOTOR: Use backend for full data correlation ===
+  if(window._BACKEND_ACTIVE && typeof window._backendCorrelation==='function'){
+    (async()=>{
+      try{
+        const numCols=outHeaders.filter(h=>colStats[h]&&colStats[h].isNumeric&&colStats[h].numCount>0);
+        if(numCols.length<2){area.innerHTML='<p class="text-sm text-muted">En az 2 sayısal sütun gerekli.</p>';return}
+
+        // Sync filters
+        const anyF=outHeaders.some(h=>hasActiveFilter(h));
+        if(anyF&&typeof window._backendSetFilters==='function'){
+          const fObj=_getActiveFiltersObj();
+          await window._backendSetFilters(fObj);
+        }else if(!anyF&&typeof window._backendSetFilters==='function'){
+          await window._backendSetFilters({});
+        }
+
+        const result=await window._backendCorrelation(numCols);
+        if(result&&result.matrix&&result.columns){
+          console.log('[CORR] Backend: '+result.columns.length+' sütun');
+          _renderCorrelationUI(result.matrix,result.columns,anyF);
+          return;
+        }
+        console.warn('[CORR] Backend başarısız, JS fallback...',result?.error);
+      }catch(e){
+        console.warn('[CORR] Backend hatası, JS fallback:',e);
+      }
+      // Fallback to JS
+      _computeCorrelationJS();
+    })();
+    return;
+  }
+
+  _computeCorrelationJS();
+}
+
+function _renderCorrelationUI(matrix,columns,anyFilter){
+  const area=document.getElementById('corrMatrixArea');
+  const filterBannerCorr=anyFilter?'<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#92400e">🔍 <strong>Filtre aktif</strong> — Korelasyon matrisi filtrelenmiş veriye göre hesaplanmıştır.</div>':'';
+  let html=filterBannerCorr+'<table class="corr-matrix"><thead><tr><th></th>';
+  columns.forEach(h=>{html+='<th title="'+escHtml(h)+'">'+escHtml(h.substring(0,10))+'</th>'});
+  html+='</tr></thead><tbody>';
+  columns.forEach((h,i)=>{
+    html+='<tr><th style="text-align:left" title="'+escHtml(h)+'">'+escHtml(h.substring(0,10))+'</th>';
+    for(let j=0;j<columns.length;j++){
+      const v=matrix[i][j];
+      const color=isNaN(v)?'#f1f5f9':v>0.7?'#dcfce7':v>0.3?'#f0fdf4':v<-0.7?'#fee2e2':v<-0.3?'#fef2f2':'#fff';
+      html+='<td style="background:'+color+';font-weight:'+(i===j?'400':'600')+'">'+(!isNaN(v)?v.toFixed(2):'-')+'</td>';
+    }
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  html+='<div class="flex gap-12 mt-12" style="font-size:11px;color:#64748b">';
+  html+='<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:#dcfce7;border-radius:2px"></span> Guclu pozitif (>0.7)</span>';
+  html+='<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:#fee2e2;border-radius:2px"></span> Guclu negatif (<-0.7)</span>';
+  html+='</div>';
+  html+='<div style="margin-top:12px;padding:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;line-height:1.6;color:#166534">';
+  html+='<strong>Korelasyon Matrisi Yorumlama Rehberi:</strong><br>';
+  html+='• <b>r = 1.00</b>: Tam pozitif ilişki (biri artarken diğeri de artar)<br>';
+  html+='• <b>0.70 – 0.99</b>: Güçlü pozitif ilişki<br>';
+  html+='• <b>0.40 – 0.69</b>: Orta düzey pozitif ilişki<br>';
+  html+='• <b>0.10 – 0.39</b>: Zayıf pozitif ilişki<br>';
+  html+='• <b>0.00</b>: İlişki yok<br>';
+  html+='• <b>-0.10 – -0.39</b>: Zayıf negatif ilişki<br>';
+  html+='• <b>-0.40 – -0.69</b>: Orta düzey negatif ilişki<br>';
+  html+='• <b>-0.70 – -1.00</b>: Güçlü negatif ilişki (biri artarken diğeri azalır)<br>';
+  html+='<i>Not: Korelasyon nedensellik anlamına gelmez. İki değişken arasında ilişki olması, birinin diğerini etkilediğini göstermez.</i>';
+  html+='</div>';
+  html+='<button class="btn mt-8" onclick="llmInterpretSection(\'corr\')" title="Bu tabloyu yapay zeka ile yorumlat" style="width:100%;background:#7c3aed;color:#fff;border:none;font-size:12px;padding:8px">🤖 LLM ile Yorumlat</button>';
+  html+='<div id="llmInterpretCorr" style="margin-top:8px"></div>';
+  area.innerHTML=html;
+}
+
+function _computeCorrelationJS(){
+  const area=document.getElementById('corrMatrixArea');
   setTimeout(()=>{
     const anyFilter=outHeaders.some(h=>hasActiveFilter(h));
     const numCols=outHeaders.filter(h=>colStats[h]&&colStats[h].isNumeric&&colStats[h].numCount>0);
     if(numCols.length<2){area.innerHTML='<p class="text-sm text-muted">En az 2 sayısal sütun gerekli.</p>';return}
     const indices=numCols.map(h=>outHeaders.indexOf(h));
-    // Collect running sums for EXACT Pearson correlation — streams ALL rows
     const arrays=indices.map(()=>({sum:0,sumSq:0,n:0}));
     const pairSums={};
     let filteredRowCount=0;
     streamOutputRows(row=>{
-      // Apply filters
       if(anyFilter){let skip=false;for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){if(colFilters[outHeaders[fi]]&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}}if(skip)return}
       filteredRowCount++;
       const nums=indices.map(idx=>{const v=(row[idx]||'').replace(',','.');return parseFloat(v)});
@@ -8647,7 +8967,6 @@ function computeCorrelationMatrix(){
         }
       }
     });
-    // Build matrix
     const matrix=Array.from({length:numCols.length},()=>Array(numCols.length).fill(1));
     for(let a=0;a<numCols.length;a++){
       for(let b=a+1;b<numCols.length;b++){
@@ -8657,42 +8976,7 @@ function computeCorrelationMatrix(){
         matrix[a][b]=matrix[b][a]=isNaN(r)?0:r;
       }
     }
-    // Render
-    const filterBannerCorr=anyFilter?'<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#92400e">🔍 <strong>Filtre aktif</strong> — Korelasyon matrisi '+filteredRowCount+' filtrelenmiş satıra göre hesaplanmıştır.</div>':'';
-    let html=filterBannerCorr+'<table class="corr-matrix"><thead><tr><th></th>';
-    numCols.forEach(h=>{html+='<th title="'+escHtml(h)+'">'+escHtml(h.substring(0,10))+'</th>'});
-    html+='</tr></thead><tbody>';
-    numCols.forEach((h,i)=>{
-      html+='<tr><th style="text-align:left" title="'+escHtml(h)+'">'+escHtml(h.substring(0,10))+'</th>';
-      for(let j=0;j<numCols.length;j++){
-        const v=matrix[i][j];
-        const color=isNaN(v)?'#f1f5f9':v>0.7?'#dcfce7':v>0.3?'#f0fdf4':v<-0.7?'#fee2e2':v<-0.3?'#fef2f2':'#fff';
-        html+='<td style="background:'+color+';font-weight:'+(i===j?'400':'600')+'">'+(!isNaN(v)?v.toFixed(2):'-')+'</td>';
-      }
-      html+='</tr>';
-    });
-    html+='</tbody></table>';
-    html+='<div class="flex gap-12 mt-12" style="font-size:11px;color:#64748b">';
-    html+='<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:#dcfce7;border-radius:2px"></span> Guclu pozitif (>0.7)</span>';
-    html+='<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:#fee2e2;border-radius:2px"></span> Guclu negatif (<-0.7)</span>';
-    html+='</div>';
-    // Interpretation guide
-    html+='<div style="margin-top:12px;padding:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;line-height:1.6;color:#166534">';
-    html+='<strong>Korelasyon Matrisi Yorumlama Rehberi:</strong><br>';
-    html+='• <b>r = 1.00</b>: Tam pozitif ilişki (biri artarken diğeri de artar)<br>';
-    html+='• <b>0.70 – 0.99</b>: Güçlü pozitif ilişki<br>';
-    html+='• <b>0.40 – 0.69</b>: Orta düzey pozitif ilişki<br>';
-    html+='• <b>0.10 – 0.39</b>: Zayıf pozitif ilişki<br>';
-    html+='• <b>0.00</b>: İlişki yok<br>';
-    html+='• <b>-0.10 – -0.39</b>: Zayıf negatif ilişki<br>';
-    html+='• <b>-0.40 – -0.69</b>: Orta düzey negatif ilişki<br>';
-    html+='• <b>-0.70 – -1.00</b>: Güçlü negatif ilişki (biri artarken diğeri azalır)<br>';
-    html+='<i>Not: Korelasyon nedensellik anlamına gelmez. İki değişken arasında ilişki olması, birinin diğerini etkilediğini göstermez.</i>';
-    html+='</div>';
-    // LLM interpret button
-    html+='<button class="btn mt-8" onclick="llmInterpretSection(\'corr\')" title="Bu tabloyu yapay zeka ile yorumlat" style="width:100%;background:#7c3aed;color:#fff;border:none;font-size:12px;padding:8px">🤖 LLM ile Yorumlat</button>';
-    html+='<div id="llmInterpretCorr" style="margin-top:8px"></div>';
-    area.innerHTML=html;
+    _renderCorrelationUI(matrix,numCols,anyFilter);
   },50);
 }
 
@@ -8710,6 +8994,172 @@ function computeCrossTab(){
   area.innerHTML='<p class="text-sm" style="color:#3b82f6"><span class="computing-spinner"></span> Hesaplanıyor...</p>';
   const exportBtn=document.getElementById('ctExportBtn');
   if(exportBtn)exportBtn.style.display='none';
+
+  // === PYTHON MOTOR: Backend'den tam veri ile çapraz tablo hesapla ===
+  if(window._BACKEND_ACTIVE && typeof window._backendCrosstab==='function'){
+    (async()=>{
+      try{
+        // Önce filtreleri senkronize et
+        const anyF=outHeaders.some(h=>hasActiveFilter(h));
+        if(anyF&&typeof window._backendSetFilters==='function'){
+          const fObj=_getActiveFiltersObj();
+          await window._backendSetFilters(fObj);
+        }else if(!anyF&&typeof window._backendSetFilters==='function'){
+          await window._backendSetFilters({});
+        }
+        const t0=performance.now();
+        const result=await window._backendCrosstab(rowCol,colCol,valCol||'',aggType||'count');
+        if(result&&!result.error&&result.rows&&result.rows.length>0){
+          // Backend başarılı — tam veri üzerinden hesaplandı
+          console.log('[CROSSTAB] Backend: '+result.row_count+' satır × '+(result.headers.length-1)+' sütun');
+          const hdrs=result.headers; // ilk header = rowCol, geri kalanı colVal'lar
+          const rowKey=hdrs[0]; // row_col adı
+          const cArr=hdrs.slice(1); // col values
+          const rArr=result.rows.map(r=>String(r[rowKey]||''));
+          const rowMap=new Map();
+          const colValsSet=new Set(cArr);
+          // grid ve rowMap oluştur
+          const grid=[];
+          let globalMin=Infinity,globalMax=-Infinity;
+          for(let r=0;r<result.rows.length;r++){
+            const row=result.rows[r];
+            const rv=String(row[rowKey]||'');
+            const rMap=new Map();
+            const gRow=new Array(cArr.length);
+            for(let c=0;c<cArr.length;c++){
+              const v=row[cArr[c]];
+              const nv=(v!==null&&v!==undefined)?Number(v):null;
+              if(nv!==null){rMap.set(cArr[c],{count:nv,sum:nv,n:nv?1:0})}
+              gRow[c]=nv;
+              if(nv!==null){if(nv<globalMin)globalMin=nv;if(nv>globalMax)globalMax=nv}
+            }
+            rowMap.set(rv,rMap);
+            grid.push(gRow);
+          }
+          _lastCrossTab={rowCol,colCol,aggType,valCol,rArr,cArr,grid,rowMap};
+          _renderCrossTabUI(rArr,cArr,grid,rowMap,globalMin,globalMax,aggType,rowCol,colCol,t0);
+          return;
+        }
+        console.warn('[CROSSTAB] Backend başarısız, JS fallback...',result?.error);
+      }catch(e){
+        console.warn('[CROSSTAB] Backend hatası, JS fallback:',e);
+      }
+      // Fallback: JS ile hesapla
+      _computeCrossTabJS(rowCol,colCol,aggType,valCol);
+    })();
+    return;
+  }
+  _computeCrossTabJS(rowCol,colCol,aggType,valCol);
+}
+
+// Shared UI renderer for cross-tab (used by both backend and JS)
+function _renderCrossTabUI(rArr,cArr,grid,rowMap,globalMin,globalMax,aggType,rowCol,colCol,t0){
+  const area=document.getElementById('crossTabArea');
+  const exportBtn=document.getElementById('ctExportBtn');
+
+  // Helper: format cell value
+  function cellDisplay(v){
+    if(v===null||v===undefined)return'-';
+    return typeof v==='number'?v.toLocaleString('tr-TR',{maximumFractionDigits:2}):String(v);
+  }
+
+  // Helper: heatmap color
+  function heatColor(v){
+    const range=globalMax-globalMin;
+    if(v===null||range===0)return '#fff';
+    const ratio=Math.max(0,Math.min(1,(v-globalMin)/range));
+    let r,g,b;
+    if(ratio<0.5){const t=ratio/0.5;r=220;g=Math.round(60+160*t);b=Math.round(30+20*t)}
+    else{const t=(ratio-0.5)/0.5;r=Math.round(220-180*t);g=Math.round(220-40*t);b=Math.round(50-20*t)}
+    return 'rgba('+r+','+g+','+b+',0.35)';
+  }
+
+  const elapsed=((performance.now()-t0)/1000).toFixed(1);
+
+  // Build HTML
+  const parts=[];
+  parts.push('<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">');
+  parts.push('<span style="font-size:12px;color:#334155"><strong>'+rArr.length+'</strong> satır x <strong>'+cArr.length+'</strong> sütun <span style="font-size:10px;color:#94a3b8">('+elapsed+'s)</span></span>');
+  parts.push('<div style="display:flex;align-items:center;gap:8px;font-size:10px">');
+  parts.push('<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:14px;height:10px;background:rgba(220,60,0,0.25);border-radius:2px"></span> Düşük</span>');
+  parts.push('<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:14px;height:10px;background:rgba(220,220,60,0.25);border-radius:2px"></span> Orta</span>');
+  parts.push('<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:14px;height:10px;background:rgba(40,180,40,0.25);border-radius:2px"></span> Yüksek</span>');
+  parts.push('</div></div>');
+
+  parts.push('<div style="overflow:auto;max-height:75vh;border:1px solid #e2e8f0;border-radius:8px;contain:layout style;will-change:scroll-position">');
+  parts.push('<table class="corr-matrix" style="font-size:13px;border-collapse:collapse;width:max-content;content-visibility:auto">');
+
+  // Pre-compute raw sums + header counts
+  const rowRaw=new Array(rArr.length);
+  const colRaw=new Array(cArr.length);
+  const rowNonNull=new Array(rArr.length).fill(0);
+  const colNonNull=new Array(cArr.length).fill(0);
+  for(let c=0;c<cArr.length;c++)colRaw[c]={sum:0,n:0,count:0};
+  let grandRaw={sum:0,n:0,count:0};
+  for(let r=0;r<rArr.length;r++){
+    rowRaw[r]={sum:0,n:0,count:0};
+    const rMap=rowMap.get(rArr[r]);
+    for(let c=0;c<cArr.length;c++){
+      const d=rMap?rMap.get(cArr[c]):null;
+      if(d){
+        rowRaw[r].sum+=d.sum;rowRaw[r].n+=d.n;rowRaw[r].count+=d.count;
+        colRaw[c].sum+=d.sum;colRaw[c].n+=d.n;colRaw[c].count+=d.count;
+        grandRaw.sum+=d.sum;grandRaw.n+=d.n;grandRaw.count+=d.count;
+        rowNonNull[r]++;colNonNull[c]++;
+      }
+    }
+  }
+
+  // Header
+  parts.push('<thead><tr><th style="position:sticky;left:0;top:0;z-index:3;background:#f1f5f9;min-width:140px;max-width:260px;white-space:normal;word-break:break-word;padding:6px 10px;font-size:13px">'+escHtml(rowCol)+' \\ '+escHtml(colCol)+'</th>');
+  for(let c=0;c<cArr.length;c++){
+    const cv=cArr[c];
+    const cCnt=colNonNull[c];
+    parts.push('<th style="position:sticky;top:0;z-index:2;background:#f1f5f9;white-space:normal;word-break:break-word;min-width:80px;max-width:180px;padding:6px 10px;font-size:13px;font-weight:600" title="'+escHtml(cv)+' ('+cCnt+' satırda)">'+escHtml(cv)+' <span style="color:#6366f1;font-size:11px;font-weight:400">('+cCnt+')</span></th>');
+  }
+  const margLabel=aggType==='count'?'TOPLAM':aggType==='sum'?'TOPLAM':(aggType==='avg'||aggType==='mean')?'ORT.':'TOPLAM';
+  parts.push('<th style="position:sticky;top:0;right:0;z-index:3;background:#dbeafe;font-weight:700;min-width:80px;padding:6px 10px;font-size:13px">'+margLabel+'</th></tr></thead>');
+
+  function marginalVal(raw){
+    if(aggType==='count')return raw.count;
+    if(aggType==='sum')return +raw.sum.toFixed(2);
+    if(aggType==='avg'||aggType==='mean')return raw.n>0?+(raw.sum/raw.n).toFixed(2):null;
+    return raw.count;
+  }
+
+  // Body
+  parts.push('<tbody>');
+  for(let r=0;r<rArr.length;r++){
+    const rv=rArr[r];
+    const rCnt=rowNonNull[r];
+    parts.push('<tr><th style="position:sticky;left:0;z-index:1;background:#f8fafc;text-align:left;font-weight:600;white-space:normal;word-break:break-word;min-width:120px;max-width:260px;padding:6px 10px;font-size:13px" title="'+escHtml(rv)+' ('+rCnt+' sütunda)">'+escHtml(rv)+' <span style="color:#6366f1;font-size:11px;font-weight:400">('+rCnt+')</span></th>');
+    for(let c=0;c<cArr.length;c++){
+      const v=grid[r][c];
+      parts.push('<td style="background:'+heatColor(v)+';text-align:right;padding:5px 8px;white-space:nowrap;font-variant-numeric:tabular-nums">'+cellDisplay(v)+'</td>');
+    }
+    const rowMarg=marginalVal(rowRaw[r]);
+    parts.push('<td style="background:#dbeafe;font-weight:600;text-align:right;padding:5px 8px;white-space:nowrap;position:sticky;right:0">'+cellDisplay(rowMarg)+'</td></tr>');
+  }
+
+  // Totals
+  parts.push('<tr style="font-weight:700;background:#f1f5f9;position:sticky;bottom:0;z-index:2"><th style="position:sticky;left:0;z-index:4;background:#e2e8f0;text-align:left;padding:6px 10px;font-size:13px">'+margLabel+'</th>');
+  for(let c=0;c<cArr.length;c++){
+    const colMarg=marginalVal(colRaw[c]);
+    parts.push('<td style="text-align:right;padding:5px 8px;background:#e2e8f0;white-space:nowrap;font-weight:700">'+cellDisplay(colMarg)+'</td>');
+  }
+  const grandMarg=marginalVal(grandRaw);
+  parts.push('<td style="text-align:right;padding:5px 8px;background:#bfdbfe;font-weight:700;white-space:nowrap;position:sticky;right:0;z-index:4">'+cellDisplay(grandMarg)+'</td></tr></tbody></table></div>');
+
+  // Footer
+  parts.push('<div style="font-size:11px;color:#64748b;margin-bottom:6px">📊 '+rArr.length+' satır × '+cArr.length+' sütun</div>');
+  parts.push('<button class="btn mt-8" onclick="llmInterpretSection(\'crossTab\')" title="Bu tabloyu yapay zeka ile yorumlat" style="width:100%;background:#7c3aed;color:#fff;border:none;font-size:12px;padding:8px">\uD83E\uDD16 LLM ile Yorumlat</button>');
+  parts.push('<div id="llmInterpretCrossTab" style="margin-top:8px"></div>');
+  area.innerHTML=parts.join('');
+  if(exportBtn)exportBtn.style.display='';
+}
+
+function _computeCrossTabJS(rowCol,colCol,aggType,valCol){
+  const area=document.getElementById('crossTabArea');
 
   setTimeout(()=>{
     const t0=performance.now();
@@ -8749,135 +9199,36 @@ function computeCrossTab(){
     // Check if any data was streamed
     if(_ctRows===0){area.innerHTML=_noDataHTML();return}
 
-    // Sort rows and columns — limit for performance
+    // Sort rows and columns
     let rArr=[...rowMap.keys()].sort((a,b)=>a.localeCompare(b,'tr'));
     let cArr=[...colValsSet].sort((a,b)=>a.localeCompare(b,'tr'));
-    // Limitsiz — tüm satır ve sütunlar gösterilir (1000×100+ stabil)
-
-    // Cell value function
-    function cellVal(rMap,cv){
-      if(!rMap)return null;
-      const d=rMap.get(cv);if(!d)return null;
-      if(aggType==='count')return d.count;
-      if(aggType==='sum')return +d.sum.toFixed(2);
-      if(aggType==='avg'||aggType==='mean')return d.n>0?+(d.sum/d.n).toFixed(2):null;
-      return d.count;
-    }
-    function cellDisplay(v){
-      if(v===null||v===undefined)return'-';
-      return typeof v==='number'?v.toLocaleString('tr-TR',{maximumFractionDigits:2}):String(v);
-    }
 
     // Pre-compute grid for faster rendering and heatmap
     let globalMin=Infinity,globalMax=-Infinity;
-    const grid=[];// grid[rowIdx][colIdx] = numeric value
+    const grid=[];
     for(let r=0;r<rArr.length;r++){
       const rMap=rowMap.get(rArr[r]);
       const gRow=new Array(cArr.length);
       for(let c=0;c<cArr.length;c++){
-        const v=cellVal(rMap,cArr[c]);
+        const d=rMap?rMap.get(cArr[c]):null;
+        let v=null;
+        if(d){
+          if(aggType==='count')v=d.count;
+          else if(aggType==='sum')v=+d.sum.toFixed(2);
+          else if(aggType==='avg'||aggType==='mean')v=d.n>0?+(d.sum/d.n).toFixed(2):null;
+          else v=d.count;
+        }
         gRow[c]=v;
         if(v!==null){if(v<globalMin)globalMin=v;if(v>globalMax)globalMax=v}
       }
       grid.push(gRow);
     }
-    const range=globalMax-globalMin;
 
     // Store for export
     _lastCrossTab={rowCol,colCol,aggType,valCol,rArr,cArr,grid,rowMap};
 
-    function heatColor(v){
-      if(v===null||range===0)return '#fff';
-      const ratio=Math.max(0,Math.min(1,(v-globalMin)/range));
-      let r,g,b;
-      // Kırmızı → Sarı → Yeşil gradyan (ısı haritası)
-      if(ratio<0.5){const t=ratio/0.5;r=220;g=Math.round(60+160*t);b=Math.round(30+20*t)}
-      else{const t=(ratio-0.5)/0.5;r=Math.round(220-180*t);g=Math.round(220-40*t);b=Math.round(50-20*t)}
-      return 'rgba('+r+','+g+','+b+',0.35)';
-    }
-
-    const elapsed=((performance.now()-t0)/1000).toFixed(1);
-
-    // Build HTML using array join (faster than string concatenation)
-    const parts=[];
-    parts.push('<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">');
-    parts.push('<span style="font-size:12px;color:#334155"><strong>'+rArr.length+'</strong> satır x <strong>'+cArr.length+'</strong> sütun <span style="font-size:10px;color:#94a3b8">('+elapsed+'s)</span></span>');
-    parts.push('<div style="display:flex;align-items:center;gap:8px;font-size:10px">');
-    parts.push('<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:14px;height:10px;background:rgba(220,60,0,0.25);border-radius:2px"></span> Düşük</span>');
-    parts.push('<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:14px;height:10px;background:rgba(220,220,60,0.25);border-radius:2px"></span> Orta</span>');
-    parts.push('<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:14px;height:10px;background:rgba(40,180,40,0.25);border-radius:2px"></span> Yüksek</span>');
-    parts.push('</div></div>');
-
-    parts.push('<div style="overflow:auto;max-height:75vh;border:1px solid #e2e8f0;border-radius:8px;contain:layout style;will-change:scroll-position">');
-    parts.push('<table class="corr-matrix" style="font-size:13px;border-collapse:collapse;width:max-content;content-visibility:auto">');
-    // Pre-compute raw sums + header counts (kaç karşı değerle eşleşiyor)
-    const rowRaw=new Array(rArr.length);
-    const colRaw=new Array(cArr.length);
-    const rowNonNull=new Array(rArr.length).fill(0); // satır başlığı: kaç sütunda veri var
-    const colNonNull=new Array(cArr.length).fill(0); // sütun başlığı: kaç satırda veri var
-    for(let c=0;c<cArr.length;c++)colRaw[c]={sum:0,n:0,count:0};
-    let grandRaw={sum:0,n:0,count:0};
-    for(let r=0;r<rArr.length;r++){
-      rowRaw[r]={sum:0,n:0,count:0};
-      const rMap=rowMap.get(rArr[r]);
-      for(let c=0;c<cArr.length;c++){
-        const d=rMap?rMap.get(cArr[c]):null;
-        if(d){
-          rowRaw[r].sum+=d.sum;rowRaw[r].n+=d.n;rowRaw[r].count+=d.count;
-          colRaw[c].sum+=d.sum;colRaw[c].n+=d.n;colRaw[c].count+=d.count;
-          grandRaw.sum+=d.sum;grandRaw.n+=d.n;grandRaw.count+=d.count;
-          rowNonNull[r]++;colNonNull[c]++;
-        }
-      }
-    }
-
-    // Header — sütun başlıklarında (kaç satırda var)
-    parts.push('<thead><tr><th style="position:sticky;left:0;top:0;z-index:3;background:#f1f5f9;min-width:140px;max-width:260px;white-space:normal;word-break:break-word;padding:6px 10px;font-size:13px">'+escHtml(rowCol)+' \\ '+escHtml(colCol)+'</th>');
-    for(let c=0;c<cArr.length;c++){
-      const cv=cArr[c];
-      const cCnt=colNonNull[c];
-      parts.push('<th style="position:sticky;top:0;z-index:2;background:#f1f5f9;white-space:normal;word-break:break-word;min-width:80px;max-width:180px;padding:6px 10px;font-size:13px;font-weight:600" title="'+escHtml(cv)+' ('+cCnt+' satırda)">'+escHtml(cv)+' <span style="color:#6366f1;font-size:11px;font-weight:400">('+cCnt+')</span></th>');
-    }
-    // Marginal label based on aggregation type
-    const margLabel=aggType==='count'?'TOPLAM':aggType==='sum'?'TOPLAM':(aggType==='avg'||aggType==='mean')?'ORT.':'TOPLAM';
-    parts.push('<th style="position:sticky;top:0;right:0;z-index:3;background:#dbeafe;font-weight:700;min-width:80px;padding:6px 10px;font-size:13px">'+margLabel+'</th></tr></thead>');
-
-    function marginalVal(raw){
-      if(aggType==='count')return raw.count;
-      if(aggType==='sum')return +raw.sum.toFixed(2);
-      if(aggType==='avg'||aggType==='mean')return raw.n>0?+(raw.sum/raw.n).toFixed(2):null;
-      return raw.count;
-    }
-
-    // Body
-    parts.push('<tbody>');
-    for(let r=0;r<rArr.length;r++){
-      const rv=rArr[r];
-      const rCnt=rowNonNull[r];
-      parts.push('<tr><th style="position:sticky;left:0;z-index:1;background:#f8fafc;text-align:left;font-weight:600;white-space:normal;word-break:break-word;min-width:120px;max-width:260px;padding:6px 10px;font-size:13px" title="'+escHtml(rv)+' ('+rCnt+' sütunda)">'+escHtml(rv)+' <span style="color:#6366f1;font-size:11px;font-weight:400">('+rCnt+')</span></th>');
-      for(let c=0;c<cArr.length;c++){
-        const v=grid[r][c];
-        parts.push('<td style="background:'+heatColor(v)+';text-align:right;padding:5px 8px;white-space:nowrap;font-variant-numeric:tabular-nums">'+cellDisplay(v)+'</td>');
-      }
-      const rowMarg=marginalVal(rowRaw[r]);
-      parts.push('<td style="background:#dbeafe;font-weight:600;text-align:right;padding:5px 8px;white-space:nowrap;position:sticky;right:0">'+cellDisplay(rowMarg)+'</td></tr>');
-    }
-
-    // Totals row at bottom — sticky bottom
-    parts.push('<tr style="font-weight:700;background:#f1f5f9;position:sticky;bottom:0;z-index:2"><th style="position:sticky;left:0;z-index:4;background:#e2e8f0;text-align:left;padding:6px 10px;font-size:13px">'+margLabel+'</th>');
-    for(let c=0;c<cArr.length;c++){
-      const colMarg=marginalVal(colRaw[c]);
-      parts.push('<td style="text-align:right;padding:5px 8px;background:#e2e8f0;white-space:nowrap;font-weight:700">'+cellDisplay(colMarg)+'</td>');
-    }
-    const grandMarg=marginalVal(grandRaw);
-    parts.push('<td style="text-align:right;padding:5px 8px;background:#bfdbfe;font-weight:700;white-space:nowrap;position:sticky;right:0;z-index:4">'+cellDisplay(grandMarg)+'</td></tr></tbody></table></div>');
-
-    // Boyut bilgisi
-    parts.push('<div style="font-size:11px;color:#64748b;margin-bottom:6px">📊 '+rArr.length+' satır × '+cArr.length+' sütun</div>');
-    parts.push('<button class="btn mt-8" onclick="llmInterpretSection(\'crossTab\')" title="Bu tabloyu yapay zeka ile yorumlat" style="width:100%;background:#7c3aed;color:#fff;border:none;font-size:12px;padding:8px">\uD83E\uDD16 LLM ile Yorumlat</button>');
-    parts.push('<div id="llmInterpretCrossTab" style="margin-top:8px"></div>');
-    area.innerHTML=parts.join('');
-    if(exportBtn)exportBtn.style.display='';
+    // Render UI
+    _renderCrossTabUI(rArr,cArr,grid,rowMap,globalMin,globalMax,aggType,rowCol,colCol,t0);
   },30);
 }
 
@@ -9413,21 +9764,51 @@ async function sendSmartLLM(){
   const gi=outHeaders.indexOf(groupCol);
   if(gi<0)return;
 
-  // Group ALL rows — EXACT via streamOutputRows
-  const groupMap={};
-  streamOutputRows(row=>{
-    const gv=row[gi]||'(boş)';
-    if(!groupMap[gv])groupMap[gv]=[];
-    groupMap[gv].push(row);
-  });
+  // Group ALL rows — use backend if active
+  let groupMap={};
+  let groupNames=[];
 
-  let groupNames;
+  if(window._BACKEND_ACTIVE){
+    // Backend modu: tüm grup değerlerini al (sample API ile)
+    try{
+      const sampleResp=await window._backendSample(100,0);
+      if(sampleResp&&sampleResp.rows){
+        const uniqueGroups=new Set();
+        sampleResp.rows.forEach(row=>{
+          const gv=row[groupCol]||'(boş)';
+          uniqueGroups.add(gv);
+        });
+        groupNames=Array.from(uniqueGroups).sort();
+      }
+    }catch(e){
+      console.warn('[LLM] Backend sample hataları, JS fallback');
+      groupMap={};
+      streamOutputRows(row=>{
+        const gv=row[gi]||'(boş)';
+        if(!groupMap[gv])groupMap[gv]=[];
+        groupMap[gv].push(row);
+      });
+      groupNames=Object.keys(groupMap).sort((a,b)=>groupMap[b].length-groupMap[a].length);
+    }
+  }else{
+    // JS modu: stream tüm satırları
+    streamOutputRows(row=>{
+      const gv=row[gi]||'(boş)';
+      if(!groupMap[gv])groupMap[gv]=[];
+      groupMap[gv].push(row);
+    });
+    groupNames=Object.keys(groupMap).sort((a,b)=>groupMap[b].length-groupMap[a].length);
+  }
+
   if(isSingleBatch){
     // Tek grup modu: sadece seçilen grubu işle
     groupNames=[singleGroupVal];
-    if(!groupMap[singleGroupVal]){noteEl.textContent=singleGroupVal+' grubunda veri bulunamadı.';noteEl.style.color='#dc2626';return}
+    if(window._BACKEND_ACTIVE){
+      // Backend'de veri var mı kontrol etme (backend validate edecek)
+    }else if(!groupMap[singleGroupVal]){
+      noteEl.textContent=singleGroupVal+' grubunda veri bulunamadı.';noteEl.style.color='#dc2626';return
+    }
   }else{
-    groupNames=Object.keys(groupMap).sort((a,b)=>groupMap[b].length-groupMap[a].length);
     if(maxGroups>0)groupNames=groupNames.slice(0,maxGroups);
   }
 
@@ -9439,7 +9820,28 @@ async function sendSmartLLM(){
   const results=[];
   for(let i=0;i<groupNames.length;i++){
     const gName=groupNames[i];
-    const gRows=groupMap[gName];
+    let gRows=[];
+
+    if(window._BACKEND_ACTIVE){
+      // Backend'den grup satırlarını al
+      try{
+        const grResp=await window._backendGroupRows(groupCol,gName);
+        if(grResp&&grResp.rows){
+          // Backend satırları {headers:[], rows:[[],...]} formatında dönüyor
+          // Onları {col:val} formatına dönüştür
+          gRows=grResp.rows.map((rowArr,idx)=>{
+            const rowObj={};
+            grResp.headers.forEach((h,ci)=>{rowObj[h]=rowArr[ci]});
+            return rowObj;
+          });
+        }
+      }catch(e){
+        console.warn('[LLM] Group rows hatası için '+gName+', skipping');
+        continue;
+      }
+    }else{
+      gRows=groupMap[gName]||[];
+    }
     progText.textContent=(i+1)+' / '+groupNames.length+' — '+gName;
     progBar.style.width=Math.round((i/groupNames.length)*100)+'%';
 
@@ -9507,23 +9909,58 @@ function showRuleBasedReport(){
     const maxGroups=isSingleBatch?0:(parseInt(document.getElementById('llmMaxGroups').value)||0);
     const gi=outHeaders.indexOf(groupCol);
     if(gi<0)return;
-    // Group ALL rows — EXACT via streamOutputRows
-    const groupMap={};
-    streamOutputRows(row=>{const gv=row[gi]||'(boş)';if(!groupMap[gv])groupMap[gv]=[];groupMap[gv].push(row)});
-    let groupNames;
+    // Group ALL rows — use backend if active
+    let groupMap={};
+    let groupNames=[];
+    if(window._BACKEND_ACTIVE){
+      // Backend modu: tüm grup değerlerini al
+      try{
+        const sampleResp=await window._backendSample(100,0);
+        if(sampleResp&&sampleResp.rows){
+          const uniqueGroups=new Set();
+          sampleResp.rows.forEach(row=>{const gv=row[groupCol]||'(boş)';uniqueGroups.add(gv)});
+          groupNames=Array.from(uniqueGroups).sort();
+        }
+      }catch(e){
+        console.warn('[PDF] Backend sample hatası, JS fallback');
+        groupMap={};
+        streamOutputRows(row=>{const gv=row[gi]||'(boş)';if(!groupMap[gv])groupMap[gv]=[];groupMap[gv].push(row)});
+        groupNames=Object.keys(groupMap).sort((a,b)=>groupMap[b].length-groupMap[a].length);
+      }
+    }else{
+      groupMap={};
+      streamOutputRows(row=>{const gv=row[gi]||'(boş)';if(!groupMap[gv])groupMap[gv]=[];groupMap[gv].push(row)});
+      groupNames=Object.keys(groupMap).sort((a,b)=>groupMap[b].length-groupMap[a].length);
+    }
     if(isSingleBatch){
       groupNames=[singleGroupVal];
-      if(!groupMap[singleGroupVal]){const n=document.getElementById('pdfNote');if(n){n.textContent=singleGroupVal+' grubunda veri bulunamadı.';n.style.color='#dc2626'}return}
     }else{
-      groupNames=Object.keys(groupMap).sort((a,b)=>groupMap[b].length-groupMap[a].length);
       if(maxGroups>0)groupNames=groupNames.slice(0,maxGroups);
     }
     const results=[];
-    groupNames.forEach(gName=>{
-      const gRows=groupMap[gName];
+    for(const gName of groupNames){
+      let gRows=[];
+      if(window._BACKEND_ACTIVE){
+        // Backend'den grup satırlarını al
+        try{
+          const grResp=await window._backendGroupRows(groupCol,gName);
+          if(grResp&&grResp.rows){
+            gRows=grResp.rows.map((rowArr)=>{
+              const rowObj={};
+              grResp.headers.forEach((h,ci)=>{rowObj[h]=rowArr[ci]});
+              return rowObj;
+            });
+          }
+        }catch(e){
+          console.warn('[PDF] Group rows hatası için '+gName);
+          gRows=[];
+        }
+      }else{
+        gRows=groupMap[gName]||[];
+      }
       const autoText=_ruleInterpretGroup(groupCol,gName,gRows,selectedFields);
       results.push({group:gName,count:gRows.length,text:autoText});
-    });
+    }
     let compiled='';
     compiled+='═══════════════════════════════════════════════════\n';
     compiled+='  '+(isSingleBatch?('TEK GRUP RAPORU: '+singleGroupVal):'ALAN BAZLI OTOMATİK RAPOR')+'\n';
@@ -10010,9 +10447,36 @@ async function _buildOffscreenChart(config){
 async function buildGroupSection(indepVar,groupVal,depVars,model,endpoint,onProgress,opts){
   opts=opts||{};
   const ci=outHeaders.indexOf(indepVar);
-  // Collect ALL rows for this group — EXACT via streamOutputRows
-  const groupRows=[];
-  streamOutputRows(row=>{if((row[ci]||'')===groupVal)groupRows.push(row)});
+  // Collect ALL rows for this group — use backend if active
+  let groupRows=[];
+  if(window._BACKEND_ACTIVE){
+    try{
+      const grResp=await window._backendGroupRows(indepVar,groupVal);
+      if(grResp&&grResp.rows){
+        groupRows=grResp.rows.map((rowArr)=>{
+          // Backend satırları {headers:[], rows:[[],...]} formatında dönüyor
+          // Onları array formatına dönüştür
+          const rowObj={};
+          grResp.headers.forEach((h,ci)=>{rowObj[h]=rowArr[ci]});
+          // Original array formatını da oluştur
+          return rowArr;
+        });
+        // Also set up map for later lookups
+        for(let i=0;i<grResp.headers.length;i++){
+          if(grResp.headers[i]===indepVar){
+            // Verify group val
+            break;
+          }
+        }
+      }
+    }catch(e){
+      console.warn('[buildGroupSection] Backend hatası, JS fallback:',e);
+      groupRows=[];
+      streamOutputRows(row=>{if((row[ci]||'')===groupVal)groupRows.push(row)});
+    }
+  }else{
+    streamOutputRows(row=>{if((row[ci]||'')===groupVal)groupRows.push(row)});
+  }
   const charts=[];
   const subGroupVar=opts.subGroupVar||null;
   const sgIdx=subGroupVar?outHeaders.indexOf(subGroupVar):-1;
@@ -13824,7 +14288,7 @@ function advStatsRun(testId){
   resArea.style.display='block';
   interpArea.style.display='none';
   // Check output data availability
-  if(!_hasOutputData()){resTable.innerHTML=_noDataHTML();return}
+  if(!_hasOutputData()){resTable.innerHTML=_noDataHTML();_hideBusy();return}
   let html='';
   let resultData={test:testId};
   window._lastSamplingInfo=null; // Reset sampling tracking before each test
@@ -14941,14 +15405,18 @@ function advStatsRun(testId){
 
     html+='<div style="margin-top:8px;padding:8px;background:#fff7ed;border-radius:6px;font-size:11px"><b>📌 Genel Değerlendirme:</b> '+(goodFit?'Model veriye kabul edilebilir düzeyde uyum göstermektedir.':'Model uyumu yeterli değildir, model revize edilmelidir.')+' '+pathResults.filter(p=>p.p<0.05).length+'/'+pathResults.length+' yol istatistiksel olarak anlamlıdır (p<0.05).</div>';
   }
-  }catch(err){html='<p style="color:#ef4444">Hesaplama hatası: '+err.message+'</p>'}
+  }catch(err){html='<p style="color:#ef4444">Hesaplama hatası: '+err.message+'</p>'}finally{_hideBusy()}
 
   _advLastResult=resultData;
   // İşlem süresi bilgisi
   const _testElapsed=((Date.now()-_testStart)/1000).toFixed(1);
   if(parseFloat(_testElapsed)>2){html+='<div style="margin-top:6px;font-size:10px;color:#94a3b8;text-align:right">İşlem süresi: '+_testElapsed+' sn</div>'}
-  // Örnekleme uyarı notu — büyük veri için / veya tam veri teyidi
-  if(window._lastSamplingInfo&&window._lastSamplingInfo._sampled){
+  // Örnekleme uyarı notu — Python Motor aktifken şeffaf uyarı
+  if(window._BACKEND_ACTIVE && window._processedByBackend){
+    html='<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#92400e;display:flex;align-items:center;gap:8px">'+
+      '<span style="font-size:14px">⚠️</span>'+
+      '<span><b>Akıllı Örneklem:</b> İleri istatistik testleri performans için akıllı örneklem üzerinden hesaplanmaktadır. Temel analiz sekmeleri (Dashboard, Özet, Çapraz Tablo, Frekans vb.) tam veri kullanır.</span></div>'+html;
+  }else if(window._lastSamplingInfo&&window._lastSamplingInfo._sampled){
     html=_samplingNoteBanner(window._lastSamplingInfo)+html;
   }else if(totalRows>100000){
     // Tam veri kullanıldığını teyit et (şeffaflık)
@@ -14957,7 +15425,6 @@ function advStatsRun(testId){
       '<span><b>Tam Veri:</b> Bu test tüm '+totalRows.toLocaleString('tr-TR')+' satır üzerinden hesaplanmıştır. Örnekleme uygulanmamıştır.</span></div>'+html;
   }
   resTable.innerHTML=html;
-  _hideBusy(); // Remove busy overlay after computation
   // Draw JASP-like chart
   try{_advStatsDrawChart(resultData)}catch(e){console.warn('advStats chart err:',e)}
   // Akıllı test yönlendirme paneli
