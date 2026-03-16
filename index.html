@@ -456,6 +456,13 @@
   </div>
   <div id="stepDescBar" style="padding:6px 20px 2px;font-size:11px;color:#94a3b8;margin-bottom:4px"></div>
 
+  <!-- Sonuçlara Dön butonu — önceki adımlardayken görünür -->
+  <div id="backToResultsBanner" style="display:none;padding:8px 20px;background:linear-gradient(135deg,#059669,#10b981);border-radius:8px;margin:4px 20px;text-align:center">
+    <span style="color:#fff;font-size:13px;font-weight:500">Sonuçlarınız mevcut — </span>
+    <button onclick="showStep('Done')" style="background:#fff;color:#059669;border:none;padding:4px 14px;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px;margin:0 4px">📊 Sonuçlara Dön</button>
+    <button onclick="showStep('Analysis')" style="background:#fff;color:#7c3aed;border:none;padding:4px 14px;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px;margin:0 4px">📈 Analiz Dashboard</button>
+  </div>
+
   <div id="errorBar" class="card error-bar hidden">
     <span id="errorText"></span>
     <button onclick="hideError()" title="Hata mesajını kapat" style="float:right;background:none;border:none;cursor:pointer;color:#dc2626;font-weight:700">✕</button>
@@ -2291,16 +2298,20 @@ function showStep(name){
     // PERFORMANCE: schedule garbage collection hint
     setTimeout(()=>{if(parseOutputRows._caches){const ks=Object.keys(parseOutputRows._caches);if(ks.length>3){ks.forEach(k=>{if(k==='_full')delete parseOutputRows._caches[k]});console.log('parseOutputRows cache temizlendi')}}},1000);
   }
-  // Update step nav bar
+  // Update step nav bar — en yüksek tamamlanan adımı takip et
   const stepOrder=['Welcome','Upload','ModeSelect','Join','Delimiter','Columns','Processing','Done','Analysis'];
   const activeIdx=stepOrder.indexOf(name);
+  if(!window._highestCompletedStep)window._highestCompletedStep=-1;
+  // Mevcut adım daha ileri ise, en yüksek tamamlanan adımı güncelle
+  if(activeIdx>window._highestCompletedStep)window._highestCompletedStep=activeIdx;
   const navName=name;
   document.querySelectorAll('.step-nav-item').forEach(el=>{
     const nav=el.dataset.nav;
     const navIdx=stepOrder.indexOf(nav);
     el.classList.remove('active','done');
     if(nav===navName)el.classList.add('active');
-    else if(navIdx<activeIdx)el.classList.add('done');
+    // Hem geçmiş adımlar HEM DE ileriye dönüş yapılabilecek adımlar "done" olsun
+    else if(navIdx<activeIdx||navIdx<=window._highestCompletedStep)el.classList.add('done');
   });
   // Step descriptions
   const descs={
@@ -2316,6 +2327,12 @@ function showStep(name){
   };
   const descBar=document.getElementById('stepDescBar');
   if(descBar)descBar.textContent=descs[name]||'';
+  // "Sonuçlara Dön" banner — önceki adımlardayken ve sonuç varsa göster
+  const _btRBanner=document.getElementById('backToResultsBanner');
+  if(_btRBanner){
+    const _earlySteps=['Welcome','Upload','ModeSelect','Join','Delimiter','Columns','Processing'];
+    _btRBanner.style.display=(_earlySteps.includes(name)&&totalRows>0)?'':'none';
+  }
   // Update chatbot visibility
   setTimeout(updateChatbotVisibility,50);
 }
@@ -2326,6 +2343,7 @@ function navStepClick(el){
   const navMap={Welcome:'Welcome',Upload:'Upload',ModeSelect:'ModeSelect',Join:'Join',Delimiter:'Delimiter',Columns:'Columns',Processing:'Processing',Done:'Done',Analysis:'Analysis'};
   const stepName=navMap[nav];if(!stepName)return;
   if(stepName==='Processing')return;
+  // İleri adımlara geçiş (Done, Analysis) her zaman izin ver
   if(stepName==='Analysis'){
     if(totalRows>0){showStep('Analysis')}
     return;
@@ -2334,14 +2352,18 @@ function navStepClick(el){
     if(totalRows>0){showStep('Done')}
     return;
   }
-  // Warn user when going to an earlier step
+  // Warn user when going to an earlier step — but make it clear they can come back
   const stepOrder=['Welcome','Upload','ModeSelect','Join','Delimiter','Columns','Processing','Done','Analysis'];
   const currentStepEl=document.querySelector('.step-nav-item.active');
   const currentNav=currentStepEl?currentStepEl.dataset.nav:null;
   const currentIdx=currentNav?stepOrder.indexOf(currentNav):-1;
   const targetIdx=stepOrder.indexOf(stepName);
   if(targetIdx<currentIdx&&stepName!=='Welcome'){
-    if(!confirm('⚠️ Geri adıma dönmek üzeresiniz.\n\nBu adıma geri dönerseniz ilerlemeniz kaybolabilir ve işlemleri baştan yapmanız gerekebilir.\n\nDevam etmek istiyor musunuz?'))return;
+    const hasResults=totalRows>0;
+    const msg=hasResults
+      ?'📋 Önceki adıma göz atıyorsunuz.\n\nSonuçlarınız korunuyor — üst menüden "Sonuçlar" veya "Analiz" adımına geri dönebilirsiniz.\n\n⚠️ Ancak dosya yeniden yüklerseniz veya ayırıcıyı değiştirirseniz işlemlerin baştan yapılması gerekir.\n\nDevam etmek istiyor musunuz?'
+      :'⚠️ Geri adıma dönmek üzeresiniz.\n\nBu adıma geri dönerseniz ilerlemeniz kaybolabilir ve işlemleri baştan yapmanız gerekebilir.\n\nDevam etmek istiyor musunuz?';
+    if(!confirm(msg))return;
   }
   showStep(stepName);
 }
@@ -2651,6 +2673,9 @@ async function doMergePath(){
   currentFile={name:mergedName,size:totalSize,_isMerged:true,_files:uploadedFiles};
   rawText=await uploadedFiles[0].slice(0,32768).text();
   rawLines=rawText.split(/\r?\n/).filter(l=>l.trim());
+  // KRİTİK: Merge modunda da delimiter'ı algıla! Yoksa varsayılan ',' kalır.
+  delimiterMode=detectDelimiter(rawLines.slice(0,10));
+  console.log('[MERGE] Delimiter algılandı:',JSON.stringify(delimiterMode),'rawLines:',rawLines.length);
   if(_mergeJoinMode){
     // After merge, offer to add JOIN files
     if(confirm('✅ Merge tamamlandı!\n\nŞimdi yeni dosya(lar) ile JOIN yapmak ister misiniz?\n\n"Tamam" → JOIN için dosya seçin\n"İptal" → Maskeleme adımına devam edin')){
@@ -2856,6 +2881,7 @@ async function startProcessing(){
       },500);
 
       let pyResult=null;
+      console.log('[PYTHON FAST-PATH] delimiterMode='+JSON.stringify(delimiterMode)+', delimiter='+JSON.stringify(delimiter)+', headers='+headers.length+', outHeaders='+outHeaders.length);
 
       // === Determine which path: single, merge, or joined ===
       if(currentFile._isJoined&&joinedOutput){
@@ -2881,11 +2907,16 @@ async function startProcessing(){
       if(pyResult&&pyResult.ok){
         // Python başarılı — JS loop tamamen atlanıyor!
         console.log('[PYTHON FAST-PATH] '+pyResult.cells.toLocaleString('tr-TR')+' hücre '+pyResult.processing_time+'s\'de işlendi');
+        console.log('[PYTHON FAST-PATH] Backend delimiter: '+JSON.stringify(pyResult.delimiter)+', rows: '+pyResult.rows+', cols: '+pyResult.cols+', headers: '+(pyResult.headers||[]).length);
+        console.log('[PYTHON FAST-PATH] col_stats mevcut mu: '+Object.keys(pyResult.col_stats||{}).length+' sütun');
         if(pyResult._error){console.warn('[PYTHON FAST-PATH] Kısmi hata:',pyResult._error)}
         totalRows=pyResult.rows;
         outHeaders=pyResult.headers;
 
         // colStats'ı Python'dan gelen verilerle güncelle
+        console.log('[PYTHON FAST-PATH] col_stats keys:', Object.keys(pyResult.col_stats||{}));
+        console.log('[PYTHON FAST-PATH] outHeaders:', outHeaders);
+        console.log('[PYTHON FAST-PATH] sample col_stats[0]:', pyResult.col_stats[outHeaders[0]]);
         colStats={};
         for(const h of outHeaders){
           const ps=pyResult.col_stats[h]||{};
