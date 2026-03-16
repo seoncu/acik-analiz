@@ -2289,7 +2289,7 @@ function showStep(name){
   });
   // Hero banner sadece Upload adımında görünür
   const _heroBanner=document.getElementById('heroBanner');
-  if(_heroBanner)_heroBanner.style.display=(name==='Welcome'||name==='Upload')?'':'none';
+  if(_heroBanner)_heroBanner.style.display=(name==='Welcome')?'':'none';
   if(name==='Analysis'){
     // PERFORMANCE: free reservoir sample when entering analysis — colStats + streamOutputRows cover all needs
     if(totalRows>500000&&_reservoirSample.length>500000){
