@@ -629,9 +629,6 @@
       </div>
     </div>
 
-    <!-- Büyük dosya uyarısı (gizli, dosya yüklendiğinde gösterilir) -->
-    <div id="bigFileForceWarning" style="display:none;margin-top:14px"></div>
-
     <!-- Sistem Gereksinimleri Tablosu -->
     <div style="margin-top:20px">
       <p style="font-size:14px;font-weight:700;color:#1e293b;margin:0 0 10px;cursor:pointer" onclick="document.getElementById('sysReqContent').classList.toggle('hidden')">📋 Sistem Gereksinimleri <span style="font-size:11px;color:#94a3b8;font-weight:400">(tıkla: aç/kapat)</span></p>
@@ -730,8 +727,10 @@
     <div id="fileListArea" class="hidden mt-16">
       <p class="text-sm mb-8" style="font-weight:600;color:#334155">Yüklenen Dosyalar:</p>
       <div id="fileListItems" style="display:flex;flex-direction:column;gap:6px"></div>
+      <!-- Büyük dosya uyarısı — dosya yüklendiğinde gösterilir -->
+      <div id="bigFileForceWarning" style="display:none;margin-top:14px"></div>
       <div class="flex gap-8 mt-12">
-        <button class="btn btn-success" onclick="proceedWithFiles()" title="Seçilen dosyalarla devam et">Devam Et</button>
+        <button class="btn btn-success" id="proceedBtn" onclick="proceedWithFiles()" title="Seçilen dosyalarla devam et">Devam Et</button>
         <button class="btn btn-outline btn-sm" onclick="clearFiles()" title="Yüklenen dosyaları temizle">Temizle</button>
       </div>
       <p class="text-xs text-muted mt-8" id="mergeNote"></p>
@@ -1875,13 +1874,15 @@ function _checkBigFileWarning(){
   uploadedFiles.forEach(f=>totalSize+=f.size);
 
   // Try to estimate columns by peeking at first file's header
-  let estCols=10; // fallback
+  let estCols=0;
   try{
     const f0=uploadedFiles[0];
-    if(f0._peekCols)estCols=f0._peekCols;
+    if(f0._peekCols&&f0._peekCols>1)estCols=f0._peekCols;
   }catch(e){}
-  // CSV average: ~30 bytes per cell value + delimiter
-  const avgBytesPerRow=estCols*30;
+  if(estCols<2)estCols=10; // fallback: minimum 10 columns for estimation
+  // CSV average: ~15 bytes per cell value (including delimiter/quotes)
+  const avgBytesPerCell=15;
+  const avgBytesPerRow=estCols*avgBytesPerCell;
   const estRows=Math.round(totalSize/avgBytesPerRow);
   const estCells=estRows*estCols;
   const totalMB=totalSize/(1024*1024);
@@ -1935,17 +1936,28 @@ function _checkBigFileWarning(){
     '<p style="font-size:14px;color:'+titleColor+';margin:0;font-weight:700">'+icon+' '+title+'</p>'+
     '<div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:8px">'+
       '<span style="background:rgba(0,0,0,.08);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;color:'+bodyColor+'">📦 '+totalMB.toFixed(1)+' MB'+(totalMB>=1024?' ('+totalGB+' GB)':'')+'</span>'+
-      '<span style="background:rgba(0,0,0,.08);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;color:'+bodyColor+'">📊 ~'+_fmtNum(estRows)+' satır</span>'+
-      '<span style="background:rgba(0,0,0,.08);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;color:'+bodyColor+'">🔢 ~'+_fmtNum(estCells)+' hücre</span>'+
+      '<span style="background:rgba(0,0,0,.08);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;color:'+bodyColor+'">📊 ~'+estRows.toLocaleString('tr-TR')+' satır</span>'+
+      '<span style="background:rgba(0,0,0,.08);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;color:'+bodyColor+'">🔢 ~'+estCells.toLocaleString('tr-TR')+' hücre'+(estCols>1?' ('+estCols+' sütun)':'')+'</span>'+
     '</div>'+
     '<p style="font-size:12px;color:'+bodyColor+';margin:6px 0 0;line-height:1.6">'+extra+'</p>'+
     (level!=='info'?pyNote:'')+
   '</div>';
 
-  // Pulse Python card if not active
-  if(!pyActive&&totalSize>=MEDIUM&&window._selectedEngineMode==='browser'){
-    const pCard=document.getElementById('modePythonCard');
-    if(pCard){pCard.style.animation='pulse 1.5s ease-in-out 3'}
+  // Disable "Devam Et" button if Python Motor required but not active
+  const procBtn=document.getElementById('proceedBtn');
+  if(procBtn){
+    if(totalSize>=XLARGE&&!pyActive){
+      // 1 GB+ → block completely in browser mode
+      procBtn.disabled=true;
+      procBtn.style.opacity='0.4';
+      procBtn.style.cursor='not-allowed';
+      procBtn.title='Bu boyut için Python Motor gereklidir. Lütfen önce Python Motor\'u başlatın.';
+    }else{
+      procBtn.disabled=false;
+      procBtn.style.opacity='1';
+      procBtn.style.cursor='pointer';
+      procBtn.title='Seçilen dosyalarla devam et';
+    }
   }
 }
 function _fmtNum(n){
@@ -2459,19 +2471,24 @@ function clearFiles(){uploadedFiles=[];fileLabels=[];document.getElementById('fi
 async function proceedWithFiles(){
   if(!uploadedFiles.length){showError('Lütfen önce dosya seçin.');return}
   hideError();
-  // === BÜYÜK DOSYA KONTROLÜ: Python Motor zorunluluğu ===
+  // === BÜYÜK DOSYA KONTROLÜ: Python Motor zorunluluğu (Dosya Yükleme adımında) ===
   let _totalFileSize=0;
   uploadedFiles.forEach(f=>_totalFileSize+=f.size);
-  const _FORCE_PYTHON_THRESHOLD=500*1024*1024; // 500 MB
-  const _WARN_PYTHON_THRESHOLD=200*1024*1024;  // 200 MB
+  const _FORCE_PYTHON_THRESHOLD=500*1024*1024; // 500 MB — tarayıcıda engelle
+  const _WARN_PYTHON_THRESHOLD=200*1024*1024;  // 200 MB — tarayıcıda uyar
+  const _BLOCK_THRESHOLD=1024*1024*1024;       // 1 GB — Python Motor olmadan asla
+  const totalMB=(_totalFileSize/(1024*1024)).toFixed(0);
+  if(_totalFileSize>=_BLOCK_THRESHOLD&&!window._BACKEND_ACTIVE){
+    showError('🔴 '+totalMB+' MB ('+(_totalFileSize/(1024*1024*1024)).toFixed(2)+' GB) boyutunda veri tespit edildi.\n\nBu boyut yalnızca Python Veri Motoru ile işlenebilir.\n\n👉 Terminal: cd server && python engine.py\n👉 Ardından sayfayı yenileyin.');
+    try{_addLog('Devam engellendi: '+totalMB+'MB dosya, Python Motor gerekli','err')}catch(e){}
+    return;
+  }
   if(_totalFileSize>=_FORCE_PYTHON_THRESHOLD&&!window._BACKEND_ACTIVE){
-    const totalMB=(_totalFileSize/(1024*1024)).toFixed(0);
-    showError('🚨 '+totalMB+' MB boyutunda veri tespit edildi. Bu boyutta veri tarayıcı modunda işlenemez. Lütfen önce Python Veri Motoru\'nu başlatın (cd server && python engine.py), ardından sayfayı yenileyin.');
+    showError('🚨 '+totalMB+' MB boyutunda veri tespit edildi. Bu boyutta veri tarayıcı modunda stabil çalışmaz.\n\nLütfen önce Python Veri Motoru\'nu başlatın:\n1. Terminal: cd server && python engine.py\n2. Sayfayı yenileyin\n\nKüçük dosyalar için tarayıcı modunu kullanabilirsiniz.');
     try{_addLog('Devam engellendi: '+totalMB+'MB dosya, Python Motor gerekli','err')}catch(e){}
     return;
   }
   if(_totalFileSize>=_WARN_PYTHON_THRESHOLD&&!window._BACKEND_ACTIVE){
-    const totalMB=(_totalFileSize/(1024*1024)).toFixed(0);
     const confirmed=confirm('⚠️ '+totalMB+' MB boyutunda veri yüklüyorsunuz.\n\nTarayıcı modunda bu boyut donma veya çökmeye neden olabilir.\nPython Veri Motoru kullanmanız şiddetle önerilir.\n\nYine de tarayıcı modunda devam etmek istiyor musunuz?');
     if(!confirmed){
       try{_addLog('Kullanıcı '+totalMB+'MB dosyada tarayıcı modunu reddetti','info')}catch(e){}
@@ -2927,7 +2944,10 @@ async function startProcessing(){
     }catch(e){
       console.error('[PYTHON FAST-PATH] Hata:',e);
       const _pyB=document.getElementById('longOpBanner');if(_pyB)_pyB.remove();
-      try{_addLog('Python Motor hatası, JS fallback: '+e.message,'err')}catch(e2){}
+      const isTimeout=e.name==='AbortError';
+      const errMsg=isTimeout?'Zaman aşımı (10 dk) — dosya çok büyük veya backend yanıt vermiyor':e.message;
+      document.getElementById('processedCount').textContent='⚠️ Python Motor hatası: '+errMsg+' — JS fallback kullanılıyor...';
+      try{_addLog('Python Motor hatası, JS fallback: '+errMsg,'err')}catch(e2){}
     }
   }
   // ============================================================
