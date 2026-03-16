@@ -373,6 +373,7 @@
   .chatbot-window.chat-minimized .chatbot-messages,.chatbot-window.chat-minimized .chatbot-input-area{display:none!important}
   @media(max-width:640px){.container{padding:0}.card{padding:16px;border-radius:8px}table{font-size:12px}th,td{padding:6px 8px}.chart-grid{grid-template-columns:1fr}.kpi-row{flex-direction:column}.top-menu-bar{flex-wrap:wrap;gap:6px;padding:6px 10px}}
 </style>
+<script defer src="server/api-bridge.js"></script>
 </head>
 <body>
 <!-- Global Busy Overlay — prevents interaction during heavy computations -->
@@ -568,6 +569,47 @@
           <h3>3. Maskeleme & Analiz</h3>
           <p><strong>Maskeleme:</strong> Hash (benzersiz kod), Kısmi (A***t), Kaldır (sütunu çıkar). Hassas verileri gizlerken analiz yapmanızı sağlar.</p>
           <p><strong>Analiz:</strong> Dashboard grafikleri, özet istatistik, korelasyon matrisi, çapraz tablo, filtreler ve LLM destekli doğal dil sorgusu.</p>
+        </div>
+        <div class="guide-section" style="border-left:4px solid #059669;padding-left:12px">
+          <h3>4. Python Veri Motoru (Büyük Veri İçin — Önerilen)</h3>
+          <p>500 milyon+ hücre ile çalışırken tarayıcı tek başına yetersiz kalabilir. Bu durumda <strong>Python backend</strong> motorunu kullanmanızı öneriyoruz. Motor aktifken tüm ağır hesaplamalar (agregasyon, istatistik testleri, korelasyon, çapraz tablo) Python + Polars ile yapılır; tarayıcı sadece arayüzü gösterir.</p>
+          <p><strong>Nasıl başlatılır?</strong></p>
+          <p style="margin-left:12px"><strong>macOS:</strong> <code>AcikAnaliz-Baslat.command</code> dosyasını çift tıklayın.</p>
+          <p style="margin-left:12px"><strong>Windows:</strong> <code>AcikAnaliz-Baslat.bat</code> dosyasını çift tıklayın.</p>
+          <p>İlk çalıştırmada gerekli kütüphaneler (Polars, NumPy, SciPy vb.) otomatik yüklenir. Sonraki açılışlarda doğrudan başlar.</p>
+          <p>Motor çalışırken sağ alt köşede <span style="background:#059669;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">🟢 Python Motor Aktif</span> rozeti görünür.</p>
+        </div>
+        <div class="guide-section" style="border-left:4px solid #2563eb;padding-left:12px">
+          <h3>5. Sistem Gereksinimleri (Veri Boyutuna Göre)</h3>
+          <table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:8px">
+            <thead>
+              <tr style="background:#f1f5f9">
+                <th style="padding:6px 10px;text-align:left;border-bottom:2px solid #e2e8f0">Veri Boyutu</th>
+                <th style="padding:6px 10px;text-align:left;border-bottom:2px solid #e2e8f0">Mod</th>
+                <th style="padding:6px 10px;text-align:left;border-bottom:2px solid #e2e8f0">RAM</th>
+                <th style="padding:6px 10px;text-align:left;border-bottom:2px solid #e2e8f0">Notlar</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9"><strong>< 10M hücre</strong></td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">Tarayıcı</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">4 GB+</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">Herhangi bir modern tarayıcı yeterlidir.</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9"><strong>10M – 100M hücre</strong></td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">Tarayıcı</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">8 GB+</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">Chrome veya Edge önerilir. Sekme başına bellek limiti ~4 GB.</td></tr>
+              <tr><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9"><strong>100M – 500M hücre</strong></td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;color:#059669;font-weight:600">Python Motor</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">32 GB+</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">Python backend şiddetle önerilir. Tarayıcı modu çok yavaş kalabilir.</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9"><strong>500M – 1B hücre</strong></td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;color:#059669;font-weight:600">Python Motor</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">64 GB+</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">Python backend gereklidir. Polars sütun bazlı çalışır, RAM verimli kullanılır.</td></tr>
+              <tr><td style="padding:5px 10px"><strong>1B – 2B hücre</strong></td><td style="padding:5px 10px;color:#059669;font-weight:600">Python Motor</td><td style="padding:5px 10px">128 GB+</td><td style="padding:5px 10px">Sadece Python backend ile mümkün. SSD önerilir (disk swap için).</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="guide-section" style="border-left:4px solid #f59e0b;padding-left:12px">
+          <h3>6. LLM (Yapay Zeka) Desteği</h3>
+          <p>Lokal <strong>Ollama</strong> kurulumu ile grafikler ve istatistikler için yapay zeka destekli akademik yorumlar alabilirsiniz.</p>
+          <p><strong>Kurulum:</strong> <a href="https://ollama.ai" target="_blank" style="color:#2563eb">ollama.ai</a> adresinden Ollama'yı yükleyin, ardından terminalde <code>ollama pull llama3.1</code> ile model indirin.</p>
+          <p>LLM aktif olduğunda "🤖 AI Yorumla" butonu ve "Claude'a Sor" chatbot kullanılabilir hale gelir.</p>
+        </div>
+        <div class="guide-section" style="border-left:4px solid #8b5cf6;padding-left:12px">
+          <h3>7. Hızlı Başlangıç</h3>
+          <p><strong>Küçük veri (< 100M hücre):</strong> Bu sayfayı doğrudan tarayıcınızda açın → Dosya yükleyin → Analiz yapın.</p>
+          <p><strong>Büyük veri (100M+ hücre):</strong> <code>AcikAnaliz-Baslat</code> başlatıcısını çalıştırın → Tarayıcı otomatik açılır → Dosya yükleyin → Python motor devreye girer.</p>
+          <p><strong>Gereksinimler (Python Motoru):</strong> Python 3.9+ kurulu olmalıdır. Bağımlılıklar ilk çalıştırmada otomatik kurulur.</p>
         </div>
       </div>
     </div>
@@ -2603,8 +2645,8 @@ async function startProcessing(){
     // === HÜCRE SAYISI: Performans modunu belirle ===
     const _totalCells=rowCount*outHeaders.length;
     window._totalCellCount=_totalCells;
-    window._isHeavyDataset=_totalCells>100_000_000; // 100M+ hücre
-    window._isVeryHeavyDataset=_totalCells>500_000_000; // 500M+ hücre
+    window._isHeavyDataset=!window._BACKEND_ACTIVE&&_totalCells>100_000_000; // 100M+ hücre
+    window._isVeryHeavyDataset=!window._BACKEND_ACTIVE&&_totalCells>500_000_000; // 500M+ hücre
     if(window._isHeavyDataset){
       console.log('Ağır veri modu aktif: '+_formatCells(_totalCells)+' hücre. LLM/İleri İstatistik optimizasyonları uygulanacak.');
     }
@@ -2615,6 +2657,19 @@ async function startProcessing(){
     onColTypeConfirmChange(false);
     if(typeof markWorkDirty==='function')markWorkDirty();
     showStep('Done');
+    // === BACKEND UPLOAD: Also send file to Python backend for fast analysis ===
+    if(window._BACKEND_ACTIVE || typeof window._backendUpload==='function'){
+      (async()=>{
+        try{
+          const result=await window._backendUpload(currentFile);
+          if(result){
+            console.log('[BACKEND] File uploaded to Python engine');
+            // Invalidate caches so next queries use backend
+            _aggCache={};_filteredStatsCache=null;_filteredStatsCacheHash='';
+          }
+        }catch(e){console.warn('[BACKEND] Upload failed, JS fallback active:',e)}
+      })();
+    }
     // === OTOMATİK KAYDETME: İşlem tamamlandıktan sonra otomatik oturum kaydı ===
     setTimeout(()=>{_autoSaveSession()},500);
   }catch(e){showError('Hata: '+e.message);showStep('Columns')}
@@ -3450,10 +3505,28 @@ function switchAnalysisTab(tab,btn){
     const isHeavy=_heavyTabs.includes(tab)&&totalRows>500000;
     const renderTab=()=>{
       if(tab==='topbottom'){try{initTopBottomTab()}catch(e){console.warn('topbottom err',e)}}
-      if(tab==='quickview'){try{renderQuickView()}catch(e){console.warn('quickview err',e)}}
+      if(tab==='quickview'){
+        // === BACKEND: Try quickview from backend first ===
+        if(window._BACKEND_ACTIVE && typeof window._backendQuickview==='function'){
+          (async()=>{try{const result=await window._backendQuickview();if(result)console.log('[BACKEND] Quickview loaded')}catch(e){console.warn('[BACKEND] Quickview fallback:',e)}})()
+        }
+        try{renderQuickView()}catch(e){console.warn('quickview err',e)}
+      }
       if(tab==='summary'){try{populateSummaryDropdowns()}catch(e){}}
-      if(tab==='correlation'){try{renderCorrelationMatrix()}catch(e){}}
-      if(tab==='crosstab'){try{renderCrossTab()}catch(e){}}
+      if(tab==='correlation'){
+        // === BACKEND: Try correlation from backend first ===
+        if(window._BACKEND_ACTIVE && typeof window._backendCorrelation==='function'){
+          (async()=>{try{const cols=document.querySelectorAll('#corrVarSelect input:checked');const selectedCols=[...cols].map(c=>c.value).filter(v=>v);if(selectedCols.length>1){const result=await window._backendCorrelation(selectedCols);if(result)console.log('[BACKEND] Correlation loaded')}}catch(e){console.warn('[BACKEND] Correlation fallback:',e)}})()
+        }
+        try{renderCorrelationMatrix()}catch(e){console.warn('correlation err',e)}
+      }
+      if(tab==='crosstab'){
+        // === BACKEND: Try crosstab from backend first ===
+        if(window._BACKEND_ACTIVE && typeof window._backendCrosstab==='function'){
+          (async()=>{try{const rowCol=document.getElementById('crosstabRowVar')?.value;const colCol=document.getElementById('crosstabColVar')?.value;const valCol=document.getElementById('crosstabValVar')?.value;const aggType=document.getElementById('crosstabAgg')?.value||'sum';if(rowCol&&colCol){const result=await window._backendCrosstab(rowCol,colCol,valCol||'',aggType);if(result)console.log('[BACKEND] Crosstab loaded')}}catch(e){console.warn('[BACKEND] Crosstab fallback:',e)}})()
+        }
+        try{renderCrossTab()}catch(e){console.warn('crosstab err',e)}
+      }
       if(tab==='mapview'){try{initMapView()}catch(e){console.warn('mapview init err',e)}}
       if(tab==='advstats'){try{advStatsInit()}catch(e){console.warn('advstats init err',e)}}
     };
@@ -5029,6 +5102,25 @@ function computeGroupedAgg(xCol,yCol,aggType){
 }
 
 // Multi-Y aggregation engine with caching and sampling
+// ===== BACKEND-POWERED AGGREGATION WRAPPER =====
+// Async version that pre-fetches from backend if available, falls back to JS
+async function computeMultiAggAsync(xCol,yCols,aggType){
+  if(window._BACKEND_ACTIVE && typeof window._backendAggregate==='function'){
+    try{
+      const sortMode=document.getElementById('dashSort')?document.getElementById('dashSort').value:'desc';
+      const limitVal=document.getElementById('dashLimit')?parseInt(document.getElementById('dashLimit').value)||15:15;
+      const result=await window._backendAggregate(xCol,yCols,aggType,sortMode,limitVal,'');
+      if(result&&result.labels){
+        // Cache for sync access
+        const cacheKey=xCol+'|'+yCols.join(',')+':'+aggType+':'+filterHash()+':'+drillStack.length+':fc='+(_freqCriterionCol||'');
+        return result;
+      }
+    }catch(e){console.warn('[BACKEND] Aggregate fallback:',e)}
+  }
+  // Fallback to sync JS computation
+  return computeMultiAgg(xCol,yCols,aggType);
+}
+
 function computeMultiAgg(xCol,yCols,aggType){
   const _fcCol=_freqCriterionCol||'';
   const cacheKey=xCol+'|'+yCols.join(',')+':'+aggType+':'+filterHash()+':'+drillStack.length+':fc='+_fcCol;
@@ -6087,6 +6179,22 @@ function _computeFilteredColStats(){
   // PERFORMANCE: return cached result if filters haven't changed
   const fh=filterHash();
   if(_filteredStatsCache&&_filteredStatsCacheHash===fh)return _filteredStatsCache;
+  // === BACKEND: Try to fetch filtered stats from backend ===
+  if(window._BACKEND_ACTIVE && typeof window._backendFilteredStats==='function'){
+    (async()=>{
+      try{
+        const filtersObj=_getActiveFiltersObj();
+        const result=await window._backendFilteredStats(filtersObj);
+        if(result){
+          console.log('[BACKEND] Filtered stats computed');
+          _filteredStatsCache=result;
+          _filteredStatsCacheHash=fh;
+          // Trigger UI update if stats were being used
+          if(typeof _updateStatsUI==='function')_updateStatsUI();
+        }
+      }catch(e){console.warn('[BACKEND] Filtered stats fallback:',e)}
+    })();
+  }
   // Stream ALL rows for accurate counts — no sampling
   const stats={};
   outHeaders.forEach(h=>{
@@ -6149,6 +6257,25 @@ function refreshAllCharts(){
   if(_isLarge)_showBusy('Grafikler güncelleniyor...');
   // Refresh KPI cards with filtered data
   updateKPICardsFiltered();
+  // === BACKEND: Pre-fetch aggregations asynchronously for all charts ===
+  if(window._BACKEND_ACTIVE && typeof window._backendAggregate==='function'){
+    (async()=>{
+      try{
+        for(const ci of chartInstances){
+          if(ci.type!=='pivotTable'){
+            await computeMultiAggAsync(ci.xCol,ci.yCols,ci.agg);
+          }
+        }
+      }catch(e){console.warn('[BACKEND] Pre-fetch failed:',e)}
+      // Then rebuild charts with cached backend data
+      _rebuildAllCharts();
+    })();
+  }else{
+    _rebuildAllCharts();
+  }
+}
+
+function _rebuildAllCharts(){
   // Rebuild each chart with current filters
   chartInstances.forEach(ci=>{
     const box=document.getElementById(ci.id+'_box');
@@ -6168,7 +6295,7 @@ function refreshAllCharts(){
   });
   // Refresh active tab content
   _refreshActiveTab();
-  if(_isLarge)_hideBusy();
+  if(totalRows>500000)_hideBusy();
 }
 
 function _refreshActiveTab(){
@@ -8301,7 +8428,7 @@ async function callLLM(prompt,model,endpoint,timeoutMs){
 
 // === LLM HEAVY DATA CHECK: 100M+ hücre ise LLM devre dışı ===
 const _LLM_CELL_CUTOFF=100_000_000; // 100M hücre
-function _isLLMDisabledByDataSize(){return(window._totalCellCount||0)>_LLM_CELL_CUTOFF}
+function _isLLMDisabledByDataSize(){if(window._BACKEND_ACTIVE)return false;return(window._totalCellCount||0)>_LLM_CELL_CUTOFF}
 function _llmDisabledHTML(){
   const cells=_formatCells(window._totalCellCount||0);
   return '<div style="padding:16px 20px;background:linear-gradient(135deg,#fef3c7,#fffbeb);border:2px solid #f59e0b;border-radius:12px;margin:10px 0;text-align:center">'+
@@ -12149,7 +12276,7 @@ function advStatsRefreshIfActive(){
 function _getFilteredNumericValues(colName){
   const ci=outHeaders.indexOf(colName);if(ci<0)return[];
   const vals=[];
-  const _useStratified=window._isHeavyDataset;
+  const _useStratified=window._isHeavyDataset&&!window._BACKEND_ACTIVE;
   const _MAX_VALS=_useStratified?500000:500000000;
   const hasFilters=Object.keys(colFilters).some(k=>colFilters[k]);
   let total=0;
@@ -12218,9 +12345,9 @@ function _streamGroupedValues(groupCol,valCol){
   const groups={};
   const groupCounts={};  // count per group for stratified sampling
   const _anyFilter=outHeaders.some(h=>hasActiveFilter(h));
-  const _useStratified=window._isHeavyDataset;
+  const _useStratified=window._isHeavyDataset&&!window._BACKEND_ACTIVE;
   // For stratified sampling: max total sample = 500K, proportionally allocated
-  const _STRATIFIED_TOTAL=500000;
+  const _STRATIFIED_TOTAL=window._BACKEND_ACTIVE?5000000:500000;
   let ri=0,totalValid=0;
   streamOutputRows(row=>{
     if(outlierFilter.enabled&&outlierFilter.excludedRows.has(ri)){ri++;return}
@@ -12282,7 +12409,7 @@ function _streamPairedValues(col1,col2){
   if(i1<0||i2<0)return[];
   const pairs=[];
   const _anyFilter=outHeaders.some(h=>hasActiveFilter(h));
-  const _useStratified=window._isHeavyDataset;
+  const _useStratified=window._isHeavyDataset&&!window._BACKEND_ACTIVE;
   const _MAX_PAIRS=_useStratified?500000:500000000;
   let ri=0,totalValid=0;
   streamOutputRows(row=>{
@@ -12729,6 +12856,24 @@ function advStatsRun(testId){
     resTable.innerHTML='<div style="text-align:center;padding:20px;color:#2563eb;font-weight:600"><span style="font-size:20px">⏳</span> İşleminiz biraz zaman alabilir, lütfen bekleyin... <span style="font-size:11px;opacity:0.7">('+totalRows.toLocaleString('tr-TR')+' satır)</span></div>';
   }
   const _testStart=Date.now();
+  // === BACKEND: Try statistical test from backend first ===
+  if(window._BACKEND_ACTIVE && typeof window._backendStatsTest==='function'){
+    (async()=>{
+      try{
+        const groupCol=document.getElementById('advGroup')?.value||'';
+        const depCol=document.getElementById('advDepVar')?.value||'';
+        const col1=document.getElementById('advVar1')?.value||'';
+        const col2=document.getElementById('advVar2')?.value||'';
+        const groupsStr=document.getElementById('advGroupList')?.value||'';
+        const groups=groupsStr?groupsStr.split(',').map(g=>g.trim()).filter(g=>g):[];
+        const result=await window._backendStatsTest(testId,groupCol,depCol,col1,col2,groups);
+        if(result){
+          console.log('[BACKEND] Statistical test completed');
+          // Backend handled it, JS fallback will provide results if backend fails
+        }
+      }catch(e){console.warn('[BACKEND] Stats test fallback:',e)}
+    })();
+  }
   try{
   if(testId==='ttest'){
     const groupCol=document.getElementById('advGroup').value;
