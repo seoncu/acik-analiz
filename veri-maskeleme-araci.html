@@ -417,9 +417,9 @@
   <div class="card">
     <div class="flex flex-between flex-center flex-wrap gap-8">
       <div>
-        <h1>📊 Açık Analiz</h1>
+        <h1 style="display:flex;align-items:center;gap:10px">📊 Açık Analiz <span style="font-size:11px;font-weight:500;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;padding:3px 10px;border-radius:20px;vertical-align:middle">v1.5</span></h1>
         <p class="subtitle">Büyük dosyaları işle &bull; Yatay/Dikey Birleştir &bull; Maskele &bull; Analiz et &bull; PDF rapor oluştur</p>
-        <p style="font-size:12px;color:#64748b;margin-top:6px;max-width:680px;line-height:1.5">Bu uygulama, büyük veri setlerinin kolayca sisteme aktarılması, birleştirilmesi, maskelenmesi ve ardından görselleştirme ile raporlama yapılması amacıyla geliştirilmiştir. Yazılı izin olmaksızın paylaşılamaz ve kullanılamaz. &copy; Sefa Emre Öncü</p>
+        <p style="font-size:11px;color:#94a3b8;margin-top:6px;max-width:680px;line-height:1.5">Büyük veri setlerini güvenle aktarın, birleştirin, maskeleyin ve analiz edin. Kişisel kullanım amaçlıdır.</p>
       </div>
       <div class="flex gap-8 flex-center flex-wrap">
         <div class="privacy-badge">🛡️ %100 Lokal</div>
@@ -430,12 +430,6 @@
         <button id="btnLLMSetup" onclick="showLLMSetupModal()" class="privacy-badge" style="background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;cursor:pointer;font-weight:600;font-size:12px" title="Yerel dil modelini kolayca kurun">
           🚀 LLM Kur
         </button>
-      </div>
-    </div>
-    <div id="heroPythonBadge" style="display:none;margin-top:8px;text-align:right">
-      <div id="heroPythonBadgeInner" class="privacy-badge" style="background:#ecfdf5;color:#065f46;border-color:#6ee7b7;font-weight:600;font-size:12px;display:inline-flex;align-items:center;gap:6px;cursor:default">
-        <span id="heroPythonDot" style="width:8px;height:8px;border-radius:50%;background:#059669;display:inline-block"></span>
-        <span id="heroPythonText">🐍 Python Motor: Kontrol ediliyor...</span>
       </div>
     </div>
   </div>
@@ -629,7 +623,7 @@
           <div style="margin-top:6px;font-size:11.5px;color:#475569;line-height:1.7">
             <p style="margin:0">→ İlk seferde gerekli kütüphaneler <strong>otomatik kurulur</strong> (~1-2 dakika). Sonraki açılışlarda anında başlar.</p>
             <p style="margin:3px 0 0">→ Açılan siyah pencereyi (Terminal/Komut İstemi) <strong>kapatmayın</strong> — motor arka planda çalışıyor.</p>
-            <p style="margin:3px 0 0">→ Tarayıcınız otomatik açılır. Sayfanın üst kısmında <span style="background:#059669;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">🟢 Python Motor: Aktif</span> rozeti görünür.</p>
+            <p style="margin:3px 0 0">→ Tarayıcınız otomatik açılır. Sayfanın sağ alt köşesinde <span style="background:#059669;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">🟢 Python Motor Aktif</span> rozeti görünür.</p>
           </div>
         </div>
       </div>
@@ -1847,10 +1841,6 @@ function _updateEngineModeUI(){
   const sub=document.getElementById('pythonModeSubtitle');
   const badge=document.getElementById('pythonStatusBadge');
   const setupBox=document.getElementById('pythonSetupInfo');
-  const heroBadge=document.getElementById('heroPythonBadge');
-  const heroBadgeInner=document.getElementById('heroPythonBadgeInner');
-  const heroDot=document.getElementById('heroPythonDot');
-  const heroText=document.getElementById('heroPythonText');
   // Settings panel elements
   const setPyStatus=document.getElementById('settingsPythonStatus');
   const setEngMode=document.getElementById('settingsEngineMode');
@@ -1858,11 +1848,6 @@ function _updateEngineModeUI(){
     if(sub){sub.textContent='Motor Aktif ✓';sub.style.color='#059669'}
     if(badge)badge.innerHTML='<span style="display:inline-block;padding:4px 12px;background:#059669;color:#fff;border-radius:20px;font-size:11px;font-weight:600">🟢 Bağlı — Kullanıma Hazır</span>';
     if(setupBox)setupBox.style.display='none';
-    // Hero bar Python badge
-    if(heroBadge)heroBadge.style.display='';
-    if(heroBadgeInner){heroBadgeInner.style.background='#ecfdf5';heroBadgeInner.style.color='#065f46';heroBadgeInner.style.borderColor='#6ee7b7'}
-    if(heroDot)heroDot.style.background='#059669';
-    if(heroText)heroText.textContent='🐍 Python Motor: Aktif';
     // Settings panel
     if(setPyStatus){setPyStatus.textContent='🟢 Aktif — Bağlı';setPyStatus.style.color='#059669'}
     if(setEngMode){setEngMode.textContent='Python (FastAPI + Polars)';setEngMode.style.color='#059669'}
@@ -1875,17 +1860,6 @@ function _updateEngineModeUI(){
     // Settings panel
     if(setPyStatus){setPyStatus.textContent='⚠ Bağlı Değil';setPyStatus.style.color='#f59e0b'}
     if(setEngMode){setEngMode.textContent='Tarayıcı (JavaScript)';setEngMode.style.color='#94a3b8'}
-    // Hero bar — show only if user explicitly selected Python mode
-    if(heroBadge){
-      if(window._selectedEngineMode==='python'){
-        heroBadge.style.display='';
-        if(heroBadgeInner){heroBadgeInner.style.background='#fef2f2';heroBadgeInner.style.color='#991b1b';heroBadgeInner.style.borderColor='#fecaca'}
-        if(heroDot)heroDot.style.background='#dc2626';
-        if(heroText)heroText.textContent='🐍 Python Motor: Bağlı Değil';
-      }else{
-        heroBadge.style.display='none';
-      }
-    }
   }
 }
 // Check on page load (api-bridge.js sets _BACKEND_ACTIVE after health check)
@@ -2382,6 +2356,8 @@ fileInput.addEventListener('change',e=>handleFiles(e.target.files));
 
 async function handleFiles(fileList){
   hideError();if(!fileList||!fileList.length)return;
+  // Reset backend processing flag for new file
+  window._processedByBackend=false;
   console.log('[handleFiles] Processing '+fileList.length+' file(s)');
   try{_addLog(fileList.length+' dosya yükleniyor: '+Array.from(fileList).map(f=>f.name).join(', '))}catch(e){}
   const valid=[];
@@ -2832,6 +2808,132 @@ async function startProcessing(){
   await _cleanupOPFS();
   outHeaders=headers.filter(h=>maskConfig[h]!=='remove');
 
+  // ============================================================
+  // PYTHON MOTOR FAST-PATH: Tüm işlemi Python'a devret
+  // ============================================================
+  if(window._BACKEND_ACTIVE&&typeof window._backendProcess==='function'){
+    try{
+      document.getElementById('progressFill').style.width='10%';
+      document.getElementById('progressPct').textContent='10%';
+      document.getElementById('processedCount').textContent='🐍 Python Motor ile işleniyor...';
+      // Banner
+      const _pyBanner=document.createElement('div');
+      _pyBanner.id='longOpBanner';
+      _pyBanner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#059669,#10b981);color:#fff;padding:12px 24px;text-align:center;font-size:15px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;gap:12px';
+      _pyBanner.innerHTML='<span style="font-size:20px">🐍</span> Python Motor ile işleniyor — Polars (Rust) kullanılıyor, tarayıcıdan çok daha hızlı...';
+      document.body.appendChild(_pyBanner);
+
+      let pyResult=null;
+
+      // === Determine which path: single, merge, or joined ===
+      if(currentFile._isJoined&&joinedOutput){
+        // JOINED DATA: Send joined CSV as blob to backend
+        document.getElementById('processedCount').textContent='🐍 Python Motor: Birleştirilmiş veri gönderiliyor...';
+        const csvLines=[joinedOutput.headers.map(h=>'"'+h.replace(/"/g,'""')+'"').join(',')];
+        for(const row of joinedOutput.rows){
+          csvLines.push(row.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(','));
+        }
+        const csvBlob=new Blob([csvLines.join('\n')],{type:'text/csv'});
+        const csvFile=new File([csvBlob],'joined_data.csv',{type:'text/csv'});
+        pyResult=await window._backendProcess(csvFile,maskConfig,',');
+      }else if(currentFile._isMerged&&currentFile._files&&currentFile._files.length>1){
+        // MERGED FILES: Send all files to backend for server-side merge
+        document.getElementById('processedCount').textContent='🐍 Python Motor: '+currentFile._files.length+' dosya birleştiriliyor...';
+        pyResult=await window._backendProcessMulti(currentFile._files,maskConfig,delimiterMode,fileLabels);
+      }else{
+        // SINGLE FILE: Send directly
+        pyResult=await window._backendProcess(currentFile,maskConfig,delimiterMode);
+      }
+      if(pyResult&&pyResult.ok){
+        // Python başarılı — JS loop tamamen atlanıyor!
+        console.log('[PYTHON FAST-PATH] '+pyResult.cells.toLocaleString('tr-TR')+' hücre '+pyResult.processing_time+'s\'de işlendi');
+        totalRows=pyResult.rows;
+        outHeaders=pyResult.headers;
+
+        // colStats'ı Python'dan gelen verilerle güncelle
+        colStats={};
+        for(const h of outHeaders){
+          const ps=pyResult.col_stats[h]||{};
+          colStats[h]={
+            count:ps.count||0,empty:ps.empty||0,
+            numCount:ps.numCount||0,sum:ps.sum||0,sumSq:0,
+            min:ps.min||0,max:ps.max||0,
+            freq:ps.freq||{},_freqSize:Object.keys(ps.freq||{}).length,
+            isNumeric:!!ps.isNumeric,allVals:[],_allValsTotal:0,
+            uniqueCount:ps.uniqueCount||0,_uniqSet:new Set(),_useHLL:false
+          };
+          if(ps.isNumeric){
+            colStats[h].mean=ps.mean||0;
+            colStats[h].std=ps.std||0;
+            colStats[h].median=ps.median||0;
+            colStats[h].p25=ps.p25||0;
+            colStats[h].p75=ps.p75||0;
+          }
+        }
+
+        // Reservoir sample'ı Python'dan gelen sample_rows ile oluştur
+        _reservoirSample=[];
+        if(pyResult.sample_rows&&pyResult.sample_rows.length){
+          const outDelim=document.getElementById('outputFormat').value==='tsv'?'\t':',';
+          pyResult.sample_rows.forEach(row=>{
+            const line=outHeaders.map(h=>'"'+(String(row[h]||'').replace(/"/g,'""'))+'"').join(outDelim);
+            _reservoirSample.push(line);
+          });
+        }
+        _rsvRowCount=totalRows;
+
+        // outputChunks — sadece header + preview rows (indirme Python'dan yapılacak)
+        const outDelim2=document.getElementById('outputFormat').value==='tsv'?'\t':',';
+        const headerLine=outHeaders.map(h=>'"'+h.replace(/"/g,'""')+'"').join(outDelim2)+'\n';
+        outputChunks=[headerLine];
+        if(pyResult.preview_rows){
+          pyResult.preview_rows.forEach(row=>{
+            const line=outHeaders.map(h=>'"'+(String(row[h]||'').replace(/"/g,'""'))+'"').join(outDelim2)+'\n';
+            outputChunks.push(line);
+          });
+        }
+        // Backend'den indirme yapılabilmesi için flag
+        window._processedByBackend=true;
+
+        // UI güncelle
+        document.getElementById('progressFill').style.width='100%';
+        document.getElementById('progressPct').textContent='100%';
+        const _doneCells=totalRows*outHeaders.length;
+        const _doneMsg=totalRows.toLocaleString('tr-TR')+' satır × '+outHeaders.length+' sütun = '+_formatCells(_doneCells)+' hücre işlendi. (🐍 Python Motor: '+pyResult.processing_time+'s)';
+        document.getElementById('doneText').textContent=_doneMsg;
+        document.getElementById('processedCount').textContent='✅ '+_doneMsg;
+        const noteEl=document.getElementById('xlsxNote');
+        if(totalRows>1e6){noteEl.textContent='⚠️ 1M+ satır: Excel RAM kullanabilir, CSV önerilir.';noteEl.style.color='#f59e0b'}else noteEl.textContent='';
+
+        window._totalCellCount=_doneCells;
+        window._isHeavyDataset=_doneCells>100000000;
+        window._isVeryHeavyDataset=_doneCells>500000000;
+        _pyBanner.remove();
+
+        renderSummaryStats();
+        renderColTypeChips();
+        _colTypesConfirmed=false;
+        const _chk=document.getElementById('colTypeConfirmCheck');if(_chk)_chk.checked=false;
+        onColTypeConfirmChange(false);
+        if(typeof markWorkDirty==='function')markWorkDirty();
+        showStep('Done');
+        setTimeout(()=>{_autoSaveSession()},500);
+        try{_addLog('Python Motor ile işlendi: '+_formatCells(_doneCells)+' hücre, '+pyResult.processing_time+'s','ok')}catch(e){}
+        return; // JS loop tamamen atlandı!
+      }else{
+        console.warn('[PYTHON FAST-PATH] Başarısız, JS fallback...');
+        _pyBanner.remove();
+      }
+    }catch(e){
+      console.error('[PYTHON FAST-PATH] Hata:',e);
+      const _pyB=document.getElementById('longOpBanner');if(_pyB)_pyB.remove();
+      try{_addLog('Python Motor hatası, JS fallback: '+e.message,'err')}catch(e2){}
+    }
+  }
+  // ============================================================
+  // JS FALLBACK PATH (Python yoksa veya başarısız olduysa)
+  // ============================================================
+
   // Add "Kaynak" source column when merging multiple files (not for JOIN)
   const isMerge=currentFile&&currentFile._isMerged&&currentFile._files&&currentFile._files.length>1&&!currentFile._isJoined;
   if(isMerge&&!outHeaders.includes('Kaynak'))outHeaders.push('Kaynak');
@@ -2862,11 +2964,25 @@ async function startProcessing(){
     // Kullanıcıya uzun işlem uyarısı göster
     const _longOpBanner=document.createElement('div');
     _longOpBanner.id='longOpBanner';
-    _longOpBanner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#fff;padding:14px 24px;text-align:center;font-size:15px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;gap:12px';
-    _longOpBanner.innerHTML='<span style="font-size:22px;animation:spin 1s linear infinite">⏳</span> İşleminiz biraz zaman alabilir, lütfen bekleyin... <span style="font-size:12px;font-weight:400;opacity:0.8">(~'+_formatCells(_estCells)+' hücre, tahmini '+estMins+' dk)</span>';
+    _longOpBanner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#fff;padding:10px 24px;text-align:center;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;gap:12px';
+    _longOpBanner.innerHTML='<span style="font-size:18px;animation:spin 1s linear infinite">⏳</span> <span id="longOpText">İşleminiz başlıyor... (~'+_formatCells(_estCells)+' hücre)</span> <span id="longOpProgress" style="font-size:12px;font-weight:400;opacity:0.85;margin-left:8px"></span>';
     const _styleEl=document.createElement('style');_styleEl.textContent='@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}';
     document.head.appendChild(_styleEl);
     document.body.appendChild(_longOpBanner);
+  }
+  // Helper to update long-op banner with real progress
+  function _updateLongOpBanner(pct,rows,etaSec){
+    const t=document.getElementById('longOpText');
+    const p=document.getElementById('longOpProgress');
+    if(t){t.textContent=rows.toLocaleString('tr-TR')+' satır işlendi ('+_formatCells(rows*outHeaders.length)+' hücre)'}
+    if(p){
+      let info='%'+pct;
+      if(etaSec>0){
+        if(etaSec>=60){info+=' — ~'+Math.ceil(etaSec/60)+' dk kaldı'}
+        else{info+=' — ~'+etaSec+' sn kaldı'}
+      }
+      p.textContent=info;
+    }
   }
 
   const headerLine=outHeaders.map(h=>'"'+h.replace(/"/g,'""')+'"').join(outDelim)+'\n';
@@ -2896,7 +3012,11 @@ async function startProcessing(){
           const pct=Math.round(rowCount/totalJoinRows*100);
           document.getElementById('progressFill').style.width=pct+'%';
           document.getElementById('progressPct').textContent=pct+'%';
-          document.getElementById('processedCount').textContent=rowCount.toLocaleString('tr-TR')+' satır işlendi (JOIN)';
+          let etaSec=0;
+          let progTxt=rowCount.toLocaleString('tr-TR')+' satır işlendi (JOIN)';
+          if(pct>2){const elapsed=(Date.now()-_procStartTime)/1000;etaSec=Math.round(elapsed/pct*(100-pct));if(etaSec>3)progTxt+=' — ~'+etaSec+' sn kaldı'}
+          document.getElementById('processedCount').textContent=progTxt;
+          _updateLongOpBanner(pct,rowCount,etaSec);
           await new Promise(r=>setTimeout(r,0));
         }
       }
@@ -2933,8 +3053,10 @@ async function startProcessing(){
               document.getElementById('progressFill').style.width=pct+'%';
               document.getElementById('progressPct').textContent=pct+'%';
               let progTxt=rowCount.toLocaleString('tr-TR')+' satır'+(fileList.length>1?' (dosya '+(fi+1)+'/'+fileList.length+')':'');
-              if(pct>2){const elapsed=(Date.now()-_procStartTime)/1000;const eta=Math.round(elapsed/pct*(100-pct));if(eta>3)progTxt+=' — ~'+eta+' sn kaldı'}
+              let etaSec=0;
+              if(pct>2){const elapsed=(Date.now()-_procStartTime)/1000;etaSec=Math.round(elapsed/pct*(100-pct));if(etaSec>3)progTxt+=' — ~'+etaSec+' sn kaldı'}
               document.getElementById('processedCount').textContent=progTxt;
+              _updateLongOpBanner(pct,rowCount,etaSec);
               await new Promise(r=>setTimeout(r,0));
             }
           }
@@ -2942,6 +3064,7 @@ async function startProcessing(){
           document.getElementById('progressFill').style.width=pct+'%';
           document.getElementById('progressPct').textContent=pct+'%';
           document.getElementById('processedCount').textContent=rowCount.toLocaleString('tr-TR')+' satır'+(fileList.length>1?' (dosya '+(fi+1)+'/'+fileList.length+')':'');
+          _updateLongOpBanner(pct,rowCount,0);
         }
       }
     }
@@ -3998,6 +4121,23 @@ function onFreqCriterionChange(){
 // === Filter system (kept from before) ===
 function initColFilters(){
   outHeaders.forEach(h=>{if(!colFilters[h])colFilters[h]={minVal:null,maxVal:null,excludeValues:[],includeValues:null,textFilters:[]}});
+}
+
+// Build filters object for backend API — only include columns with active filters
+function _getActiveFiltersObj(){
+  const obj={};
+  outHeaders.forEach(h=>{
+    if(hasActiveFilter(h)){
+      const f=colFilters[h];
+      obj[h]={};
+      if(f.minVal!==null)obj[h].minVal=f.minVal;
+      if(f.maxVal!==null)obj[h].maxVal=f.maxVal;
+      if(f.excludeValues&&f.excludeValues.length)obj[h].excludeValues=f.excludeValues;
+      if(f.includeValues!==null&&f.includeValues.length)obj[h].includeValues=f.includeValues;
+      if(f.textFilters&&f.textFilters.length)obj[h].textFilters=f.textFilters;
+    }
+  });
+  return obj;
 }
 
 function hasActiveFilter(colName){
@@ -5471,6 +5611,19 @@ function _noDataHTML(){
 // === Stream ALL output rows without memory caching (for accurate N counts) ===
 // callback(row) is called for each parsed row (array of strings)
 function streamOutputRows(callback){
+  // PYTHON BACKEND PATH: Use reservoir sample when data was processed by backend
+  if(window._processedByBackend&&_reservoirSample&&_reservoirSample.length>0&&(!_hasOutputData()||outputChunks.length<=30)){
+    const outDelim=document.getElementById('outputFormat').value==='tsv'?'\t':',';
+    let rowCount=0;
+    for(let si=0;si<_reservoirSample.length;si++){
+      const line=_reservoirSample[si];
+      if(!line||!line.trim())continue;
+      const row=parseOutputRows._parseRow?parseOutputRows._parseRow(line,outDelim):parseCSVLine(line,outDelim);
+      callback(row);
+      rowCount++;
+    }
+    return rowCount;
+  }
   // Check if outputChunks has actual data (use cached length)
   if(!_hasOutputData()){
     console.warn('streamOutputRows: outputChunks boş ('+_outputDataLen+' bytes, '+outputChunks.length+' chunks). Veri yok — dosyayı yeniden işleyin.');
@@ -5512,6 +5665,9 @@ function computeGroupedAgg(xCol,yCol,aggType){
 // ===== BACKEND-POWERED AGGREGATION WRAPPER =====
 // Async version that pre-fetches from backend if available, falls back to JS
 async function computeMultiAggAsync(xCol,yCols,aggType){
+  // Check cache first to avoid redundant backend calls
+  const _ck=xCol+'|'+yCols.join(',')+':'+aggType+':'+filterHash()+':'+drillStack.length+':fc='+(_freqCriterionCol||'');
+  if(_aggCache[_ck]&&_aggCache[_ck]._fromBackend)return _aggCache[_ck];
   if(window._BACKEND_ACTIVE && typeof window._backendAggregate==='function'){
     try{
       const sortMode=document.getElementById('dashSort')?document.getElementById('dashSort').value:'desc';
@@ -5520,6 +5676,8 @@ async function computeMultiAggAsync(xCol,yCols,aggType){
       if(result&&result.labels){
         // Cache for sync access
         const cacheKey=xCol+'|'+yCols.join(',')+':'+aggType+':'+filterHash()+':'+drillStack.length+':fc='+(_freqCriterionCol||'');
+        result._fromBackend=true;
+        _aggCache[cacheKey]=result; // Cache for sync access by _buildChart
         return result;
       }
     }catch(e){console.warn('[BACKEND] Aggregate fallback:',e)}
@@ -6114,15 +6272,56 @@ function computeScatterData(col1,col2){
 }
 
 // === Dashboard Sampling Transparency Note ===
-function _dashSamplingNote(context){
+function _dashSamplingNote(context,showDownload){
   // Show note when scatter/outlier uses sampled data instead of ALL rows
-  if(totalRows<=DASH_SAMPLE_LIMIT)return '';
-  const sampleN=Math.min(totalRows,DASH_SAMPLE_LIMIT);
+  if(totalRows<=DASH_SAMPLE_LIMIT&&!window._processedByBackend)return '';
+  const sampleN=window._processedByBackend?(_reservoirSample?_reservoirSample.length:0):Math.min(totalRows,DASH_SAMPLE_LIMIT);
+  if(sampleN<=0||sampleN>=totalRows)return '';
   const ctx=context||'grafik';
-  return '<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;padding:5px 10px;margin-top:4px;font-size:10px;color:#92400e;display:flex;align-items:center;gap:6px">'+
+  let html='<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;padding:6px 12px;margin-top:6px;font-size:10px;color:#92400e">'+
+    '<div style="display:flex;align-items:center;gap:6px">'+
     '<span style="font-size:13px">⚠️</span>'+
-    '<span><b>Örnekleme:</b> Bu '+ctx+' '+sampleN.toLocaleString('tr-TR')+' satırlık örneklem üzerinden oluşturulmuştur (toplam: '+totalRows.toLocaleString('tr-TR')+' satır). '+
-    'Temel metrikler (ortalama, toplam, medyan vb.) tüm veriler üzerinden hesaplanmaktadır.</span></div>';
+    '<span><b>Örnekleme:</b> Bu '+ctx+' <b>'+sampleN.toLocaleString('tr-TR')+'</b> satırlık akıllı örneklem üzerinden oluşturulmuştur (toplam: <b>'+totalRows.toLocaleString('tr-TR')+'</b> satır). '+
+    'Temel metrikler (sayı, toplam, ortalama, medyan, min, maks, frekans vb.) <b>tüm veriler</b> üzerinden hesaplanmaktadır.</span></div>';
+  if(showDownload){
+    html+='<div style="margin-top:5px;display:flex;gap:6px;align-items:center">'+
+      '<span style="font-size:9px;color:#78350f">Örneklem veri setini indir:</span>'+
+      '<button onclick="_downloadReservoirSample(\'csv\')" style="background:#92400e;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:9px;cursor:pointer;font-weight:600">📥 CSV</button>'+
+      '<button onclick="_downloadReservoirSample(\'txt\')" style="background:#78350f;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:9px;cursor:pointer;font-weight:600">📥 TXT</button>'+
+      '<span style="font-size:8px;color:#a16207">('+sampleN.toLocaleString('tr-TR')+' satır)</span>'+
+    '</div>';
+  }
+  html+='</div>';
+  return html;
+}
+
+// Download reservoir sample as CSV or TXT
+function _downloadReservoirSample(format){
+  if(!_reservoirSample||!_reservoirSample.length){showError('Örneklem verisi mevcut değil.');return}
+  const delim=format==='txt'?'\t':',';
+  const ext=format==='txt'?'txt':'csv';
+  const headerLine=outHeaders.map(h=>'"'+h.replace(/"/g,'""')+'"').join(delim);
+  let lines=[headerLine];
+  _reservoirSample.forEach(line=>{
+    if(!line||!line.trim())return;
+    if(format==='txt'&&delim==='\t'){
+      // Convert CSV-style sample line to TSV
+      const row=parseCSVLine(line,',');
+      lines.push(row.join('\t'));
+    }else{
+      lines.push(line);
+    }
+  });
+  const content=lines.join('\n');
+  const blob=new Blob(['\uFEFF'+content],{type:format==='txt'?'text/plain;charset=utf-8':'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  const baseName=(currentFile&&currentFile.name)?currentFile.name.replace(/\.[^.]+$/,''):'veri';
+  a.download=baseName+'_orneklem_'+_reservoirSample.length+'satir.'+ext;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  try{_addLog('Örneklem indirildi: '+_reservoirSample.length+' satır ('+ext.toUpperCase()+')','ok')}catch(e){}
 }
 
 // === Dashboard Chart ===
@@ -6658,6 +6857,24 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
   }
   const inst=new Chart(ctx,chartConfig);
   chartInstances.push({id,instance:inst,title,type,xCol,yCols,agg,colorCol:colorCol||'',subGroups:subGroups.slice(),filterSnapshot:JSON.stringify(colFilters),showLabels:_showLabels});
+  // === BACKEND: If chart was built from JS sample, async-refresh with full backend data ===
+  if(!_buildChart._noLoop && window._BACKEND_ACTIVE && typeof window._backendAggregate==='function' && type!=='scatter' && type!=='histogram' && type!=='bubble'){
+    const _bid=id,_bxCol=xCol,_byCols=yCols.slice(),_bagg=agg,_bcolorCol=colorCol||'',_bsubGroups=subGroups.slice(),_btype=type;
+    computeMultiAggAsync(_bxCol,_byCols,_bagg).then(backendResult=>{
+      if(backendResult&&backendResult._fromBackend){
+        const ci=chartInstances.find(c=>c.id===_bid);
+        if(ci&&ci.instance){try{ci.instance.destroy()}catch(e){}}
+        if(ci)chartInstances.splice(chartInstances.indexOf(ci),1);
+        const bx=document.getElementById(_bid+'_box');
+        if(bx){
+          bx.querySelectorAll('canvas').forEach(c=>c.remove());
+          _buildChart._noLoop=true;
+          _buildChart(_bid,bx,_bxCol,_byCols,_btype,_bagg,_bcolorCol,_bsubGroups);
+          _buildChart._noLoop=false;
+        }
+      }
+    }).catch(()=>{});
+  }
   // Sampling transparency: show note for scatter/bubble (uses parseOutputRows sample)
   if((type==='scatter'||type==='bubble')&&totalRows>DASH_SAMPLE_LIMIT){
     const noteDiv=document.createElement('div');noteDiv.innerHTML=_dashSamplingNote('saçılım grafiği');
@@ -6769,21 +6986,43 @@ function _computeFilteredColStats(){
   // PERFORMANCE: return cached result if filters haven't changed
   const fh=filterHash();
   if(_filteredStatsCache&&_filteredStatsCacheHash===fh)return _filteredStatsCache;
-  // === BACKEND: Try to fetch filtered stats from backend ===
+  // === BACKEND: Fetch filtered stats from backend ===
   if(window._BACKEND_ACTIVE && typeof window._backendFilteredStats==='function'){
+    // Fire async backend request — it will update cache and trigger UI refresh
     (async()=>{
       try{
         const filtersObj=_getActiveFiltersObj();
+        // First, send filter config to backend
+        if(typeof window._backendSetFilters==='function')await window._backendSetFilters(filtersObj);
         const result=await window._backendFilteredStats(filtersObj);
-        if(result){
+        if(result&&result.col_stats){
           console.log('[BACKEND] Filtered stats computed');
-          _filteredStatsCache=result;
+          // Transform backend stats to match JS format
+          const stats={};
+          for(const h of outHeaders){
+            const bs=result.col_stats[h]||{};
+            stats[h]={
+              count:bs.count||0,empty:bs.empty||0,
+              numCount:bs.numCount||0,sum:bs.sum||0,sumSq:0,
+              min:bs.min||0,max:bs.max||0,
+              freq:bs.freq||{},isNumeric:!!bs.isNumeric,
+              uniqueCount:bs.uniqueCount||0,
+              _median:bs.median||undefined,_p25:bs.p25||undefined,_p75:bs.p75||undefined
+            };
+          }
+          _filteredStatsCache=stats;
           _filteredStatsCacheHash=fh;
-          // Trigger UI update if stats were being used
           if(typeof _updateStatsUI==='function')_updateStatsUI();
         }
       }catch(e){console.warn('[BACKEND] Filtered stats fallback:',e)}
     })();
+    // If backend processed the data, return colStats as initial (no JS output data to stream)
+    if(window._processedByBackend){
+      // Return unfiltered colStats as placeholder — backend will update async
+      const placeholder={};
+      outHeaders.forEach(h=>{placeholder[h]=colStats[h]||{count:0,empty:0,freq:{},isNumeric:false}});
+      return placeholder;
+    }
   }
   // Stream ALL rows for accurate counts — no sampling
   const stats={};
@@ -6838,6 +7077,12 @@ function _computeFilteredColStats(){
   return stats;
 }
 
+// === Update stats UI after async backend filtered stats arrive ===
+function _updateStatsUI(){
+  try{renderSummaryStats()}catch(e){}
+  try{updateKPICardsFiltered()}catch(e){}
+}
+
 // === Refresh All Charts & KPIs on Filter Change ===
 function refreshAllCharts(){
   _aggCache={};
@@ -6851,6 +7096,12 @@ function refreshAllCharts(){
   if(window._BACKEND_ACTIVE && typeof window._backendAggregate==='function'){
     (async()=>{
       try{
+        // Sync filters to backend FIRST so aggregate uses correct filter state
+        const anyF=outHeaders.some(h=>hasActiveFilter(h));
+        if(anyF&&typeof window._backendSetFilters==='function'){
+          const fObj=_getActiveFiltersObj();
+          await window._backendSetFilters(fObj);
+        }
         for(const ci of chartInstances){
           if(ci.type!=='pivotTable'){
             await computeMultiAggAsync(ci.xCol,ci.yCols,ci.agg);
@@ -8138,6 +8389,12 @@ function renderSummaryStatsTable(){
     });
 
     if(!html)html='<p class="text-sm text-muted">Sonuç bulunamadı.</p>';
+    // Add sampling note with download buttons when using sample data
+    if(window._processedByBackend&&_reservoirSample&&_reservoirSample.length>0&&_reservoirSample.length<totalRows){
+      html+=_dashSamplingNote('istatistik tablosu',true);
+    }else if(totalRows>DASH_SAMPLE_LIMIT){
+      html+=_dashSamplingNote('istatistik tablosu',true);
+    }
     area.innerHTML=html;
   },50);
 }
@@ -10296,6 +10553,11 @@ function addDataJoin(){
 // === Downloads ===
 function downloadCSV(){
   try{_addLog('CSV indiriliyor...','ok')}catch(e){}
+  // Python Motor fast-path: indirmeyi backend'den yap
+  if(window._processedByBackend&&typeof window._backendDownloadProcessed==='function'){
+    window._backendDownloadProcessed('csv');
+    return;
+  }
   const fmt=document.getElementById('outputFormat').value,ext=fmt==='tsv'?'tsv':'csv';
   // Use pre-built Blob for large datasets (already converted in startProcessing)
   const blob=(window._outputBlobReady&&window._outputBlob)?window._outputBlob:new Blob(outputChunks,{type:'text/csv;charset=utf-8'});
@@ -10304,6 +10566,11 @@ function downloadCSV(){
 }
 
 function downloadXLSX(){
+  // Python Motor fast-path
+  if(window._processedByBackend&&typeof window._backendDownloadProcessed==='function'){
+    window._backendDownloadProcessed('xlsx');
+    return;
+  }
   if(typeof XLSX==='undefined'){showError('Excel kütüphanesi yüklenemedi. Internet bağlantınızı kontrol edin veya CSV olarak indirin.');return}
   const noteEl=document.getElementById('xlsxNote');noteEl.textContent='Excel hazırlanıyor...';
   setTimeout(()=>{
@@ -13134,7 +13401,12 @@ function _samplingNoteBanner(dataObj){
     '<div><b>Örnekleme Aktif:</b> '+escHtml(obj._sampleInfo||'')+
     '<br><span style="font-size:10px;color:#a16207">Büyük veri seti nedeniyle tabakalı/rastgele örnekleme uygulanmıştır. Her grup evreni orantılı şekilde temsil etmektedir. Popülasyon N='+
     (obj._populationN||0).toLocaleString('tr-TR')+', Örneklem n='+(obj._sampleN||0).toLocaleString('tr-TR')+'</span>'+
-    '<br><span style="font-size:10px;color:#065f46">ℹ️ Not: Temel metrikler (sayı, toplam, ortalama, medyan, min, maks) tüm veriler üzerinden hesaplanmaktadır. Örnekleme yalnızca bu ileri istatistik testi için geçerlidir.</span></div></div>';
+    '<br><span style="font-size:10px;color:#065f46">ℹ️ Not: Temel metrikler (sayı, toplam, ortalama, medyan, min, maks) tüm veriler üzerinden hesaplanmaktadır. Örnekleme yalnızca bu ileri istatistik testi için geçerlidir.</span>'+
+    '<br><span style="margin-top:3px;display:inline-flex;gap:4px;align-items:center">'+
+    '<button onclick="_downloadReservoirSample(\'csv\')" style="background:#92400e;color:#fff;border:none;border-radius:3px;padding:1px 6px;font-size:9px;cursor:pointer;font-weight:600">📥 CSV</button>'+
+    '<button onclick="_downloadReservoirSample(\'txt\')" style="background:#78350f;color:#fff;border:none;border-radius:3px;padding:1px 6px;font-size:9px;cursor:pointer;font-weight:600">📥 TXT</button>'+
+    '<span style="font-size:8px;color:#a16207">Örneklem veri setini indir</span></span>'+
+    '</div></div>';
 }
 
 // --- Helper: Run t-test with user-selected 2 groups (when 3+ exist) ---
