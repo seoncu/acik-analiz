@@ -579,6 +579,7 @@
           </div>
           <div id="modePythonCheck" style="position:absolute;top:12px;right:12px;width:24px;height:24px;background:#d1d5db;border-radius:50%;display:none;align-items:center;justify-content:center"><span style="color:#fff;font-size:14px;font-weight:700">✓</span></div>
           <div id="pythonStatusBadge" style="margin-top:12px;text-align:center"></div>
+          <button id="btnReconnectPython" onclick="(async function(){var b=document.getElementById('btnReconnectPython');b.disabled=true;b.textContent='Bağlanıyor...';try{var r=await fetch('http://127.0.0.1:8765/api/health',{signal:AbortSignal.timeout(3000)});if(r.ok){var d=await r.json();if(d.status==='ok'){window._BACKEND_ACTIVE=true;window._BACKEND_INFO=d;if(typeof window._updateEngineModeUI==='function')window._updateEngineModeUI();b.textContent='✓ Bağlandı!';b.style.background='#059669';setTimeout(function(){b.textContent='🔄 Yeniden Bağlan';b.style.background='#f59e0b';b.disabled=false},2000);return}}b.textContent='✗ Bağlanamadı';b.style.background='#dc2626';setTimeout(function(){b.textContent='🔄 Yeniden Bağlan';b.style.background='#f59e0b';b.disabled=false},2000)}catch(e){b.textContent='✗ Motor bulunamadı';b.style.background='#dc2626';setTimeout(function(){b.textContent='🔄 Yeniden Bağlan';b.style.background='#f59e0b';b.disabled=false},2000)}})()" style="margin-top:8px;width:100%;padding:8px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🔄 Yeniden Bağlan</button>
         </div>
       </div>
       <!-- Python kurulum açıklaması -->
@@ -1846,35 +1847,56 @@ function _selectEngineMode(mode){
 // Detect Python backend status and update UI
 // window'a açıkça atanır — api-bridge.js'den çağrılabilmesi için
 window._updateEngineModeUI=function _updateEngineModeUI(){
-  const sub=document.getElementById('pythonModeSubtitle');
-  const badge=document.getElementById('pythonStatusBadge');
-  const setupBox=document.getElementById('pythonSetupInfo');
-  // Settings panel elements
-  const setPyStatus=document.getElementById('settingsPythonStatus');
-  const setEngMode=document.getElementById('settingsEngineMode');
-  if(window._BACKEND_ACTIVE){
-    if(sub){sub.textContent='Motor Aktif ✓';sub.style.color='#059669'}
-    if(badge)badge.innerHTML='<span style="display:inline-block;padding:4px 12px;background:#059669;color:#fff;border-radius:20px;font-size:11px;font-weight:600">🟢 Bağlı — Kullanıma Hazır</span>';
-    if(setupBox)setupBox.style.display='none';
-    // Settings panel
-    if(setPyStatus){setPyStatus.textContent='🟢 Aktif — Bağlı';setPyStatus.style.color='#059669'}
-    if(setEngMode){setEngMode.textContent='Python (FastAPI + Polars)';setEngMode.style.color='#059669'}
-    // Auto-select python mode if backend is active
-    if(typeof _selectEngineMode==='function')_selectEngineMode('python');
-  }else{
-    if(sub){sub.textContent='Motor Bağlı Değil';sub.style.color='#dc2626'}
-    if(badge)badge.innerHTML='<span style="display:inline-block;padding:4px 12px;background:#fef3c7;color:#92400e;border-radius:20px;font-size:11px;font-weight:600">⚠ Başlatılmadı</span>';
-    if(setupBox)setupBox.style.display='';
-    // Settings panel
-    if(setPyStatus){setPyStatus.textContent='⚠ Bağlı Değil';setPyStatus.style.color='#f59e0b'}
-    if(setEngMode){setEngMode.textContent='Tarayıcı (JavaScript)';setEngMode.style.color='#94a3b8'}
+  try{
+    const sub=document.getElementById('pythonModeSubtitle');
+    const badge=document.getElementById('pythonStatusBadge');
+    const setupBox=document.getElementById('pythonSetupInfo');
+    const setPyStatus=document.getElementById('settingsPythonStatus');
+    const setEngMode=document.getElementById('settingsEngineMode');
+    if(window._BACKEND_ACTIVE){
+      console.log('[ENGINE-UI] _updateEngineModeUI: BACKEND_ACTIVE=true, Python moduna geçiliyor');
+      if(sub){sub.textContent='Motor Aktif ✓';sub.style.color='#059669'}
+      if(badge)badge.innerHTML='<span style="display:inline-block;padding:4px 12px;background:#059669;color:#fff;border-radius:20px;font-size:11px;font-weight:600">🟢 Bağlı — Kullanıma Hazır</span>';
+      if(setupBox)setupBox.style.display='none';
+      if(setPyStatus){setPyStatus.textContent='🟢 Aktif — Bağlı';setPyStatus.style.color='#059669'}
+      if(setEngMode){setEngMode.textContent='Python (FastAPI + Polars)';setEngMode.style.color='#059669'}
+      // Auto-select python mode — hem _selectEngineMode hem de doğrudan DOM güncelle
+      if(typeof _selectEngineMode==='function'){
+        _selectEngineMode('python');
+      }else{
+        // Fallback: doğrudan kartları güncelle
+        var pCard=document.getElementById('modePythonCard');
+        var bCard=document.getElementById('modeBrowserCard');
+        var pCheck=document.getElementById('modePythonCheck');
+        var bCheck=document.getElementById('modeBrowserCheck');
+        if(pCard){pCard.style.border='2px solid #059669';pCard.style.background='linear-gradient(135deg,#ecfdf5,#d1fae5)'}
+        if(bCard){bCard.style.border='2px solid #e2e8f0';bCard.style.background='#fff'}
+        if(pCheck){pCheck.style.display='flex';pCheck.style.background='#059669'}
+        if(bCheck){bCheck.style.display='none'}
+        window._selectedEngineMode='python';
+      }
+      // Yeniden Bağlan butonunu gizle (bağlı olduğumuz için)
+      var reconnBtn=document.getElementById('btnReconnectPython');
+      if(reconnBtn){reconnBtn.textContent='✓ Bağlı';reconnBtn.style.background='#059669';reconnBtn.disabled=true}
+    }else{
+      if(sub){sub.textContent='Motor Bağlı Değil';sub.style.color='#dc2626'}
+      if(badge)badge.innerHTML='<span style="display:inline-block;padding:4px 12px;background:#fef3c7;color:#92400e;border-radius:20px;font-size:11px;font-weight:600">⚠ Başlatılmadı</span>';
+      if(setupBox)setupBox.style.display='';
+      if(setPyStatus){setPyStatus.textContent='⚠ Bağlı Değil';setPyStatus.style.color='#f59e0b'}
+      if(setEngMode){setEngMode.textContent='Tarayıcı (JavaScript)';setEngMode.style.color='#94a3b8'}
+      // Yeniden Bağlan butonunu göster
+      var reconnBtn2=document.getElementById('btnReconnectPython');
+      if(reconnBtn2){reconnBtn2.textContent='🔄 Yeniden Bağlan';reconnBtn2.style.background='#f59e0b';reconnBtn2.disabled=false}
+    }
+  }catch(err){
+    console.error('[ENGINE-UI] _updateEngineModeUI hata:',err);
   }
 };
 // Check on page load — api-bridge.js de health check sonrası _updateEngineModeUI çağırır
 setTimeout(window._updateEngineModeUI,1000);
 setTimeout(window._updateEngineModeUI,2500);
 setTimeout(window._updateEngineModeUI,5000);
-setTimeout(window._updateEngineModeUI,10000); // geç başlayan motorlar için
+setTimeout(window._updateEngineModeUI,10000);
 
 // Big file warning: check file size after upload
 const _origHandleFiles=typeof handleFiles==='function'?handleFiles:null;
