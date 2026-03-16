@@ -122,9 +122,13 @@
   .corr-matrix{border-collapse:collapse;font-size:11px}
   .corr-matrix th,.corr-matrix td{padding:4px 6px;text-align:center;border:1px solid #e2e8f0;min-width:50px}
   .corr-matrix th{background:#f1f5f9;font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .tab-bar{display:flex;border-bottom:2px solid #e2e8f0;margin-bottom:16px}
-  .tab-btn{padding:9px 18px;font-size:14px;font-weight:600;color:#94a3b8;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s}
-  .tab-btn:hover{color:#3b82f6}.tab-btn.active{color:#3b82f6;border-bottom-color:#3b82f6}
+  .tab-bar{display:flex;border-bottom:2px solid #e2e8f0;margin-bottom:16px;gap:4px;overflow-x:auto;padding-bottom:2px;flex-wrap:wrap}
+  .tab-btn{padding:10px 18px;font-size:13px;font-weight:700;color:#334155;cursor:pointer;border:none;background:#f1f5f9;border-radius:8px 8px 0 0;margin-bottom:-2px;transition:all .2s;border-bottom:2px solid transparent}
+  .tab-btn:hover{color:#1e40af;background:#dbeafe;border-bottom-color:#93c5fd}.tab-btn.active{color:#fff;background:linear-gradient(135deg,#3b82f6,#2563eb);border-bottom-color:#2563eb;box-shadow:0 2px 8px rgba(59,130,246,0.3)}
+  .tab-btn-special{background:linear-gradient(135deg,#ecfdf5,#d1fae5);color:#065f46;border:1.5px solid #6ee7b7}.tab-btn-special:hover{background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#064e3b}
+  .tab-btn-adv{background:linear-gradient(135deg,#ede9fe,#e0e7ff);color:#4c1d95;border:1.5px solid #c4b5fd}.tab-btn-adv:hover{background:linear-gradient(135deg,#ddd6fe,#c7d2fe);color:#3b0764}
+  .tab-btn-special.active{background:linear-gradient(135deg,#059669,#0d9488);color:#fff;border-color:#059669;box-shadow:0 2px 8px rgba(5,150,105,0.3)}
+  .tab-btn-adv.active{background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border-color:#7c3aed;box-shadow:0 2px 8px rgba(124,58,237,0.3)}
   .computing-overlay{position:absolute;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:13px;font-weight:600;color:#3b82f6;z-index:10}
   .kpi-row{display:flex;gap:10px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;flex-wrap:wrap}
   .kpi-card{background:linear-gradient(135deg,#fff,#f8fafc);border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;min-width:130px;max-width:220px;flex:1 1 130px;position:relative;overflow:hidden}
@@ -375,7 +379,14 @@
   .chatbot-window.chat-minimized{height:48px!important;min-height:48px!important;overflow:hidden;border-radius:12px}
   .chatbot-window.chat-minimized .chatbot-messages,.chatbot-window.chat-minimized .chatbot-input-area{display:none!important}
   @media(max-width:640px){.container{padding:0}.card{padding:16px;border-radius:8px}table{font-size:12px}th,td{padding:6px 8px}.chart-grid{grid-template-columns:1fr}.kpi-row{flex-direction:column}.top-menu-bar{flex-wrap:wrap;gap:6px;padding:6px 10px}}
-</style>
+
+  .show-me-panel{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+  .show-me-tile{padding:12px;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;text-align:center;font-size:11px;font-weight:600;color:#475569;background:#fff;transition:.15s;user-select:none}
+  .show-me-tile:hover{border-color:#93c5fd;background:#eff6ff;transform:scale(1.02)}
+  .show-me-tile.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
+  .show-me-icon{font-size:20px;margin-bottom:4px}
+
+  </style>
 <script defer src="server/api-bridge.js"></script>
 </head>
 <body>
@@ -423,7 +434,9 @@
 
   <!-- Step Navigation Bar -->
   <div id="stepNavBar" class="step-nav">
-    <div class="step-nav-item active" data-nav="Upload" onclick="navStepClick(this)"><span class="step-num">1</span> Dosya Yükle</div>
+    <div class="step-nav-item active" data-nav="Welcome" onclick="navStepClick(this)"><span class="step-num">0</span> Başlangıç</div>
+    <span class="step-nav-arrow">›</span>
+    <div class="step-nav-item" data-nav="Upload" onclick="navStepClick(this)"><span class="step-num">1</span> Dosya Yükle</div>
     <span class="step-nav-arrow">›</span>
     <div class="step-nav-item" data-nav="ModeSelect" onclick="navStepClick(this)"><span class="step-num">2</span> Mod Seç</div>
     <span class="step-nav-arrow">›</span>
@@ -478,7 +491,7 @@
       <!-- Slogan -->
       <div style="text-align:center;margin-bottom:18px">
         <h2 style="margin:0;font-size:26px;font-weight:900;letter-spacing:-0.5px;background:linear-gradient(90deg,#fff 0%,#93c5fd 50%,#c4b5fd 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.3">Verinin Gücünü Keşfedin — Tamamen Lokalde, Sıfır Veri Kaybıyla</h2>
-        <p style="margin:10px auto 0;font-size:14px;color:#f1f5f9;font-weight:400;max-width:700px;line-height:1.6">Milyarlarca hücreyi tarayıcınızda güvenle işleyin. Maskeleme, analiz, birleştirme, ileri istatistik ve yapay zeka destekli raporlamayı tek bir araçta deneyimleyin.</p>
+        <p style="margin:10px auto 0;font-size:14px;color:#f1f5f9;font-weight:400;max-width:700px;line-height:1.6">Milyarlarca hücreyi güvenle işleyin. Tarayıcı veya Python Veri Motoru ile maskeleme, analiz, birleştirme, ileri istatistik ve yapay zeka destekli raporlamayı tek araçta deneyimleyin.</p>
       </div>
       <!-- Feature cards -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px">
@@ -505,7 +518,7 @@
       </div>
       <!-- Bottom info line + signature -->
       <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <p style="margin:0;font-size:10.5px;color:#e2e8f0">🔒 Verileriniz tamamen tarayıcınızda işlenir — hiçbir veri sunucuya gönderilmez. Sıfır veri kaybı garantisi.</p>
+        <p style="margin:0;font-size:10.5px;color:#e2e8f0">🔒 Verileriniz tamamen cihazınızda işlenir (tarayıcı veya yerel Python motor) — hiçbir veri internete gönderilmez.</p>
         <p style="margin:0;font-size:9.5px;color:#cbd5e1;font-style:italic">İnsan + AI Agent (Claude) iş birliğiyle geliştirilmiştir &bull; v1.5</p>
       </div>
     </div>
@@ -531,7 +544,7 @@
               <p style="font-size:11px;color:#3b82f6;margin:2px 0 0;font-weight:600">Kurulum gerektirmez — hemen başlayın</p>
             </div>
           </div>
-          <p style="font-size:12px;color:#475569;margin:0;line-height:1.6">Küçük ve orta ölçekli verisetleri için idealdir. Tüm işlemler tarayıcınızda yapılır, hiçbir veri sunucuya gönderilmez.</p>
+          <p style="font-size:12px;color:#475569;margin:0;line-height:1.6">Küçük ve orta ölçekli verisetleri için idealdir. Tüm işlemler tarayıcınızda yapılır, veri cihazınızdan çıkmaz.</p>
           <div style="margin-top:12px;padding:8px 12px;background:rgba(59,130,246,0.08);border-radius:10px">
             <p style="font-size:12px;color:#1e40af;margin:0;font-weight:600">Önerilen: 100 milyon hücreye kadar</p>
             <p style="font-size:10.5px;color:#64748b;margin:4px 0 0">Örn: 1M satır × 8 sütun = 8M hücre ✓</p>
@@ -687,7 +700,7 @@
         <input type="checkbox" id="localWorkAcknowledge0" style="margin-top:3px;width:18px;height:18px;accent-color:#ca8a04;flex-shrink:0" onchange="localStorage.setItem('vmaLocalAck','1');if(this.checked){this.parentElement.parentElement.style.borderColor='#86efac';this.parentElement.parentElement.style.background='linear-gradient(135deg,#f0fdf4,#dcfce7)'}">
         <div>
           <p style="font-size:13px;font-weight:700;color:#854d0e;margin:0">⚠️ Önemli Bilgilendirme</p>
-          <p style="font-size:12px;color:#713f12;margin:6px 0 0;line-height:1.6">Bu uygulama tamamen tarayıcınızda (lokalde) çalışır. Çalışmanıza daha sonra devam etmek için <strong>"Kaydet"</strong> butonuyla oturumunuzu kaydedin. Farklı bir cihazda devam etmek için <strong>"Dışa Aktar"</strong> kullanın.</p>
+          <p style="font-size:12px;color:#713f12;margin:6px 0 0;line-height:1.6">Bu uygulama tamamen cihazınızda (tarayıcı veya yerel Python motor) çalışır. Çalışmanıza daha sonra devam etmek için <strong>"Kaydet"</strong> butonuyla oturumunuzu kaydedin. Farklı bir cihazda devam etmek için <strong>"Dışa Aktar"</strong> kullanın.</p>
         </div>
       </label>
     </div>
@@ -712,7 +725,7 @@
     <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
       <div style="font-size:48px;margin-bottom:12px">📂</div>
       <p style="font-size:16px;font-weight:600;color:#334155">Dosyalarınızı sürükleyin veya tıklayarak seçin</p>
-      <p class="text-sm text-muted mt-8">.csv, .tsv, .txt, .dat, .xlsx, .xls &bull; 100 GB+ destekler &bull; Birden fazla dosya seçip birleştirebilirsiniz</p>
+      <p class="text-sm text-muted mt-8">.csv, .tsv, .txt, .dat, .xlsx, .xls &bull; Python Motor ile 100 GB+ &bull; Birden fazla dosya seçip birleştirebilirsiniz</p>
       <input id="fileInput" type="file" accept=".csv,.tsv,.txt,.dat,.xlsx,.xls" multiple style="display:none"/>
     </div>
     <div id="fileListArea" class="hidden mt-16">
@@ -1126,14 +1139,15 @@
 
       <!-- Tabs -->
       <div class="tab-bar">
-        <button class="tab-btn active" data-tab="dashboard" onclick="switchAnalysisTab('dashboard',this)" title="Grafik ve görselleştirme panosu">Dashboard</button>
-        <button class="tab-btn" data-tab="quickview" onclick="switchAnalysisTab('quickview',this)" title="Verinin hızlı tablo görünümü">Hızlı Bakış</button>
-        <button class="tab-btn" data-tab="topbottom" onclick="switchAnalysisTab('topbottom',this)" title="Bağımlı değişkene göre en yüksek ve en düşük listeler">Kritik Listeler</button>
-        <button class="tab-btn" data-tab="summary" onclick="switchAnalysisTab('summary',this)" title="Kategorik ve sayısal özet istatistikler">Özet İstatistik</button>
-        <button class="tab-btn" data-tab="stats" onclick="switchAnalysisTab('stats',this)" title="Her sütun için frekans dağılımı, histogram ve detaylı istatistikler">Frekans Dağılımı</button>
-        <button class="tab-btn" data-tab="crosstab" onclick="switchAnalysisTab('crosstab',this)" title="İki kategorik değişkenin çapraz tablosu">Çapraz Tablo</button>
-        <button class="tab-btn" data-tab="mapview" onclick="switchAnalysisTab('mapview',this)" title="Kategorik değişkeni haritada görselleştirme" style="background:linear-gradient(135deg,#059669,#0d9488);color:#fff;border:none">🗺️ Harita Grafiği</button>
-        <button class="tab-btn" data-tab="advstats" onclick="switchAnalysisTab('advstats',this)" title="JASP benzeri ileri istatistik testleri" style="background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border:none">🔬 İleri İstatistik</button>
+        <button class="tab-btn active" data-tab="dashboard" onclick="switchAnalysisTab('dashboard',this)" title="Grafik ve görselleştirme panosu">📊 Dashboard</button>
+        <button class="tab-btn" data-tab="quickview" onclick="switchAnalysisTab('quickview',this)" title="Verinin hızlı tablo görünümü">👁️ Hızlı Bakış</button>
+        <button class="tab-btn" data-tab="topbottom" onclick="switchAnalysisTab('topbottom',this)" title="Bağımlı değişkene göre en yüksek ve en düşük listeler">🏆 Kritik Listeler</button>
+        <button class="tab-btn" data-tab="summary" onclick="switchAnalysisTab('summary',this)" title="Kategorik ve sayısal özet istatistikler">📋 Özet İstatistik</button>
+        <button class="tab-btn" data-tab="stats" onclick="switchAnalysisTab('stats',this)" title="Her sütun için frekans dağılımı, histogram ve detaylı istatistikler">📈 Frekans Dağılımı</button>
+        <button class="tab-btn" data-tab="correlation" onclick="switchAnalysisTab('correlation',this)" title="Sayısal sütunlar arası korelasyon matrisi">🔗 Korelasyon</button>
+        <button class="tab-btn" data-tab="crosstab" onclick="switchAnalysisTab('crosstab',this)" title="İki kategorik değişkenin çapraz tablosu">📑 Çapraz Tablo</button>
+        <button class="tab-btn tab-btn-special" data-tab="mapview" onclick="switchAnalysisTab('mapview',this)" title="Kategorik değişkeni haritada görselleştirme">🗺️ Harita</button>
+        <button class="tab-btn tab-btn-special tab-btn-adv" data-tab="advstats" onclick="switchAnalysisTab('advstats',this)" title="JASP benzeri ileri istatistik testleri">🔬 İleri İstatistik</button>
       </div>
 
       <!-- GLOBAL FILTER BAR — always visible -->
@@ -1369,6 +1383,16 @@
                   <option value="boxplot">Dağılım (Box Plot)</option>
                   <option value="stackedBar">Yığılmış Çubuk</option>
                   <option value="pivotTable">Özet Tablo (Pivot)</option>
+                  <option value="area">Alan Grafiği</option>
+                  <option value="stackedArea">Yığılmış Alan</option>
+                  <option value="radar">Radar (Örümcek)</option>
+                  <option value="polarArea">Kutupsal Alan</option>
+                  <option value="bubble">Baloncuk Grafiği</option>
+                  <option value="waterfall">Şelale Grafiği</option>
+                  <option value="funnel">Huni Grafiği</option>
+                  <option value="treemap">Ağaç Haritası</option>
+                  <option value="gauge">Gösterge</option>
+                  <option value="dualAxis">Çift Eksen</option>
                 </select>
                 <!-- Pivot Tablo Gelişmiş Seçenekler -->
                 <div id="pivotAdvancedOpts" class="hidden" style="margin-top:8px;padding:8px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px">
@@ -1394,7 +1418,19 @@
                     </label>
                   </div>
                 </div>
-              </div>
+              
+                <!-- Renk Paleti Seçimi -->
+                <div class="dash-section">
+                  <div class="dash-section-title">Renk Paleti</div>
+                  <select id="colorPalette" class="dash-select" onchange="updateChartColors()">
+                    <option value="default">Klasik</option>
+                    <option value="tableau10">Tableau 10</option>
+                    <option value="tableau20">Tableau 20</option>
+                    <option value="blues">Mavi Tonları</option>
+                    <option value="greenOrange">Yeşil-Turuncu</option>
+                  </select>
+                </div>
+</div>
               <div class="dash-section">
                 <div class="dash-section-title">Gelişmiş Ayarlar</div>
                 <div style="display:flex;flex-direction:column;gap:4px">
@@ -1805,14 +1841,17 @@ function _selectEngineMode(mode){
 function _updateEngineModeUI(){
   const sub=document.getElementById('pythonModeSubtitle');
   const badge=document.getElementById('pythonStatusBadge');
+  const setupBox=document.getElementById('pythonSetupInfo');
   if(window._BACKEND_ACTIVE){
     if(sub){sub.textContent='Motor Aktif ✓';sub.style.color='#059669'}
     if(badge)badge.innerHTML='<span style="display:inline-block;padding:4px 12px;background:#059669;color:#fff;border-radius:20px;font-size:11px;font-weight:600">🟢 Bağlı — Kullanıma Hazır</span>';
+    if(setupBox)setupBox.style.display='none';
     // Auto-select python mode if backend is active
     _selectEngineMode('python');
   }else{
     if(sub){sub.textContent='Motor Bağlı Değil';sub.style.color='#dc2626'}
     if(badge)badge.innerHTML='<span style="display:inline-block;padding:4px 12px;background:#fef3c7;color:#92400e;border-radius:20px;font-size:11px;font-weight:600">⚠ Başlatılmadı</span>';
+    if(setupBox)setupBox.style.display='';
   }
 }
 // Check on page load (api-bridge.js sets _BACKEND_ACTIVE after health check)
@@ -2177,6 +2216,7 @@ function showStep(name){
   });
   // Step descriptions
   const descs={
+    Welcome:'Çalışma modunuzu seçin ve başlangıç bilgilerini okuyun.',
     Upload:'Dosyalarınızı yükleyin. Birden fazla dosya seçip birleştirme yapabilirsiniz.',
     ModeSelect:'Yüklenen dosyaları nasıl birleştirmek istediğinizi seçin.',
     Join:'Dosyaları ortak anahtar üzerinden yanyana birleştirin (SQL JOIN). Maskeleme öncesinde yapılır.',
@@ -2195,7 +2235,7 @@ function showStep(name){
 function navStepClick(el){
   if(!el.classList.contains('done'))return; // only completed steps are clickable
   const nav=el.dataset.nav;if(!nav)return;
-  const navMap={Upload:'Upload',ModeSelect:'ModeSelect',Join:'Join',Delimiter:'Delimiter',Columns:'Columns',Processing:'Processing',Done:'Done',Analysis:'Analysis'};
+  const navMap={Welcome:'Welcome',Upload:'Upload',ModeSelect:'ModeSelect',Join:'Join',Delimiter:'Delimiter',Columns:'Columns',Processing:'Processing',Done:'Done',Analysis:'Analysis'};
   const stepName=navMap[nav];if(!stepName)return;
   if(stepName==='Processing')return;
   if(stepName==='Analysis'){
@@ -2207,12 +2247,12 @@ function navStepClick(el){
     return;
   }
   // Warn user when going to an earlier step
-  const stepOrder=['Upload','ModeSelect','Join','Delimiter','Columns','Processing','Done','Analysis'];
+  const stepOrder=['Welcome','Upload','ModeSelect','Join','Delimiter','Columns','Processing','Done','Analysis'];
   const currentStepEl=document.querySelector('.step-nav-item.active');
   const currentNav=currentStepEl?currentStepEl.dataset.nav:null;
   const currentIdx=currentNav?stepOrder.indexOf(currentNav):-1;
   const targetIdx=stepOrder.indexOf(stepName);
-  if(targetIdx<currentIdx){
+  if(targetIdx<currentIdx&&stepName!=='Welcome'){
     if(!confirm('⚠️ Geri adıma dönmek üzeresiniz.\n\nBu adıma geri dönerseniz ilerlemeniz kaybolabilir ve işlemleri baştan yapmanız gerekebilir.\n\nDevam etmek istiyor musunuz?'))return;
   }
   showStep(stepName);
@@ -5086,6 +5126,9 @@ function _previewOutlierFilter(){
   let html = details.join(' &nbsp;|&nbsp; ');
   html += '<br><span style="font-weight:700;color:'+(totalExcluded.size > 0 ? '#dc2626' : '#059669')+'">Toplam: ' +
     totalExcluded.size + ' / ' + rows.length + ' satır hariç tutulacak</span>';
+  if(totalRows>DASH_SAMPLE_LIMIT){
+    html+='<br><span style="font-size:10px;color:#92400e">⚠️ Aykırı değer önizlemesi '+Math.min(totalRows,DASH_SAMPLE_LIMIT).toLocaleString('tr-TR')+' satırlık örneklem üzerinden hesaplanmıştır (toplam: '+totalRows.toLocaleString('tr-TR')+').</span>';
+  }
   preview.innerHTML = html;
 }
 
@@ -5494,26 +5537,23 @@ function computeColorGroupAgg(xCol,colorCol,yCol,aggType){
   const cacheKey='color:'+xCol+'|'+colorCol+'|'+yCol+':'+aggType+':'+filterHash()+':'+drillStack.length;
   if(_aggCache[cacheKey])return _aggCache[cacheKey];
 
-  const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
   const xi=outHeaders.indexOf(xCol);
   const ci=outHeaders.indexOf(colorCol);
   const yi=yCol?outHeaders.indexOf(yCol):-1;
   if(xi<0||ci<0)return{labels:[],datasets:[],colorValues:[]};
 
-  // Nested grouping: {xVal: {colorVal: {count,sum,sumSq,min,max,vals}}}
+  // EXACT computation over ALL rows using streamOutputRows — zero sampling
   // PERF: Pre-compute active filter column indices
   const _afIdxs=[];
   for(let _fi=0;_fi<outHeaders.length;_fi++){if(colFilters[outHeaders[_fi]]&&hasActiveFilter(outHeaders[_fi]))_afIdxs.push(_fi)}
   const _hf=_afIdxs.length>0;
   const groups={};
   const colorSet=new Set();
-  for(const row of rows){
+  streamOutputRows(row=>{
     const xv=row[xi]||'';
     const cv=row[ci]||'(boş)';
     if(_hf){
-      let skip=false;
-      for(let fi=0;fi<_afIdxs.length;fi++){const _i=_afIdxs[fi];if(!passesFilter(outHeaders[_i],row[_i]||'')){skip=true;break}}
-      if(skip)continue;
+      for(let fi=0;fi<_afIdxs.length;fi++){const _i=_afIdxs[fi];if(!passesFilter(outHeaders[_i],row[_i]||''))return}
     }
     colorSet.add(cv);
     if(!groups[xv])groups[xv]={};
@@ -5523,7 +5563,7 @@ function computeColorGroupAgg(xCol,colorCol,yCol,aggType){
       const num=parseFloat((row[yi]||'').replace(',','.'));
       if(!isNaN(num)&&isFinite(num)){g.sum+=num;g.sumSq+=num*num;if(num<g.min)g.min=num;if(num>g.max)g.max=num;g.vals.push(num)}
     }
-  }
+  });
 
   // Sort X labels
   const sortMode=document.getElementById('dashSort')?document.getElementById('dashSort').value:'desc';
@@ -5925,9 +5965,32 @@ function computeScatterData(col1,col2){
   return pts;
 }
 
+// === Dashboard Sampling Transparency Note ===
+function _dashSamplingNote(context){
+  // Show note when scatter/outlier uses sampled data instead of ALL rows
+  if(totalRows<=DASH_SAMPLE_LIMIT)return '';
+  const sampleN=Math.min(totalRows,DASH_SAMPLE_LIMIT);
+  const ctx=context||'grafik';
+  return '<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;padding:5px 10px;margin-top:4px;font-size:10px;color:#92400e;display:flex;align-items:center;gap:6px">'+
+    '<span style="font-size:13px">⚠️</span>'+
+    '<span><b>Örnekleme:</b> Bu '+ctx+' '+sampleN.toLocaleString('tr-TR')+' satırlık örneklem üzerinden oluşturulmuştur (toplam: '+totalRows.toLocaleString('tr-TR')+' satır). '+
+    'Temel metrikler (ortalama, toplam, medyan vb.) tüm veriler üzerinden hesaplanmaktadır.</span></div>';
+}
+
 // === Dashboard Chart ===
 let chartCounter=0;
-const CHART_COLORS=['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'];
+const CHART_PALETTES={
+  default:['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'],
+  tableau10:['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f','#edc948','#b07aa1','#ff9da7','#9c755f','#bab0ac'],
+  tableau20:['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f','#edc948','#b07aa1','#ff9da7','#9c755f','#bab0ac','#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f','#edc948','#b07aa1','#ff9da7','#9c755f','#bab0ac'],
+  blues:['#e3f2fd','#bbdefb','#90caf9','#64b5f6','#42a5f5','#2196f3','#1e88e5','#1976d2','#1565c0','#0d47a1'],
+  greenOrange:['#d7191c','#fdae61','#ffffbf','#abd9e9','#2c7bb6']
+};
+let CHART_COLORS=CHART_PALETTES.default;
+function updateChartColors(){
+  const palette=document.getElementById('colorPalette')?.value||'default';
+  CHART_COLORS=CHART_PALETTES[palette]||CHART_PALETTES.default;
+}
 const aggLabels={count:'Sayı',sum:'Toplam',avg:'Ortalama',mean:'Ortalama',min:'Min',max:'Maks',std:'Std Sapma',median:'Medyan'};
 
 function onChartTypeChange(){
@@ -6206,6 +6269,78 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
       chartConfig={type:'line',data:{labels:result.labels,datasets},options:{plugins:{legend:{display:true,labels:{font:{size:10}}}},interaction:{mode:'index',intersect:false}}};
     }else if(type==='horizontalBar'){
       chartConfig={type:'bar',data:{labels:result.labels,datasets:result.datasets},options:{indexAxis:'y',plugins:{legend:{display:true,labels:{font:{size:10}}}},scales:{x:{stacked:isStacked},y:{stacked:isStacked}}}};
+    }else if(type==='area'){
+      const datasets=result.datasets.map((ds,di)=>({
+        label:ds.label,data:ds.data,
+        borderColor:CHART_COLORS[di%CHART_COLORS.length],
+        backgroundColor:CHART_COLORS[di%CHART_COLORS.length]+'40',
+        fill:true,tension:.3,borderWidth:2
+      }));
+      chartConfig={type:'line',data:{labels:result.labels,datasets},options:{plugins:{legend:{display:true,labels:{font:{size:10}}}},interaction:{mode:'index',intersect:false}}};
+    }else if(type==='stackedArea'){
+      const datasets=result.datasets.map((ds,di)=>({
+        label:ds.label,data:ds.data,
+        borderColor:CHART_COLORS[di%CHART_COLORS.length],
+        backgroundColor:CHART_COLORS[di%CHART_COLORS.length]+'60',
+        fill:true,tension:.3,borderWidth:2
+      }));
+      chartConfig={type:'line',data:{labels:result.labels,datasets},options:{plugins:{legend:{display:true,labels:{font:{size:10}}}},scales:{x:{stacked:true},y:{stacked:true}},interaction:{mode:'index',intersect:false}}};
+    }else if(type==='radar'){
+      const datasets=result.datasets.map((ds,di)=>({
+        label:ds.label,data:ds.data,
+        borderColor:CHART_COLORS[di%CHART_COLORS.length],
+        backgroundColor:CHART_COLORS[di%CHART_COLORS.length]+'40',
+        fill:true,tension:.3
+      }));
+      chartConfig={type:'radar',data:{labels:result.labels,datasets},options:{plugins:{legend:{display:true,labels:{font:{size:10}}}},scales:{r:{beginAtZero:true}},interaction:{mode:'index',intersect:false}}};
+    }else if(type==='polarArea'){
+      const ds=result.datasets[0]||{data:[]};
+      const colors=ds.data.map((_,i)=>CHART_COLORS[i%CHART_COLORS.length]);
+      chartConfig={type:'polarArea',data:{labels:result.labels,datasets:[{data:ds.data,backgroundColor:colors.map(c=>c+'80'),borderColor:colors}]},options:{plugins:{legend:{position:'right',labels:{font:{size:11}}}}}};
+    }else if(type==='bubble'){
+      const pts=computeScatterData(xCol,yCol);
+      const bubbleData=pts.map((p,i)=>{const sz=Math.max(1,Math.min(50,result.datasets[0]?.data[i]||10));return{...p,r:Math.sqrt(sz)*2}});
+      chartConfig={type:'bubble',data:{datasets:[{label:xCol+' vs '+yCol,data:bubbleData,backgroundColor:CHART_COLORS[0]+'80',borderColor:CHART_COLORS[0]}]},options:{plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:xCol}},y:{title:{display:true,text:yCol}}}}};
+    }else if(type==='waterfall'){
+      let cumulative=0;
+      const wfDatasets=[{label:'Base',data:[],backgroundColor:[]},{label:yCol,data:[],backgroundColor:[]}];
+      result.datasets[0].data.forEach(val=>{
+        const isPos=val>=0;
+        wfDatasets[0].data.push(cumulative);
+        wfDatasets[1].data.push(val);
+        wfDatasets[1].backgroundColor.push(isPos?CHART_COLORS[2]:CHART_COLORS[1]);
+        cumulative+=val;
+      });
+      chartConfig={type:'bar',data:{labels:result.labels,datasets:wfDatasets},options:{plugins:{legend:{display:false}},scales:{x:{stacked:true},y:{stacked:true}},interaction:{mode:'index',intersect:false}}};
+    }else if(type==='funnel'){
+      const sorted=result.labels.map((l,i)=>({label:l,value:result.datasets[0].data[i]})).sort((a,b)=>b.value-a.value);
+      const maxVal=Math.max(...sorted.map(s=>s.value||0));
+      const funnelDatasets=[{
+        label:yCol,
+        data:sorted.map(s=>s.value),
+        backgroundColor:sorted.map((_,i)=>CHART_COLORS[i%CHART_COLORS.length])
+      }];
+      chartConfig={type:'bar',data:{labels:sorted.map(s=>s.label),datasets:funnelDatasets},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:maxVal}}}};
+    }else if(type==='treemap'){
+      const totalVal=result.datasets[0].data.reduce((a,b)=>a+(b||0),0);
+      let html='<div style="display:flex;flex-wrap:wrap;gap:2px;width:100%;height:400px;align-content:flex-start;overflow:auto">';
+      result.labels.forEach((label,i)=>{
+        const val=result.datasets[0].data[i]||0;
+        const ratio=totalVal>0?val/totalVal:0;
+        const sz=Math.sqrt(ratio)*400;
+        const color=CHART_COLORS[i%CHART_COLORS.length];
+        html+='<div style="background:'+color+'80;border:1px solid '+color+';border-radius:4px;padding:8px;flex:0 0 '+Math.min(99,Math.max(20,sz))+'px;height:'+Math.min(99,Math.max(20,sz))+'px;display:flex;flex-direction:column;justify-content:center;align-items:center;font-size:10px;font-weight:600;text-align:center;word-wrap:break-word;overflow:hidden" title="'+escHtml(label)+': '+val+'">'+escHtml(label.substring(0,3))+'</div>';
+      });
+      html+='</div>';
+      box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="flex:1;min-width:0"><span style="font-weight:600;font-size:13px">'+escHtml(title)+'</span></div><div class="chart-action-bar"><button class="cab-btn cab-del" onclick="removeChart(\''+id+'\')" title="Bu grafiği kaldır">✕</button></div></div>'+html+'<div id="'+id+'_aiExplain" style="display:none"></div>';
+      chartInstances.push({id,instance:null,title,type:'treemap',xCol,yCols,agg,subGroups:subGroups.slice(),filterSnapshot:JSON.stringify(colFilters)});
+      return;
+    }else if(type==='gauge'){
+      const val=result.datasets[0].data[0]||0;
+      const maxVal=Math.max(...result.datasets[0].data);
+      chartConfig={type:'doughnut',data:{labels:['değer','boş'],datasets:[{data:[val,maxVal-val],backgroundColor:[CHART_COLORS[0],CHART_COLORS[0]+'20'],borderColor:[CHART_COLORS[0],'#e2e8f0'],borderWidth:2}]},options:{rotation:270,circumference:180,plugins:{legend:{display:false}}}};
+    }else if(type==='dualAxis'){
+      showError('Çift Eksen çok ölçülü mod için tasarlanmıştır.');box.remove();return;
     }else{
       // Grouped or Stacked bar
       chartConfig={type:'bar',data:{labels:result.labels,datasets:result.datasets},options:{plugins:{legend:{display:true,labels:{font:{size:10}}}},scales:{x:{stacked:isStacked},y:{stacked:isStacked}},interaction:{mode:'index',intersect:false}}};
@@ -6236,6 +6371,92 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
         backgroundColor:CHART_COLORS[di%CHART_COLORS.length]+'cc'
       }));
       chartConfig={type:'bar',data:{labels:result.labels,datasets},options:{indexAxis:'y',plugins:{legend:{display:multiY}},scales:{x:{stacked:isStacked},y:{stacked:isStacked}}}};
+    }else if(type==='area'){
+      const datasets=result.datasets.map((ds,di)=>({
+        label:ds.label,data:ds.data,
+        borderColor:CHART_COLORS[di%CHART_COLORS.length],
+        backgroundColor:CHART_COLORS[di%CHART_COLORS.length]+'40',
+        fill:true,tension:.3,borderWidth:2
+      }));
+      chartConfig={type:'line',data:{labels:result.labels,datasets},options:{plugins:{legend:{display:multiY}},interaction:{mode:'index',intersect:false}}};
+    }else if(type==='stackedArea'){
+      const datasets=result.datasets.map((ds,di)=>({
+        label:ds.label,data:ds.data,
+        borderColor:CHART_COLORS[di%CHART_COLORS.length],
+        backgroundColor:CHART_COLORS[di%CHART_COLORS.length]+'60',
+        fill:true,tension:.3,borderWidth:2
+      }));
+      chartConfig={type:'line',data:{labels:result.labels,datasets},options:{plugins:{legend:{display:true,labels:{font:{size:10}}}},scales:{x:{stacked:true},y:{stacked:true}},interaction:{mode:'index',intersect:false}}};
+    }else if(type==='radar'){
+      const datasets=result.datasets.map((ds,di)=>({
+        label:ds.label,data:ds.data,
+        borderColor:CHART_COLORS[di%CHART_COLORS.length],
+        backgroundColor:CHART_COLORS[di%CHART_COLORS.length]+'40',
+        fill:true,tension:.3
+      }));
+      chartConfig={type:'radar',data:{labels:result.labels,datasets},options:{plugins:{legend:{display:multiY,labels:{font:{size:10}}}},scales:{r:{beginAtZero:true}},interaction:{mode:'index',intersect:false}}};
+    }else if(type==='polarArea'){
+      const ds=result.datasets[0]||{data:[]};
+      const colors=ds.data.map((_,i)=>CHART_COLORS[i%CHART_COLORS.length]);
+      chartConfig={type:'polarArea',data:{labels:result.labels,datasets:[{data:ds.data,backgroundColor:colors.map(c=>c+'80'),borderColor:colors}]},options:{plugins:{legend:{position:'right',labels:{font:{size:11}}}}}};
+      if(multiY)title+=' (ilk ölçü kullanıldı)';
+    }else if(type==='bubble'){
+      const xCol2=yCols[1]||yCols[0]||xCol;
+      const pts=computeScatterData(xCol,xCol2);
+      const sizes=computeMultiAgg(xCol,yCols,agg);
+      const bubbleData=pts.map((p,i)=>{const sz=Math.max(1,Math.min(50,sizes.datasets[0]?.data[i]||10));return{...p,r:Math.sqrt(sz)*2}});
+      chartConfig={type:'bubble',data:{datasets:[{label:xCol+' vs '+xCol2,data:bubbleData,backgroundColor:CHART_COLORS[0]+'80',borderColor:CHART_COLORS[0]}]},options:{plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:xCol}},y:{title:{display:true,text:xCol2}}}}};
+    }else if(type==='waterfall'){
+      const aggData=computeMultiAgg(xCol,yCols,agg);
+      const yCol=yCols[0]||'';
+      let cumulative=0;
+      const wfDatasets=[{label:'Base',data:[],backgroundColor:[]},{label:yCol,data:[],backgroundColor:[]}];
+      aggData.datasets[0].data.forEach(val=>{
+        const isPos=val>=0;
+        wfDatasets[0].data.push(cumulative);
+        wfDatasets[1].data.push(val);
+        wfDatasets[1].backgroundColor.push(isPos?CHART_COLORS[2]:CHART_COLORS[1]);
+        cumulative+=val;
+      });
+      chartConfig={type:'bar',data:{labels:aggData.labels,datasets:wfDatasets},options:{plugins:{legend:{display:false}},scales:{x:{stacked:true},y:{stacked:true}},interaction:{mode:'index',intersect:false}}};
+    }else if(type==='funnel'){
+      const aggData=computeMultiAgg(xCol,yCols,'sum');
+      const sorted=aggData.labels.map((l,i)=>({label:l,value:aggData.datasets[0].data[i]})).sort((a,b)=>b.value-a.value);
+      const maxVal=Math.max(...sorted.map(s=>s.value||0));
+      const funnelDatasets=[{
+        label:yCols[0]||'',
+        data:sorted.map(s=>s.value),
+        backgroundColor:sorted.map((_,i)=>CHART_COLORS[i%CHART_COLORS.length])
+      }];
+      chartConfig={type:'bar',data:{labels:sorted.map(s=>s.label),datasets:funnelDatasets},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:maxVal}}}};
+    }else if(type==='treemap'){
+      const aggData=computeMultiAgg(xCol,yCols,'sum');
+      const totalVal=aggData.datasets[0].data.reduce((a,b)=>a+(b||0),0);
+      const rectSize=Math.sqrt((totalVal||1)/aggData.labels.length);
+      let html='<div style="display:flex;flex-wrap:wrap;gap:2px;width:100%;height:400px;align-content:flex-start;overflow:auto">';
+      aggData.labels.forEach((label,i)=>{
+        const val=aggData.datasets[0].data[i]||0;
+        const ratio=totalVal>0?val/totalVal:0;
+        const sz=Math.sqrt(ratio)*400;
+        const color=CHART_COLORS[i%CHART_COLORS.length];
+        html+='<div style="background:'+color+'80;border:1px solid '+color+';border-radius:4px;padding:8px;flex:0 0 '+Math.min(99,Math.max(20,sz))+'px;height:'+Math.min(99,Math.max(20,sz))+'px;display:flex;flex-direction:column;justify-content:center;align-items:center;font-size:10px;font-weight:600;text-align:center;word-wrap:break-word;overflow:hidden" title="'+escHtml(label)+': '+val+'">'+escHtml(label.substring(0,3))+'</div>';
+      });
+      html+='</div>';
+      box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="flex:1;min-width:0"><span style="font-weight:600;font-size:13px">'+escHtml(title)+'</span></div><div class="chart-action-bar"><button class="cab-btn cab-del" onclick="removeChart(\''+id+'\')" title="Bu grafiği kaldır">✕</button></div></div>'+html+'<div id="'+id+'_aiExplain" style="display:none"></div>';
+      chartInstances.push({id,instance:null,title,type:'treemap',xCol,yCols,agg,subGroups:subGroups.slice(),filterSnapshot:JSON.stringify(colFilters)});
+      return;
+    }else if(type==='gauge'){
+      const aggData=computeMultiAgg(xCol,yCols,'sum');
+      const val=aggData.datasets[0].data[0]||0;
+      const minVal=Math.min(...aggData.datasets[0].data);
+      const maxVal=Math.max(...aggData.datasets[0].data);
+      chartConfig={type:'doughnut',data:{labels:['değer','boş'],datasets:[{data:[val,maxVal-val],backgroundColor:[CHART_COLORS[0],CHART_COLORS[0]+'20'],borderColor:[CHART_COLORS[0],'#e2e8f0'],borderWidth:2}]},options:{rotation:270,circumference:180,plugins:{legend:{display:false}}}};
+    }else if(type==='dualAxis'){
+      if(yCols.length<2){showError('Çift Eksen için 2 ölçü gerekir.');box.remove();return}
+      const result=computeMultiAgg(xCol,yCols,agg);
+      const barDs={label:result.datasets[0].label,data:result.datasets[0].data,backgroundColor:CHART_COLORS[0]+'cc',yAxisID:'y'};
+      const lineDs={label:result.datasets[1]?.label||yCols[1],data:result.datasets[1]?.data||[],borderColor:CHART_COLORS[1],backgroundColor:CHART_COLORS[1]+'20',fill:false,tension:.3,yAxisID:'y1',type:'line'};
+      chartConfig={type:'bar',data:{labels:result.labels,datasets:[barDs,lineDs]},options:{plugins:{legend:{display:true,labels:{font:{size:10}}}},scales:{y:{title:{display:true,text:result.datasets[0].label},position:'left'},y1:{title:{display:true,text:yCols[1]},position:'right'}},interaction:{mode:'index',intersect:false}}};
     }else{
       // Grouped or Stacked bar chart
       const datasets=result.datasets.map((ds,di)=>({
@@ -6289,6 +6510,11 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
   }
   const inst=new Chart(ctx,chartConfig);
   chartInstances.push({id,instance:inst,title,type,xCol,yCols,agg,colorCol:colorCol||'',subGroups:subGroups.slice(),filterSnapshot:JSON.stringify(colFilters),showLabels:_showLabels});
+  // Sampling transparency: show note for scatter/bubble (uses parseOutputRows sample)
+  if((type==='scatter'||type==='bubble')&&totalRows>DASH_SAMPLE_LIMIT){
+    const noteDiv=document.createElement('div');noteDiv.innerHTML=_dashSamplingNote('saçılım grafiği');
+    box.appendChild(noteDiv);
+  }
 }
 
 // Data label drawing plugin factory
@@ -11022,6 +11248,34 @@ function processQuestion(q){
   const ql=q.toLocaleLowerCase('tr-TR').normalize('NFC').replace(/[ıİi̇]/g,'i').replace(/[öÖ]/g,'o').replace(/[üÜ]/g,'u').replace(/[çÇ]/g,'c').replace(/[şŞ]/g,'s').replace(/[ğĞ]/g,'g');
   if(!outHeaders||outHeaders.length===0)return 'Henüz veri yüklenmemiş. Lütfen önce veri yükleyin ve işleyin.';
 
+  // === PYTHON MOTOR / BACKEND AWARENESS ===
+  if(ql.match(/python|motor|backend|sunucu|server|baglanti|engine|performans.?modu|buyuk.?veri.?modu/)){
+    const isActive=!!window._BACKEND_ACTIVE;
+    const totalCells=(totalRows||0)*(outHeaders||[]).length;
+    let msg='';
+    if(isActive){
+      msg='🐍 <b>Python Motor Durumu: AKTİF</b><br><br>';
+      msg+='• <b>Motor:</b> FastAPI + Polars (Rust tabanlı)<br>';
+      msg+='• <b>Durum:</b> <span style="color:#16a34a;font-weight:700">Bağlı ve çalışıyor</span><br>';
+      msg+='• <b>Avantaj:</b> 500M+ hücreye kadar ölçeklenebilir hesaplama<br>';
+      msg+='• <b>Toplam hücre:</b> '+totalCells.toLocaleString('tr-TR')+'<br><br>';
+      msg+='Python motor aktif olduğunda tüm temel metrikler (sayı, toplam, ortalama, medyan vb.) <b>tüm veriler</b> üzerinden hesaplanır. İleri istatistik testlerinde de örnekleme sınırı kaldırılmıştır.<br><br>';
+      msg+='💡 Motor bağlantısını kesmek için Terminal\'i kapatmanız yeterlidir.';
+    }else{
+      msg='🌐 <b>Çalışma Modu: Tarayıcı</b><br><br>';
+      msg+='• <b>Motor:</b> JavaScript (tarayıcı içi)<br>';
+      msg+='• <b>Durum:</b> Python motor bağlı değil<br>';
+      msg+='• <b>Toplam hücre:</b> '+totalCells.toLocaleString('tr-TR')+'<br><br>';
+      if(totalCells>100000000){
+        msg+='⚠️ <b>Uyarı:</b> 100M+ hücre ile tarayıcı modunda çalışıyorsunuz. Performans sorunları yaşayabilirsiniz. Python motorunu başlatmanız önerilir.<br><br>';
+      }
+      msg+='<b>Temel metrikler</b> (sayı, toplam, ortalama, medyan, min, maks) her zaman <b>tüm veriler</b> üzerinden hesaplanır — tarayıcı modunda da.<br>';
+      msg+='<b>İleri istatistik testlerinde</b> büyük veri setlerinde (100M+ hücre) tabakalı örnekleme uygulanabilir. Örnekleme aktif olduğunda sarı uyarı banner\'ı gösterilir.<br><br>';
+      msg+='🐍 Python motorunu başlatmak için Adım 0\'daki talimatlara bakabilirsiniz.';
+    }
+    return msg;
+  }
+
   // === DATA SUMMARY ===
   if(ql.match(/veri ozet|genel ozet|veri hakkinda|dataset|kac satir|kac sutun|boyut/)){
     const numC=outHeaders.filter(h=>colStats[h]&&colStats[h].isNumeric&&colStats[h].numCount>0).length;
@@ -11439,6 +11693,7 @@ function processQuestion(q){
       '• "Merge Join" — Birleştirme modları<br>'+
       '• "İleri istatistik" — Test önerileri<br>'+
       '• "Kısaltmalar" — PDF\'deki kısaltma açıklamaları<br>'+
+      '• "Python motor" — Motor durumu ve büyük veri bilgisi<br>'+
       '• Sütun adı yazın — O sütunun detayı';
   }
 
@@ -12719,7 +12974,8 @@ function _samplingNoteBanner(dataObj){
     '<span style="font-size:16px">⚠️</span>'+
     '<div><b>Örnekleme Aktif:</b> '+escHtml(obj._sampleInfo||'')+
     '<br><span style="font-size:10px;color:#a16207">Büyük veri seti nedeniyle tabakalı/rastgele örnekleme uygulanmıştır. Her grup evreni orantılı şekilde temsil etmektedir. Popülasyon N='+
-    (obj._populationN||0).toLocaleString('tr-TR')+', Örneklem n='+(obj._sampleN||0).toLocaleString('tr-TR')+'</span></div></div>';
+    (obj._populationN||0).toLocaleString('tr-TR')+', Örneklem n='+(obj._sampleN||0).toLocaleString('tr-TR')+'</span>'+
+    '<br><span style="font-size:10px;color:#065f46">ℹ️ Not: Temel metrikler (sayı, toplam, ortalama, medyan, min, maks) tüm veriler üzerinden hesaplanmaktadır. Örnekleme yalnızca bu ileri istatistik testi için geçerlidir.</span></div></div>';
 }
 
 // --- Helper: Run t-test with user-selected 2 groups (when 3+ exist) ---
@@ -14184,8 +14440,15 @@ function advStatsRun(testId){
   // İşlem süresi bilgisi
   const _testElapsed=((Date.now()-_testStart)/1000).toFixed(1);
   if(parseFloat(_testElapsed)>2){html+='<div style="margin-top:6px;font-size:10px;color:#94a3b8;text-align:right">İşlem süresi: '+_testElapsed+' sn</div>'}
-  // Örnekleme uyarı notu — büyük veri için
-  if(window._lastSamplingInfo&&window._lastSamplingInfo._sampled){html=_samplingNoteBanner(window._lastSamplingInfo)+html}
+  // Örnekleme uyarı notu — büyük veri için / veya tam veri teyidi
+  if(window._lastSamplingInfo&&window._lastSamplingInfo._sampled){
+    html=_samplingNoteBanner(window._lastSamplingInfo)+html;
+  }else if(totalRows>100000){
+    // Tam veri kullanıldığını teyit et (şeffaflık)
+    html='<div style="background:#ecfdf5;border:1px solid #86efac;border-radius:8px;padding:6px 12px;margin-bottom:10px;font-size:11px;color:#065f46;display:flex;align-items:center;gap:8px">'+
+      '<span style="font-size:14px">✅</span>'+
+      '<span><b>Tam Veri:</b> Bu test tüm '+totalRows.toLocaleString('tr-TR')+' satır üzerinden hesaplanmıştır. Örnekleme uygulanmamıştır.</span></div>'+html;
+  }
   resTable.innerHTML=html;
   _hideBusy(); // Remove busy overlay after computation
   // Draw JASP-like chart
@@ -15212,7 +15475,7 @@ function _generateRuleBasedInterpretation(r){
 
     <div class="glossary-section">
       <h4>🔢 Adım Navigasyonu (Üst Bar)</h4>
-      <div class="glossary-item"><span class="gl-tag">1</span> <b>Dosya Yükle:</b> CSV, TSV, TXT veya DAT dosyalarını sürükle-bırak veya tıklayarak yükleyin. 100 GB+ destekler desteklenir.</div>
+      <div class="glossary-item"><span class="gl-tag">1</span> <b>Dosya Yükle:</b> CSV, TSV, TXT veya DAT dosyalarını sürükle-bırak veya tıklayarak yükleyin. Python Motor ile 100 GB+ desteklenir.</div>
       <div class="glossary-item"><span class="gl-tag">2</span> <b>Mod Seç:</b> Birden fazla dosya yüklendiğinde 3 mod sunulur: Yatay Birleştirme (MERGE — satır ekleme), Dikey Birleştirme (JOIN — sütun ekleme) veya Merge+Join (ikisi birden).</div>
       <div class="glossary-item"><span class="gl-tag">3</span> <b>Birleştir:</b> JOIN modunda ortak anahtar(lar) ve JOIN tipi (INNER/LEFT/FULL) belirlenir. Çoklu anahtar desteklenir (ör: TCKN + Dönem).</div>
       <div class="glossary-item"><span class="gl-tag">4</span> <b>Ayırıcı:</b> Sütun ayırıcı karakter seçilir (virgül, TAB, noktalı virgül vb.). Otomatik algılama desteği vardır.</div>
