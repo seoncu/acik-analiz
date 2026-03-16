@@ -3206,7 +3206,7 @@ async function startProcessing(){
         st._p75=nums[Math.floor(nums.length*0.75)]||0;
       }
       // Free heavy arrays to reduce RAM — more aggressive for large datasets
-      if(st.allVals&&st.allVals.length>1000){st.allVals=st.allVals.slice(0,500)} // keep tiny sample only
+      if(st.allVals&&st.allVals.length>1000){st.allVals=st.allVals} // keep tiny sample only
     });
     // Free joined data after processing
     if(joinedOutput){joinedOutput.rows=null;joinedOutput=null}
@@ -7355,7 +7355,7 @@ function buildChartInterpretPrompt(ch){
     if(d.labels&&d.datasets&&d.datasets[0]){
       prompt+='\nVeri:\n';
       const ds=d.datasets;
-      d.labels.slice(0,20).forEach((l,i)=>{
+      d.labels.forEach((l,i)=>{
         const vals=ds.map(s=>s.label+'='+(typeof s.data[i]==='object'?JSON.stringify(s.data[i]):s.data[i]));
         prompt+='  '+l+': '+vals.join(', ')+'\n';
       });
@@ -7603,7 +7603,7 @@ function _ruleInterpretDetailStats(){
     const entries=Object.entries(freq).sort((a,b)=>b[1]-a[1]);
     if(entries.length){
       t+='En sık değerler: ';
-      entries.slice(0,5).forEach(([v,c],i)=>{t+=v+' ('+c+' kez)';t+=i<Math.min(4,entries.length-1)?', ':'. '});
+      entries.forEach(([v,c],i)=>{t+=v+' ('+c+' kez)';t+=i<Math.min(4,entries.length-1)?', ':'. '});
       t+='\n';
     }
     t+='Toplam '+entries.length+' benzersiz değer bulunmaktadır.\n';
@@ -7614,7 +7614,7 @@ function _ruleInterpretDetailStats(){
     t+='Kategori sayısı: '+entries.length+'\n\n';
     if(entries.length){
       t+='En sık kategoriler:\n';
-      entries.slice(0,10).forEach(([v,c],i)=>{
+      entries.forEach(([v,c],i)=>{
         const pct=(c/s.count*100).toFixed(1);
         t+='  '+(i+1)+'. '+v+': '+c+' (%'+pct+')\n';
       });
@@ -7703,7 +7703,7 @@ function _ruleInterpretGroup(groupCol,gName,gRows,selectedFields){
       gRows.forEach(r=>{const v=r[fi]||'(boş)';freq[v]=(freq[v]||0)+1});
       const entries=Object.entries(freq).sort((a,b)=>b[1]-a[1]);
       t+=field+' (kategorik): '+entries.length+' kategori\n';
-      entries.slice(0,5).forEach(([v,c])=>{
+      entries.forEach(([v,c])=>{
         t+='  '+v+': '+c+' (%'+(c/gRows.length*100).toFixed(1)+')\n';
       });
       t+='\n';
@@ -9654,7 +9654,7 @@ function buildLLMPrompt(){
         const d=c.instance.data;
         if(d.labels&&d.datasets&&d.datasets[0]){
           const vals=d.datasets[0].data;
-          d.labels.slice(0,15).forEach((l,j)=>{prompt+='  '+l+': '+(typeof vals[j]==='object'?JSON.stringify(vals[j]):vals[j])+'\n'});
+          d.labels.forEach((l,j)=>{prompt+='  '+l+': '+(typeof vals[j]==='object'?JSON.stringify(vals[j]):vals[j])+'\n'});
           if(d.labels.length>15)prompt+='  ... (toplam '+d.labels.length+' değer)\n';
         }
       }
@@ -15785,7 +15785,7 @@ function advStatsSuggestTests(){
   numCols.forEach(nc=>{
     const vals=_getFilteredNumericValues(nc);
     if(vals.length<3){numInfo[nc]={n:vals.length,normal:null};return}
-    const sw=_shapiroWilk(vals.length>500?vals.slice(0,500):vals);
+    const sw=_shapiroWilk(vals.length>500?vals:vals);
     const sk=_skewness(vals);
     numInfo[nc]={n:vals.length,normal:sw.p>=0.05,pNorm:sw.p,skew:sk,mean:_mean(vals),std:_std(vals)};
   });
