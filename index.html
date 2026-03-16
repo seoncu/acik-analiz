@@ -4821,12 +4821,27 @@ function parseOutputRows(maxRows){
   return rows;
 }
 
+// Helper: check if output data is available for computation
+function _hasOutputData(){
+  return outputChunks.length>0&&outputChunks.reduce((s,c)=>s+c.length,0)>10;
+}
+function _noDataHTML(){
+  return '<div style="padding:30px;text-align:center;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;margin:20px 0"><p style="font-size:16px;font-weight:700;margin-bottom:8px">\u26A0\uFE0F Çıktı verisi bulunamadı</p><p style="font-size:13px;color:#991b1b">Hesaplama yapılabilmesi için dosyanızı yeniden yükleyip <b>6. İşlem</b> adımından tekrar işlemeniz gerekmektedir.<br>Bu durum, eski bir oturumun yüklenmesinden kaynaklanabilir.</p></div>';
+}
+
 // === Stream ALL output rows without memory caching (for accurate N counts) ===
 // callback(row) is called for each parsed row (array of strings)
 function streamOutputRows(callback){
+  // Check if outputChunks has actual data
+  const totalLen=outputChunks.reduce((s,c)=>s+c.length,0);
+  if(totalLen<10){
+    console.warn('streamOutputRows: outputChunks boş ('+totalLen+' bytes, '+outputChunks.length+' chunks). Veri yok — dosyayı yeniden işleyin.');
+    return 0;
+  }
   const outDelim=document.getElementById('outputFormat').value==='tsv'?'\t':',';
   let leftover='';
   let isFirst=true;
+  let rowCount=0;
   const chunkCount=outputChunks.length;
   for(let ci=0;ci<chunkCount;ci++){
     const text=leftover+outputChunks[ci];
@@ -4837,9 +4852,11 @@ function streamOutputRows(callback){
       if(!ln.trim())continue;
       if(isFirst){isFirst=false;continue}
       callback(parseCSVLine(ln,outDelim));
+      rowCount++;
     }
   }
-  if(leftover.trim()&&!isFirst)callback(parseCSVLine(leftover,outDelim));
+  if(leftover.trim()&&!isFirst){callback(parseCSVLine(leftover,outDelim));rowCount++}
+  return rowCount;
 }
 
 // Single Y backward-compat wrapper
@@ -4853,6 +4870,11 @@ function computeMultiAgg(xCol,yCols,aggType){
   const _fcCol=_freqCriterionCol||'';
   const cacheKey=xCol+'|'+yCols.join(',')+':'+aggType+':'+filterHash()+':'+drillStack.length+':fc='+_fcCol;
   if(_aggCache[cacheKey])return _aggCache[cacheKey];
+
+  // Check if output data is available (may be empty in restored sessions)
+  if(!_hasOutputData()&&!(aggType==='count'&&colStats[xCol]&&colStats[xCol].freq)){
+    return{labels:[],datasets:[],groups:[]};
+  }
 
   const xi=outHeaders.indexOf(xCol);
 
@@ -5302,6 +5324,7 @@ function computeMultiSubPivot(xCol,subGroups,yCols,aggType){
 
 // Box Plot data computation: returns {labels, boxes: [{min,q1,median,q3,max}]} per X group
 function computeBoxPlotData(xCol,yCol,colorCol){
+  if(!_hasOutputData())return{labels:[],datasets:[]};
   const xi=outHeaders.indexOf(xCol);
   const yi=yCol?outHeaders.indexOf(yCol):-1;
   const ci=colorCol?outHeaders.indexOf(colorCol):-1;
@@ -7066,7 +7089,7 @@ function renderSummaryStatsTable(){
       // Uses streamOutputRows for EXACT computation over ALL rows — zero sampling
       const groups={};
       const catFreqFromStats=colStats[catCol]?colStats[catCol].freq:null; // full-dataset freq
-      streamOutputRows(row=>{
+      const _stRows=streamOutputRows(row=>{
         // Apply global filters
         let skip=false;
         for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){
@@ -7087,6 +7110,7 @@ function renderSummaryStatsTable(){
         });
       });
 
+      if(_stRows===0){html+=_noDataHTML();return}
       const sortedKeys=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr'));
 
       html+='<div style="margin-bottom:24px"><h3 style="font-size:15px;margin-bottom:8px;display:flex;align-items:center;gap:6px">'+escHtml(catCol)+' <span class="tag tag-cat" style="font-size:9px">K</span> <span style="font-size:11px;color:#64748b;font-weight:400">('+sortedKeys.length+' grup)</span></h3>';
@@ -7343,6 +7367,7 @@ function renderDetailedStats(){
 // === Correlation Matrix ===
 function computeCorrelationMatrix(){
   const area=document.getElementById('corrMatrixArea');
+  if(!_hasOutputData()){area.innerHTML=_noDataHTML();return}
   area.innerHTML='<p class="text-sm" style="color:#3b82f6">Hesaplanıyor...</p>';
   setTimeout(()=>{
     const anyFilter=outHeaders.some(h=>hasActiveFilter(h));
@@ -7451,7 +7476,7 @@ function computeCrossTab(){
     }
 
     // Stream ALL rows — no sampling, no data loss
-    streamOutputRows(row=>{
+    const _ctRows=streamOutputRows(row=>{
       // Fast filter check - only check active filter columns
       let skip=false;
       for(let k=0;k<activeFilterCols.length;k++){
@@ -7469,6 +7494,9 @@ function computeCrossTab(){
       cell.count++;
       if(vi>=0){const n=parseFloat((row[vi]||'').replace(',','.'));if(!isNaN(n)){cell.sum+=n;cell.n++}}
     });
+
+    // Check if any data was streamed
+    if(_ctRows===0){area.innerHTML=_noDataHTML();return}
 
     // Sort rows and columns — limit for performance
     let rArr=[...rowMap.keys()].sort((a,b)=>a.localeCompare(b,'tr'));
@@ -9552,6 +9580,13 @@ async function importSession(event){
     calcFields=meta.calcFields||[];
     outputChunks=[data.outputData];
 
+    // CRITICAL: Validate outputData is not empty (old sessions may have lost data)
+    const _odLen=(data.outputData||'').trim().length;
+    if(_odLen<10&&totalRows>0){
+      warnings.push('⚠️ Kaydedilmiş çıktı verisi boş veya hasarlı. Hesaplama gerektiren sekmeler (Çapraz Tablo, Özet İstatistik, grafikler vb.) çalışmayacaktır. Veriyi yeniden işlemeniz (6. İşlem adımı) önerilir.');
+      console.warn('Session load: outputData is empty/corrupted ('+_odLen+' bytes) but totalRows='+totalRows+'. User must reprocess.');
+    }
+
     // colStats: varsa kullan, yoksa veya yapısı tutarsızsa yeniden hesapla
     let statsOK=false;
     if(data.colStats&&typeof data.colStats==='object'){
@@ -9724,6 +9759,15 @@ async function restoreSession(){
     const dataBlob=await dbGet('outputData');
     if(dataBlob){
       outputChunks=[dataBlob];
+    }
+
+    // CRITICAL: Validate restored outputData
+    const _rdLen=(dataBlob||'').trim().length;
+    if(_rdLen<10&&totalRows>0){
+      console.warn('Session restore: outputData boş/hasarlı ('+_rdLen+' bytes, totalRows='+totalRows+'). Hesaplama sekmeleri çalışmayacak.');
+      setTimeout(()=>{
+        showError('⚠️ Kaydedilmiş oturumda çıktı verisi bulunamadı. Çapraz Tablo, Özet İstatistik, grafikler ve İleri İstatistik çalışmayacaktır. Lütfen dosyanızı yeniden yükleyip 6. adımdan (İşlem) tekrar işleyin.');
+      },500);
     }
 
     // Clear parse cache
@@ -12300,6 +12344,8 @@ function advStatsRun(testId){
   const interpArea=document.getElementById('advStatsInterpretation');
   resArea.style.display='block';
   interpArea.style.display='none';
+  // Check output data availability
+  if(!_hasOutputData()){resTable.innerHTML=_noDataHTML();return}
   let html='';
   let resultData={test:testId};
   // Büyük veri uyarısı
