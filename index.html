@@ -1844,7 +1844,8 @@ function _selectEngineMode(mode){
 }
 
 // Detect Python backend status and update UI
-function _updateEngineModeUI(){
+// window'a açıkça atanır — api-bridge.js'den çağrılabilmesi için
+window._updateEngineModeUI=function _updateEngineModeUI(){
   const sub=document.getElementById('pythonModeSubtitle');
   const badge=document.getElementById('pythonStatusBadge');
   const setupBox=document.getElementById('pythonSetupInfo');
@@ -1859,7 +1860,7 @@ function _updateEngineModeUI(){
     if(setPyStatus){setPyStatus.textContent='🟢 Aktif — Bağlı';setPyStatus.style.color='#059669'}
     if(setEngMode){setEngMode.textContent='Python (FastAPI + Polars)';setEngMode.style.color='#059669'}
     // Auto-select python mode if backend is active
-    _selectEngineMode('python');
+    if(typeof _selectEngineMode==='function')_selectEngineMode('python');
   }else{
     if(sub){sub.textContent='Motor Bağlı Değil';sub.style.color='#dc2626'}
     if(badge)badge.innerHTML='<span style="display:inline-block;padding:4px 12px;background:#fef3c7;color:#92400e;border-radius:20px;font-size:11px;font-weight:600">⚠ Başlatılmadı</span>';
@@ -1868,10 +1869,12 @@ function _updateEngineModeUI(){
     if(setPyStatus){setPyStatus.textContent='⚠ Bağlı Değil';setPyStatus.style.color='#f59e0b'}
     if(setEngMode){setEngMode.textContent='Tarayıcı (JavaScript)';setEngMode.style.color='#94a3b8'}
   }
-}
-// Check on page load (api-bridge.js sets _BACKEND_ACTIVE after health check)
-setTimeout(_updateEngineModeUI,1500);
-setTimeout(_updateEngineModeUI,4000); // retry — bridge may be slow
+};
+// Check on page load — api-bridge.js de health check sonrası _updateEngineModeUI çağırır
+setTimeout(window._updateEngineModeUI,1000);
+setTimeout(window._updateEngineModeUI,2500);
+setTimeout(window._updateEngineModeUI,5000);
+setTimeout(window._updateEngineModeUI,10000); // geç başlayan motorlar için
 
 // Big file warning: check file size after upload
 const _origHandleFiles=typeof handleFiles==='function'?handleFiles:null;
