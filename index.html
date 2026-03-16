@@ -1577,6 +1577,20 @@ function _cellLimitCheck(rows,cols,context){
 let _reservoirSample=[]; // pre-built sample during processing for fast dashboard
 let _ALLVALS_LIM=2000000,_UNIQSET_LIM=10000000; // dynamic limits for large data
 let _rsvRowCount=0; // running row counter for reservoir sampling
+// === PERFORMANCE: cached output data length ===
+let _outputDataLen=0; // Total byte length of outputChunks — updated after processing and on changes
+let _outputChunkCount=0; // Number of chunks — used to detect changes
+// === PERFORMANCE: filtered col stats cache ===
+let _filteredStatsCache=null; // cached result of _computeFilteredColStats
+let _filteredStatsCacheHash=''; // filter hash when cache was built
+// === PERFORMANCE: analysis UI render guard ===
+let _analysisUIRendered=false; // true if renderAnalysisUI() has been called for current data
+let _analysisUIDataVersion=0; // incremented when data changes
+let _analysisUILastVersion=-1; // last version renderAnalysisUI() was called for
+// === PERFORMANCE: debounce timers ===
+let _tabSwitchTimer=null;
+// === PERFORMANCE: top freq entry cache per column ===
+let _topFreqCache={}; // {colName: {entry:[val,count], hash:freqSize}}
 let _useOPFS=false; // OPFS available flag
 let _opfsHandle=null; // OPFS file handle
 let _opfsWriter=null; // OPFS writable stream
@@ -1856,7 +1870,16 @@ function showStep(name){
   // Hero banner sadece Upload adımında görünür
   const _heroBanner=document.getElementById('heroBanner');
   if(_heroBanner)_heroBanner.style.display=(name==='Upload')?'':'none';
-  if(name==='Analysis'){renderAnalysisUI();setTimeout(renderGlobalFilterBar,100);setTimeout(()=>_initSearchableSelects(),300)}
+  if(name==='Analysis'){
+    // PERFORMANCE: free reservoir sample when entering analysis — colStats + streamOutputRows cover all needs
+    if(totalRows>500000&&_reservoirSample.length>500000){
+      console.log('Bellek optimizasyonu: _reservoirSample serbest bırakılıyor ('+_reservoirSample.length+' satır)');
+      _reservoirSample.length=0;_reservoirSample=[];
+    }
+    renderAnalysisUI();setTimeout(renderGlobalFilterBar,100);setTimeout(()=>_initSearchableSelects(),300);
+    // PERFORMANCE: schedule garbage collection hint
+    setTimeout(()=>{if(parseOutputRows._caches){const ks=Object.keys(parseOutputRows._caches);if(ks.length>3){ks.forEach(k=>{if(k==='_full')delete parseOutputRows._caches[k]});console.log('parseOutputRows cache temizlendi')}}},1000);
+  }
   // Update step nav bar
   const stepOrder=['Upload','ModeSelect','Join','Delimiter','Columns','Processing','Done','Analysis'];
   const activeIdx=stepOrder.indexOf(name);
@@ -2332,7 +2355,7 @@ async function startProcessing(){
   const _preChk=_cellLimitCheck(Math.round(_preEstRows),_preOutH.length,'Veri İşleme');
   if(_preChk==='block'||_preChk==='cancel')return;
   showStep('Processing');abortFlag=false;outputChunks=[];totalRows=0;
-  _reservoirSample=[];_rsvRowCount=0;parseOutputRows._caches={};
+  _reservoirSample=[];_rsvRowCount=0;parseOutputRows._caches={};_outputDataLen=0;_outputChunkCount=0;_filteredStatsCache=null;_filteredStatsCacheHash='';_topFreqCache={};
   window._outputBlob=null;window._outputBlobReady=false;
   await _cleanupOPFS();
   outHeaders=headers.filter(h=>maskConfig[h]!=='remove');
@@ -2532,6 +2555,14 @@ async function startProcessing(){
         console.log('Büyük veri: export Blob oluşturuldu. outputChunks korunuyor (hesaplama için).');
       }catch(e){console.warn('Blob dönüşümü başarısız:',e)}
     }
+    // === PERFORMANCE: Consolidate outputChunks ===
+    // Merge many small chunks into fewer large ones to reduce GC pressure
+    _consolidateOutputChunks();
+    // Update data version for lazy rendering
+    _analysisUIDataVersion++;
+    _analysisUILastVersion=-1;
+    _filteredStatsCache=null;_filteredStatsCacheHash='';
+    _topFreqCache={};
     renderSummaryStats();
     renderColTypeChips();
     _colTypesConfirmed=false;
@@ -3274,7 +3305,7 @@ function renderSummaryStats(){
     const isNum=origS&&origS.isNumeric&&origS.numCount>0;
     const filled=s.count;
     const uniq=s.uniqueCount||(s._freqSize||Object.keys(s.freq).length);
-    const topEntry=Object.entries(s.freq).sort((a,b)=>b[1]-a[1])[0];
+    const topEntry=_getTopFreqEntry(h,s.freq);
     const tr=document.createElement('tr');
     tr.innerHTML='<td style="font-weight:600">'+escHtml(h)+'</td>'+
       '<td><span class="tag '+(isNum?'tag-num':'tag-cat')+'" style="cursor:pointer" onclick="toggleColType('+idx+')" title="Tıklayarak tip değiştirin">'+(isNum?'Sayısal':'Kategorik')+'</span></td>'+
@@ -3364,15 +3395,20 @@ function switchAnalysisTab(tab,btn){
   if(btn)btn.classList.add('active');
   const map={dashboard:'tabDashboard',quickview:'tabQuickview',topbottom:'tabTopBottom',summary:'tabSummary',stats:'tabStats',correlation:'tabCorrelation',crosstab:'tabCrosstab',mapview:'tabMapView',advstats:'tabAdvStats'};
   document.getElementById(map[tab]).classList.remove('hidden');
-  if(tab==='topbottom'){setTimeout(()=>{try{initTopBottomTab()}catch(e){console.warn('topbottom err',e)}},50)}
-  if(tab==='quickview'){setTimeout(()=>{try{renderQuickView()}catch(e){console.warn('quickview err',e)}},50)}
-  if(tab==='summary'){try{populateSummaryDropdowns()}catch(e){}}
-  if(tab==='correlation'){setTimeout(()=>{try{renderCorrelationMatrix()}catch(e){}},100)}
-  if(tab==='crosstab'){setTimeout(()=>{try{renderCrossTab()}catch(e){}},100)}
-  if(tab==='mapview'){setTimeout(()=>{try{initMapView()}catch(e){console.warn('mapview init err',e)}},100)}
-  if(tab==='advstats'){setTimeout(()=>{try{advStatsInit()}catch(e){console.warn('advstats init err',e)}},50)}
-  // Auto-init searchable selects for the visible tab
-  setTimeout(()=>{try{_initSearchableSelects(document.getElementById(map[tab]))}catch(e){}},200)
+  // PERFORMANCE: debounce heavy tab content rendering to prevent rapid-switch lag
+  if(_tabSwitchTimer){clearTimeout(_tabSwitchTimer);_tabSwitchTimer=null}
+  _tabSwitchTimer=setTimeout(()=>{
+    _tabSwitchTimer=null;
+    if(tab==='topbottom'){try{initTopBottomTab()}catch(e){console.warn('topbottom err',e)}}
+    if(tab==='quickview'){try{renderQuickView()}catch(e){console.warn('quickview err',e)}}
+    if(tab==='summary'){try{populateSummaryDropdowns()}catch(e){}}
+    if(tab==='correlation'){try{renderCorrelationMatrix()}catch(e){}}
+    if(tab==='crosstab'){try{renderCrossTab()}catch(e){}}
+    if(tab==='mapview'){try{initMapView()}catch(e){console.warn('mapview init err',e)}}
+    if(tab==='advstats'){try{advStatsInit()}catch(e){console.warn('advstats init err',e)}}
+    // Auto-init searchable selects for the visible tab
+    setTimeout(()=>{try{_initSearchableSelects(document.getElementById(map[tab]))}catch(e){}},150);
+  },80);
 }
 
 // === Aggregation picker ===
@@ -3533,8 +3569,14 @@ function _computeOutlierExclusions() {
 
 // === Render Analysis UI ===
 function renderAnalysisUI(){
+  // PERFORMANCE: Skip if already rendered for current data version
+  if(_analysisUILastVersion===_analysisUIDataVersion&&_analysisUILastVersion>=0){
+    console.log('renderAnalysisUI: zaten güncel (v'+_analysisUIDataVersion+'), atlanıyor');
+    return;
+  }
+  _analysisUILastVersion=_analysisUIDataVersion;
   initColFilters();
-  _aggCache={};
+  _aggCache={};_filteredStatsCache=null;_filteredStatsCacheHash='';
   // Reset quickview rendered flag so it re-renders on next visit
   const qvArea=document.getElementById('quickviewTableArea');if(qvArea)qvArea._rendered=false;
   const xSel=document.getElementById('xVar');
@@ -3859,7 +3901,7 @@ function openGroupingModal(){
 
   }else{
     // Categorical grouping
-    const uniqueVals=Object.entries(s.freq).sort((a,b)=>b[1]-a[1]).slice(0,100);
+    const uniqueVals=_topNFreq(s.freq,100);
 
     modalHTML+='<div style="margin-bottom:12px;padding:8px;background:#fefce8;border-radius:6px;font-size:11px;color:#854d0e">';
     modalHTML+='<strong>'+escHtml(col)+'</strong>: '+Object.keys(s.freq).length+' benzersiz değer | n='+s.count.toLocaleString('tr-TR');
@@ -4756,11 +4798,11 @@ function clearDashFilter(i){clearGlobalFilter(outHeaders[i])}
 // === Compute Grouped Aggregation from outputChunks ===
 function parseOutputRows(maxRows){
   // Parse output data into rows. maxRows caps for performance (sampling).
-  // OPTIMIZED: For large datasets, avoid joining all chunks into one string.
-  // Instead, build a line index by scanning chunk boundaries.
+  // PERFORMANCE: Only cache SAMPLED results. Full dataset parse is never cached (too large).
   const cacheKey=maxRows?'_sample_'+maxRows:'_full';
   if(!parseOutputRows._caches)parseOutputRows._caches={};
-  if(parseOutputRows._caches[cacheKey])return parseOutputRows._caches[cacheKey];
+  // Only use cache for sampled results (maxRows set) — full parse is too expensive to cache
+  if(maxRows&&parseOutputRows._caches[cacheKey])return parseOutputRows._caches[cacheKey];
 
   const outDelim=document.getElementById('outputFormat').value==='tsv'?'\t':',';
 
@@ -4817,13 +4859,68 @@ function parseOutputRows(maxRows){
     if(leftover.trim()&&!isFirst)rows.push(parseCSVLine(leftover,outDelim));
   }
 
-  parseOutputRows._caches[cacheKey]=rows;
+  // Only cache sampled results to save RAM — full parse result is too large
+  if(maxRows)parseOutputRows._caches[cacheKey]=rows;
   return rows;
 }
 
-// Helper: check if output data is available for computation
+// Helper: check if output data is available for computation (uses cached length for performance)
 function _hasOutputData(){
-  return outputChunks.length>0&&outputChunks.reduce((s,c)=>s+c.length,0)>10;
+  if(_outputDataLen>10)return true;
+  // Fallback: recalculate if cache might be stale
+  if(outputChunks.length!==_outputChunkCount){_recalcOutputDataLen()}
+  return _outputDataLen>10;
+}
+function _recalcOutputDataLen(){
+  _outputDataLen=0;for(let i=0;i<outputChunks.length;i++)_outputDataLen+=outputChunks[i].length;
+  _outputChunkCount=outputChunks.length;
+}
+// === PERFORMANCE: Consolidate outputChunks into fewer large chunks ===
+// Reduces GC pressure by merging hundreds of small strings into ~16MB blocks
+function _consolidateOutputChunks(){
+  if(outputChunks.length<=4)return; // already compact
+  const TARGET_CHUNK=16*1024*1024; // 16 MB per consolidated chunk
+  const newChunks=[];
+  let buf='';
+  for(let i=0;i<outputChunks.length;i++){
+    buf+=outputChunks[i];
+    if(buf.length>=TARGET_CHUNK){
+      newChunks.push(buf);
+      buf='';
+    }
+  }
+  if(buf.length>0)newChunks.push(buf);
+  const oldCount=outputChunks.length;
+  outputChunks.length=0; // clear
+  for(let i=0;i<newChunks.length;i++)outputChunks.push(newChunks[i]);
+  _recalcOutputDataLen();
+  console.log('outputChunks konsolide edildi: '+oldCount+' → '+outputChunks.length+' parça ('+(_outputDataLen/(1024*1024)).toFixed(1)+' MB)');
+}
+// === PERFORMANCE: get top freq entry without full sort ===
+function _getTopFreqEntry(colName,freq){
+  const freqSize=Object.keys(freq).length;
+  const cached=_topFreqCache[colName];
+  if(cached&&cached.hash===freqSize)return cached.entry;
+  let topVal=null,topCnt=0;
+  for(const k in freq){if(freq[k]>topCnt){topCnt=freq[k];topVal=k}}
+  const entry=topVal!==null?[topVal,topCnt]:null;
+  _topFreqCache[colName]={entry,hash:freqSize};
+  return entry;
+}
+// === PERFORMANCE: Get top N freq entries without full sort (O(n*k) for small n) ===
+function _topNFreq(freq,n){
+  // For small freq maps, just sort normally
+  const keys=Object.keys(freq);
+  if(keys.length<=200)return Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,n);
+  // For large freq maps, use partial selection (much faster than full sort)
+  const top=[];
+  for(const k of keys){
+    const v=freq[k];
+    if(top.length<n){top.push([k,v]);if(top.length===n)top.sort((a,b)=>b[1]-a[1])}
+    else if(v>top[n-1][1]){top[n-1]=[k,v];top.sort((a,b)=>b[1]-a[1])}
+  }
+  if(top.length<n)top.sort((a,b)=>b[1]-a[1]);
+  return top;
 }
 function _noDataHTML(){
   return '<div style="padding:30px;text-align:center;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;margin:20px 0"><p style="font-size:16px;font-weight:700;margin-bottom:8px">\u26A0\uFE0F Çıktı verisi bulunamadı</p><p style="font-size:13px;color:#991b1b">Hesaplama yapılabilmesi için dosyanızı yeniden yükleyip <b>6. İşlem</b> adımından tekrar işlemeniz gerekmektedir.<br>Bu durum, eski bir oturumun yüklenmesinden kaynaklanabilir.</p></div>';
@@ -4832,10 +4929,9 @@ function _noDataHTML(){
 // === Stream ALL output rows without memory caching (for accurate N counts) ===
 // callback(row) is called for each parsed row (array of strings)
 function streamOutputRows(callback){
-  // Check if outputChunks has actual data
-  const totalLen=outputChunks.reduce((s,c)=>s+c.length,0);
-  if(totalLen<10){
-    console.warn('streamOutputRows: outputChunks boş ('+totalLen+' bytes, '+outputChunks.length+' chunks). Veri yok — dosyayı yeniden işleyin.');
+  // Check if outputChunks has actual data (use cached length)
+  if(!_hasOutputData()){
+    console.warn('streamOutputRows: outputChunks boş ('+_outputDataLen+' bytes, '+outputChunks.length+' chunks). Veri yok — dosyayı yeniden işleyin.');
     return 0;
   }
   const outDelim=document.getElementById('outputFormat').value==='tsv'?'\t':',';
@@ -5910,6 +6006,9 @@ function _updateUndoBtn(){
 
 // === Compute Filtered Column Stats ===
 function _computeFilteredColStats(){
+  // PERFORMANCE: return cached result if filters haven't changed
+  const fh=filterHash();
+  if(_filteredStatsCache&&_filteredStatsCacheHash===fh)return _filteredStatsCache;
   // Stream ALL rows for accurate counts — no sampling
   const stats={};
   outHeaders.forEach(h=>{
@@ -5955,12 +6054,15 @@ function _computeFilteredColStats(){
     if(s.min===Infinity)s.min=0;
     if(s.max===-Infinity)s.max=0;
   });
+  // Cache the result
+  _filteredStatsCache=stats;_filteredStatsCacheHash=fh;
   return stats;
 }
 
 // === Refresh All Charts & KPIs on Filter Change ===
 function refreshAllCharts(){
   _aggCache={};
+  _filteredStatsCache=null;_filteredStatsCacheHash=''; // invalidate filtered stats cache
   // Refresh KPI cards with filtered data
   updateKPICardsFiltered();
   // Rebuild each chart with current filters
@@ -6405,9 +6507,10 @@ function generateRuleBasedDashboardReport(){
     report+='KATEGORİK DEĞİŞKEN ÖZETİ\n'+'-'.repeat(30)+'\n';
     catVars.slice(0,10).forEach(h=>{
       const s=colStats[h];if(!s)return;
-      const entries=Object.entries(s.freq).sort((a,b)=>b[1]-a[1]);
-      report+=h+': '+entries.length+' kategori';
-      if(entries.length)report+=', en sık: '+entries[0][0]+' ('+entries[0][1]+')';
+      const freqLen=Object.keys(s.freq).length;
+      const topE=_getTopFreqEntry(h,s.freq);
+      report+=h+': '+freqLen+' kategori';
+      if(topE)report+=', en sık: '+topE[0]+' ('+topE[1]+')';
       report+='\n';
     });
     report+='\n';
@@ -7029,10 +7132,8 @@ function renderQuickView(){
       }else{
         html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;color:#cbd5e1">—</td>'.repeat(6);
       }
-      const freqEntries=Object.entries(s.freq);
-      if(freqEntries.length>0){
-        freqEntries.sort((a,b)=>b[1]-a[1]);
-        const top=freqEntries[0];
+      const top=_getTopFreqEntry(h,s.freq);
+      if(top){
         html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;font-size:11px" title="'+escHtml(top[0])+' ('+top[1].toLocaleString('tr-TR')+')">'+escHtml(top[0].length>20?top[0].substring(0,20)+'...':top[0])+' <span style="color:#64748b">('+top[1].toLocaleString('tr-TR')+')</span></td>';
       }else{
         html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;color:#cbd5e1">—</td>';
@@ -8414,7 +8515,7 @@ async function generateAPA7PDF(){
         const numE=[];Object.entries(s.freq).forEach(([val,c])=>{const n=parseFloat(val.replace(',','.'));if(!isNaN(n))numE.push({v:n,c})});
         numE.sort((a,b)=>a.v-b.v);const tN=numE.reduce((a,e)=>a+e.c,0);let cum=0;
         for(const e of numE){cum+=e.c;if(cum>=tN*0.5){medV=e.v.toFixed(2);break}}}
-      const topE=Object.entries(s.freq).sort((a,b)=>b[1]-a[1])[0];
+      const topE=_getTopFreqEntry(h,s.freq);
       return[h,isNum?'Sayısal':'Kategorik',String(filled),isNum?String(s.min):'-',isNum?String(s.max):'-',isNum?(s.sum/s.numCount).toFixed(2):'-',medV,stdV,topE?topE[0].substring(0,15):'-'];
     });
     doc.autoTable({startY:y,head:[[_pt('Değişken'),_pt('Tip'),'n','Min',_pt('Maks'),_pt('Ort.'),_pt('Medyan'),'SS','Mod']],body:statsRows.map(r=>r.map(_pt)),styles:{fontSize:7,cellPadding:2,font:_pdfFN},headStyles:{fillColor:[59,130,246],font:_pdfFN},margin:{left:mg,right:mg},theme:'grid'});
@@ -8566,8 +8667,12 @@ function onSmartIndepChange(){
   if(!col)return;
   const s=colStats[col];
   if(!s||!s.freq)return;
-  const keys=Object.entries(s.freq).sort((a,b)=>b[1]-a[1]);
-  keys.forEach(([v,c])=>{sel.innerHTML+='<option value="'+escHtml(v)+'">'+escHtml(v)+' (n='+c+')</option>'});
+  // PERFORMANCE: for large freq maps, limit dropdown to top 500 entries
+  const freqLen=Object.keys(s.freq).length;
+  const keys=freqLen>500?_topNFreq(s.freq,500):Object.entries(s.freq).sort((a,b)=>b[1]-a[1]);
+  const optHtml=[];
+  keys.forEach(([v,c])=>{optHtml.push('<option value="'+escHtml(v)+'">'+escHtml(v)+' (n='+c+')</option>')});
+  sel.innerHTML=optHtml.join('');
   if(sel.classList.contains('searchable-select'))_initSearchableSelects(sel.parentNode);
 }
 
@@ -9155,7 +9260,7 @@ async function generatePDF(){
         numE.sort((a,b)=>a.v-b.v);const tN=numE.reduce((a,e)=>a+e.c,0);let cum=0;
         for(const e of numE){cum+=e.c;if(cum>=tN*0.5){median=e.v.toFixed(2);break}}
       }
-      const topE=Object.entries(s.freq).sort((a,b)=>b[1]-a[1])[0];
+      const topE=_getTopFreqEntry(h,s.freq);
       return[h,isNum?'Sayısal':'Kategorik',filled.toLocaleString('tr-TR'),
         isNum?s.min.toLocaleString('tr-TR'):'-',isNum?s.max.toLocaleString('tr-TR'):'-',
         isNum?(s.sum/s.numCount).toFixed(2):'-',median,stdDev,
@@ -9365,7 +9470,7 @@ function downloadXLSX(){
   },50);
 }
 
-function backToColumns(){outputChunks=[];parseOutputRows._caches={};window._outputBlob=null;window._outputBlobReady=false;_cleanupOPFS();showStep('Columns')}
+function backToColumns(){outputChunks=[];parseOutputRows._caches={};window._outputBlob=null;window._outputBlobReady=false;_cleanupOPFS();_outputDataLen=0;_outputChunkCount=0;_filteredStatsCache=null;_filteredStatsCacheHash='';_topFreqCache={};_analysisUILastVersion=-1;showStep('Columns')}
 function undoProcessing(){
   if(!confirm('⚠️ İşlemi Geri Al\n\nMaskeleme işlemi geri alınacak ve maskeleme ayarları ekranına döneceksiniz.\nMevcut ayarlarınız korunacak.\n\nDevam etmek istiyor musunuz?'))return;
   backToColumns();
@@ -9373,6 +9478,7 @@ function undoProcessing(){
 function rerunProcessing(){
   if(!confirm('🔄 İşlemi Yenile\n\nMaskeleme işlemi mevcut ayarlarla yeniden çalıştırılacak.\n\nDevam etmek istiyor musunuz?'))return;
   outputChunks=[];parseOutputRows._caches={};window._outputBlob=null;window._outputBlobReady=false;_cleanupOPFS();
+  _outputDataLen=0;_outputChunkCount=0;_filteredStatsCache=null;_filteredStatsCacheHash='';_topFreqCache={};_analysisUILastVersion=-1;
   totalRows=0;chartInstances.forEach(c=>{if(c.instance)c.instance.destroy()});chartInstances=[];
   colFilters={};_aggCache={};
   startProcessing();
@@ -9383,6 +9489,7 @@ function resetAll(){
   uploadedFiles=[];fileLabels=[];colFilters={};currentAgg='count';
   selectedYCols=[];calcFields=[];drillStack=[];_aggCache={};
   parseOutputRows._caches={};
+  _outputDataLen=0;_outputChunkCount=0;_filteredStatsCache=null;_filteredStatsCacheHash='';_topFreqCache={};_analysisUILastVersion=-1;_reservoirSample=[];
   document.getElementById('fileListArea').classList.add('hidden');
   showStep('Upload');
   checkSavedSession();
@@ -9579,6 +9686,8 @@ async function importSession(event){
     selectedYCols=meta.selectedYCols||[];
     calcFields=meta.calcFields||[];
     outputChunks=[data.outputData];
+    _recalcOutputDataLen();
+    _analysisUIDataVersion++;_analysisUILastVersion=-1;_filteredStatsCache=null;_filteredStatsCacheHash='';_topFreqCache={};
 
     // CRITICAL: Validate outputData is not empty (old sessions may have lost data)
     const _odLen=(data.outputData||'').trim().length;
@@ -9770,9 +9879,11 @@ async function restoreSession(){
       },500);
     }
 
-    // Clear parse cache
+    // Clear parse cache and update performance caches
     parseOutputRows._caches={};
     _aggCache={};
+    _recalcOutputDataLen();
+    _analysisUIDataVersion++;_analysisUILastVersion=-1;_filteredStatsCache=null;_filteredStatsCacheHash='';_topFreqCache={};
 
     // Render
     document.getElementById('doneText').textContent=totalRows.toLocaleString('tr-TR')+' satır işlendi. (Kayıtlı oturumdan yüklendi)';
