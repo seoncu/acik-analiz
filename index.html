@@ -559,15 +559,57 @@
         </div>
       </div>
       <!-- Python kurulum açıklaması -->
-      <div id="pythonSetupInfo" style="margin-top:14px;padding:14px 16px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1.5px solid #6ee7b7;border-radius:12px">
-        <p style="font-size:13px;font-weight:700;color:#065f46;margin:0">🐍 Python Motorunu Nasıl Başlatırım?</p>
-        <div style="margin-top:8px;font-size:12px;color:#047857;line-height:1.7">
-          <p style="margin:0"><strong>1.</strong> Bilgisayarınızda <strong>Python 3.9+</strong> kurulu olmalıdır. (<a href="https://www.python.org/downloads/" target="_blank" style="color:#2563eb">python.org</a>)</p>
-          <p style="margin:4px 0 0"><strong>2.</strong> Bu klasördeki başlatıcıyı çalıştırın:</p>
-          <p style="margin:2px 0 0 16px"><strong>macOS:</strong> <code style="background:#d1fae5;padding:2px 6px;border-radius:4px">AcikAnaliz-Baslat.command</code> dosyasını çift tıklayın</p>
-          <p style="margin:2px 0 0 16px"><strong>Windows:</strong> <code style="background:#d1fae5;padding:2px 6px;border-radius:4px">AcikAnaliz-Baslat.bat</code> dosyasını çift tıklayın</p>
-          <p style="margin:4px 0 0"><strong>3.</strong> İlk seferde bağımlılıklar (Polars, NumPy, SciPy, FastAPI) otomatik kurulur (~1-2 dk).</p>
-          <p style="margin:4px 0 0"><strong>4.</strong> Tarayıcı otomatik açılır. Sağ alt köşede <span style="background:#059669;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">🟢 Python Motor Aktif</span> rozeti görünür.</p>
+      <div id="pythonSetupInfo" style="margin-top:14px;padding:16px 18px;background:linear-gradient(135deg,#fef2f2,#fee2e2);border:2px solid #fca5a5;border-radius:14px">
+        <p style="font-size:15px;font-weight:800;color:#991b1b;margin:0">🐍 Python Motorunu Nasıl Başlatırım?</p>
+
+        <!-- Ön Koşul -->
+        <div style="margin-top:14px;padding:12px 14px;background:#fff;border:1.5px solid #fca5a5;border-radius:10px">
+          <p style="font-size:13px;font-weight:700;color:#991b1b;margin:0">Ön Koşul: Python Kurulumu</p>
+          <p style="font-size:12px;color:#7f1d1d;margin:8px 0 0;line-height:1.6">Python kurulu değilse önce kurun: <a href="https://www.python.org/downloads/" target="_blank" style="color:#2563eb;font-weight:700;text-decoration:underline">python.org/downloads</a> → İndir → Kur.</p>
+          <p style="font-size:11px;color:#991b1b;margin:4px 0 0;font-weight:600">⚠️ Windows'ta kurulum sırasında "Add Python to PATH" kutusunu mutlaka işaretleyin!</p>
+        </div>
+
+        <!-- macOS Talimatı -->
+        <div style="margin-top:12px;padding:14px;background:#fff;border:1.5px solid #93c5fd;border-radius:10px">
+          <p style="font-size:13px;font-weight:700;color:#1e40af;margin:0">🍎 macOS — 3 Adımda Başlat</p>
+          <div style="margin-top:10px;font-size:12.5px;color:#1e3a5f;line-height:1.8">
+            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
+              <span style="background:#3b82f6;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">1</span>
+              <div><strong>Terminal'i açın</strong><br><span style="font-size:11.5px;color:#64748b">Klavyede <kbd style="background:#f1f5f9;padding:2px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px">⌘ Cmd</kbd> + <kbd style="background:#f1f5f9;padding:2px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px">Boşluk</kbd> basın → "Terminal" yazın → Enter</span></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
+              <span style="background:#3b82f6;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">2</span>
+              <div><span style="cursor:pointer;display:inline-block;background:#dbeafe;border:1.5px solid #93c5fd;border-radius:8px;padding:6px 14px;font-family:monospace;font-size:12px;font-weight:600;color:#1e40af;user-select:all" onclick="navigator.clipboard.writeText('bash ');this.style.background='#bbf7d0';this.style.borderColor='#4ade80';var s=this;setTimeout(function(){s.style.background='#dbeafe';s.style.borderColor='#93c5fd'},1500)" title="Tıkla → Kopyala">bash </span> <strong>yazın</strong> (sonundaki boşluk önemli!)<br><span style="font-size:11.5px;color:#64748b">Tıklayarak kopyalayıp Terminal'e yapıştırabilirsiniz.</span></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
+              <span style="background:#3b82f6;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">3</span>
+              <div>Finder'da <strong>AcikAnaliz-Baslat.command</strong> dosyasını bulun ve <strong>Terminal penceresine sürükleyip bırakın</strong><br><span style="font-size:11.5px;color:#64748b">Dosya yolu otomatik yazılır. Sonra <kbd style="background:#f1f5f9;padding:2px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px">Enter ↵</kbd> basın.</span></div>
+            </div>
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;margin-top:4px">
+              <p style="font-size:11px;color:#1e40af;margin:0"><strong>Özet:</strong> Terminal aç → <code>bash </code> yaz → dosyayı Terminal'e sürükle → Enter.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Windows Talimatı -->
+        <div style="margin-top:10px;padding:14px;background:#fff;border:1.5px solid #93c5fd;border-radius:10px">
+          <p style="font-size:13px;font-weight:700;color:#1e40af;margin:0">🪟 Windows — Tek Tıkla Başlat</p>
+          <div style="margin-top:10px;font-size:12.5px;color:#1e3a5f;line-height:1.8">
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <span style="background:#3b82f6;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">1</span>
+              <div>VeriAnaliz klasöründeki <strong>AcikAnaliz-Baslat.bat</strong> dosyasını <strong>çift tıklayın</strong>. Hepsi bu!<br><span style="font-size:11.5px;color:#64748b">Güvenlik uyarısı gelirse "Yine de çalıştır" / "Daha fazla bilgi → Çalıştır" seçin.</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ne olacak? -->
+        <div style="margin-top:10px;padding:10px 14px;background:#fff;border:1px solid #d1d5db;border-radius:10px">
+          <p style="font-size:12px;font-weight:700;color:#334155;margin:0">Başlattıktan Sonra Ne Olacak?</p>
+          <div style="margin-top:6px;font-size:11.5px;color:#475569;line-height:1.7">
+            <p style="margin:0">→ İlk seferde gerekli kütüphaneler <strong>otomatik kurulur</strong> (~1-2 dakika). Sonraki açılışlarda anında başlar.</p>
+            <p style="margin:3px 0 0">→ Açılan siyah pencereyi (Terminal/Komut İstemi) <strong>kapatmayın</strong> — motor arka planda çalışıyor.</p>
+            <p style="margin:3px 0 0">→ Tarayıcınız otomatik açılır. Sağ alt köşede <span style="background:#059669;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">🟢 Python Motor Aktif</span> rozeti görünür.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -650,10 +692,6 @@
       </label>
     </div>
 
-    <!-- Gizlilik -->
-    <div style="margin-top:14px;padding:10px 16px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px">
-      <p style="font-size:12px;color:#166534;margin:0"><strong>🔒 Gizlilik:</strong> Tüm işlemler cihazınızda yapılır. Hiçbir veri internete gönderilmez.</p>
-    </div>
 
     <!-- Devam Et Butonu -->
     <div style="margin-top:24px;text-align:center">
