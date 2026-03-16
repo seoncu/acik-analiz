@@ -406,6 +406,8 @@
     <div class="search-results-panel" id="searchResultsPanel"></div>
   </div>
   <div class="top-menu-right">
+    <button class="tmb-btn" onclick="toggleFullscreen()" id="fullscreenToggleBtn" title="Tam ekran moduna geç/çık">⛶ Tam Ekran</button>
+    <span class="tmb-sep"></span>
     <span class="tmb-status" id="tmbStatus">Hazır</span>
     <span class="tmb-sep"></span>
     <button class="tmb-btn tmb-danger" onclick="menuClose()" title="Kapat">✕</button>
@@ -428,6 +430,12 @@
         <button id="btnLLMSetup" onclick="showLLMSetupModal()" class="privacy-badge" style="background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;cursor:pointer;font-weight:600;font-size:12px" title="Yerel dil modelini kolayca kurun">
           🚀 LLM Kur
         </button>
+      </div>
+    </div>
+    <div id="heroPythonBadge" style="display:none;margin-top:8px;text-align:right">
+      <div id="heroPythonBadgeInner" class="privacy-badge" style="background:#ecfdf5;color:#065f46;border-color:#6ee7b7;font-weight:600;font-size:12px;display:inline-flex;align-items:center;gap:6px;cursor:default">
+        <span id="heroPythonDot" style="width:8px;height:8px;border-radius:50%;background:#059669;display:inline-block"></span>
+        <span id="heroPythonText">🐍 Python Motor: Kontrol ediliyor...</span>
       </div>
     </div>
   </div>
@@ -621,17 +629,14 @@
           <div style="margin-top:6px;font-size:11.5px;color:#475569;line-height:1.7">
             <p style="margin:0">→ İlk seferde gerekli kütüphaneler <strong>otomatik kurulur</strong> (~1-2 dakika). Sonraki açılışlarda anında başlar.</p>
             <p style="margin:3px 0 0">→ Açılan siyah pencereyi (Terminal/Komut İstemi) <strong>kapatmayın</strong> — motor arka planda çalışıyor.</p>
-            <p style="margin:3px 0 0">→ Tarayıcınız otomatik açılır. Sağ alt köşede <span style="background:#059669;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">🟢 Python Motor Aktif</span> rozeti görünür.</p>
+            <p style="margin:3px 0 0">→ Tarayıcınız otomatik açılır. Sayfanın üst kısmında <span style="background:#059669;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">🟢 Python Motor: Aktif</span> rozeti görünür.</p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Büyük dosya uyarısı (gizli, dosya yüklendiğinde gösterilir) -->
-    <div id="bigFileForceWarning" style="display:none;margin-top:14px;padding:14px 18px;background:linear-gradient(135deg,#fef3c7,#fde68a);border:1.5px solid #f59e0b;border-radius:14px">
-      <p style="font-size:14px;color:#92400e;margin:0;font-weight:700">⚠️ Büyük Dosya Algılandı</p>
-      <p style="font-size:12px;color:#78350f;margin:6px 0 0;line-height:1.6">Yüklediğiniz dosya büyük boyutlu. Python Veri Motoru kullanmanızı <strong>şiddetle öneriyoruz</strong>. Tarayıcı modunda bu boyutta veri ile donma/çökme yaşanabilir.</p>
-    </div>
+    <div id="bigFileForceWarning" style="display:none;margin-top:14px"></div>
 
     <!-- Sistem Gereksinimleri Tablosu -->
     <div style="margin-top:20px">
@@ -1842,16 +1847,45 @@ function _updateEngineModeUI(){
   const sub=document.getElementById('pythonModeSubtitle');
   const badge=document.getElementById('pythonStatusBadge');
   const setupBox=document.getElementById('pythonSetupInfo');
+  const heroBadge=document.getElementById('heroPythonBadge');
+  const heroBadgeInner=document.getElementById('heroPythonBadgeInner');
+  const heroDot=document.getElementById('heroPythonDot');
+  const heroText=document.getElementById('heroPythonText');
+  // Settings panel elements
+  const setPyStatus=document.getElementById('settingsPythonStatus');
+  const setEngMode=document.getElementById('settingsEngineMode');
   if(window._BACKEND_ACTIVE){
     if(sub){sub.textContent='Motor Aktif ✓';sub.style.color='#059669'}
     if(badge)badge.innerHTML='<span style="display:inline-block;padding:4px 12px;background:#059669;color:#fff;border-radius:20px;font-size:11px;font-weight:600">🟢 Bağlı — Kullanıma Hazır</span>';
     if(setupBox)setupBox.style.display='none';
+    // Hero bar Python badge
+    if(heroBadge)heroBadge.style.display='';
+    if(heroBadgeInner){heroBadgeInner.style.background='#ecfdf5';heroBadgeInner.style.color='#065f46';heroBadgeInner.style.borderColor='#6ee7b7'}
+    if(heroDot)heroDot.style.background='#059669';
+    if(heroText)heroText.textContent='🐍 Python Motor: Aktif';
+    // Settings panel
+    if(setPyStatus){setPyStatus.textContent='🟢 Aktif — Bağlı';setPyStatus.style.color='#059669'}
+    if(setEngMode){setEngMode.textContent='Python (FastAPI + Polars)';setEngMode.style.color='#059669'}
     // Auto-select python mode if backend is active
     _selectEngineMode('python');
   }else{
     if(sub){sub.textContent='Motor Bağlı Değil';sub.style.color='#dc2626'}
     if(badge)badge.innerHTML='<span style="display:inline-block;padding:4px 12px;background:#fef3c7;color:#92400e;border-radius:20px;font-size:11px;font-weight:600">⚠ Başlatılmadı</span>';
     if(setupBox)setupBox.style.display='';
+    // Settings panel
+    if(setPyStatus){setPyStatus.textContent='⚠ Bağlı Değil';setPyStatus.style.color='#f59e0b'}
+    if(setEngMode){setEngMode.textContent='Tarayıcı (JavaScript)';setEngMode.style.color='#94a3b8'}
+    // Hero bar — show only if user explicitly selected Python mode
+    if(heroBadge){
+      if(window._selectedEngineMode==='python'){
+        heroBadge.style.display='';
+        if(heroBadgeInner){heroBadgeInner.style.background='#fef2f2';heroBadgeInner.style.color='#991b1b';heroBadgeInner.style.borderColor='#fecaca'}
+        if(heroDot)heroDot.style.background='#dc2626';
+        if(heroText)heroText.textContent='🐍 Python Motor: Bağlı Değil';
+      }else{
+        heroBadge.style.display='none';
+      }
+    }
   }
 }
 // Check on page load (api-bridge.js sets _BACKEND_ACTIVE after health check)
@@ -1862,21 +1896,89 @@ setTimeout(_updateEngineModeUI,4000); // retry — bridge may be slow
 const _origHandleFiles=typeof handleFiles==='function'?handleFiles:null;
 function _checkBigFileWarning(){
   const warn=document.getElementById('bigFileForceWarning');
-  if(!warn||!uploadedFiles||!uploadedFiles.length)return;
+  if(!warn||!uploadedFiles||!uploadedFiles.length){if(warn)warn.style.display='none';return}
   let totalSize=0;
   uploadedFiles.forEach(f=>totalSize+=f.size);
-  // Heuristic: >200MB file likely has 100M+ cells
-  const BIG_THRESHOLD=200*1024*1024; // 200 MB
-  if(totalSize>BIG_THRESHOLD&&!window._BACKEND_ACTIVE){
+
+  // Try to estimate columns by peeking at first file's header
+  let estCols=10; // fallback
+  try{
+    const f0=uploadedFiles[0];
+    if(f0._peekCols)estCols=f0._peekCols;
+  }catch(e){}
+  // CSV average: ~30 bytes per cell value + delimiter
+  const avgBytesPerRow=estCols*30;
+  const estRows=Math.round(totalSize/avgBytesPerRow);
+  const estCells=estRows*estCols;
+  const totalMB=totalSize/(1024*1024);
+  const totalGB=(totalMB/1024).toFixed(2);
+
+  // Thresholds
+  const SMALL=50*1024*1024;     // 50 MB — info note
+  const MEDIUM=200*1024*1024;   // 200 MB — warning
+  const LARGE=500*1024*1024;    // 500 MB — strong warning
+  const XLARGE=1024*1024*1024;  // 1 GB — critical
+
+  if(totalSize<SMALL){
+    // Small file — show green "ok" note
     warn.style.display='block';
-    // Also suggest Python mode
-    if(window._selectedEngineMode==='browser'){
-      const pCard=document.getElementById('modePythonCard');
-      if(pCard){pCard.style.animation='pulse 1.5s ease-in-out 3'}
-    }
-  }else{
-    warn.style.display='none';
+    warn.innerHTML='<div style="padding:10px 14px;background:#ecfdf5;border:1.5px solid #86efac;border-radius:12px">'+
+      '<p style="font-size:13px;color:#065f46;margin:0;font-weight:600">✅ Dosya Boyutu Uygun</p>'+
+      '<p style="font-size:11px;color:#047857;margin:4px 0 0;line-height:1.5">'+
+        'Toplam: <b>'+totalMB.toFixed(1)+' MB</b> · Tahmini: ~'+_fmtNum(estRows)+' satır · ~'+_fmtNum(estCells)+' hücre<br>'+
+        'Bu boyut tarayıcı modunda sorunsuz çalışır.</p></div>';
+    return;
   }
+
+  let level,bg,border,titleColor,bodyColor,icon,title,extra='';
+  if(totalSize<MEDIUM){
+    level='info';bg='#eff6ff';border='#93c5fd';titleColor='#1e40af';bodyColor='#1d4ed8';icon='ℹ️';
+    title='Orta Boyutlu Dosya';
+    extra='Tarayıcı modunda çalışabilir ancak işlem süresi uzun olabilir. 8 GB+ RAM önerilir.';
+  }else if(totalSize<LARGE){
+    level='warn';bg='linear-gradient(135deg,#fef3c7,#fde68a)';border='#f59e0b';titleColor='#92400e';bodyColor='#78350f';icon='⚠️';
+    title='Büyük Dosya Algılandı';
+    extra='<b>Python Veri Motoru kullanmanızı şiddetle öneriyoruz.</b> Tarayıcı modunda donma/çökme riski yüksektir. 32 GB+ RAM gereklidir.';
+  }else if(totalSize<XLARGE){
+    level='danger';bg='linear-gradient(135deg,#fee2e2,#fecaca)';border='#f87171';titleColor='#991b1b';bodyColor='#b91c1c';icon='🚨';
+    title='Çok Büyük Dosya — Python Motor Gerekli';
+    extra='<b>Bu boyutta veri tarayıcı modunda işlenemez.</b> Python Veri Motoru başlatılmalıdır. 64 GB+ RAM önerilir.';
+  }else{
+    level='critical';bg='linear-gradient(135deg,#fecdd3,#fda4af)';border='#e11d48';titleColor='#881337';bodyColor='#9f1239';icon='🔴';
+    title='Kritik Boyut — '+totalGB+' GB Dosya';
+    extra='<b>Bu dosya yalnızca Python Veri Motoru + yüksek RAM (128 GB+) ile işlenebilir.</b> Tarayıcı modunda kesinlikle çalışmaz. SSD disk önerilir.';
+  }
+
+  const pyActive=!!window._BACKEND_ACTIVE;
+  const pyNote=pyActive?
+    '<div style="margin-top:8px;padding:6px 10px;background:#ecfdf5;border-radius:8px;font-size:11px;color:#065f46"><b>🟢 Python Motor Aktif</b> — Büyük veri işlemeye hazırsınız.</div>':
+    '<div style="margin-top:8px;padding:6px 10px;background:#1e293b;border-radius:8px;font-size:11px;color:#fbbf24;line-height:1.5"><b>🐍 Python Motor Nasıl Başlatılır:</b><br>'+
+    '1. Terminalde: <code style="background:#334155;padding:1px 4px;border-radius:3px;color:#e2e8f0">cd server && python engine.py</code><br>'+
+    '2. Sayfayı yenileyin — üst barda <span style="color:#34d399">🟢 Python Motor: Aktif</span> rozeti görünecektir.</div>';
+
+  warn.style.display='block';
+  warn.innerHTML='<div style="padding:14px 18px;background:'+bg+';border:1.5px solid '+border+';border-radius:14px">'+
+    '<p style="font-size:14px;color:'+titleColor+';margin:0;font-weight:700">'+icon+' '+title+'</p>'+
+    '<div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:8px">'+
+      '<span style="background:rgba(0,0,0,.08);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;color:'+bodyColor+'">📦 '+totalMB.toFixed(1)+' MB'+(totalMB>=1024?' ('+totalGB+' GB)':'')+'</span>'+
+      '<span style="background:rgba(0,0,0,.08);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;color:'+bodyColor+'">📊 ~'+_fmtNum(estRows)+' satır</span>'+
+      '<span style="background:rgba(0,0,0,.08);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;color:'+bodyColor+'">🔢 ~'+_fmtNum(estCells)+' hücre</span>'+
+    '</div>'+
+    '<p style="font-size:12px;color:'+bodyColor+';margin:6px 0 0;line-height:1.6">'+extra+'</p>'+
+    (level!=='info'?pyNote:'')+
+  '</div>';
+
+  // Pulse Python card if not active
+  if(!pyActive&&totalSize>=MEDIUM&&window._selectedEngineMode==='browser'){
+    const pCard=document.getElementById('modePythonCard');
+    if(pCard){pCard.style.animation='pulse 1.5s ease-in-out 3'}
+  }
+}
+function _fmtNum(n){
+  if(n>=1e9)return (n/1e9).toFixed(1)+'B';
+  if(n>=1e6)return (n/1e6).toFixed(1)+'M';
+  if(n>=1e3)return (n/1e3).toFixed(0)+'K';
+  return n.toString();
 }
 // Patch renderFileList to also check big file warning
 const _origRenderFileList=typeof renderFileList==='function'?renderFileList:null;
@@ -2280,17 +2382,20 @@ fileInput.addEventListener('change',e=>handleFiles(e.target.files));
 
 async function handleFiles(fileList){
   hideError();if(!fileList||!fileList.length)return;
+  console.log('[handleFiles] Processing '+fileList.length+' file(s)');
   try{_addLog(fileList.length+' dosya yükleniyor: '+Array.from(fileList).map(f=>f.name).join(', '))}catch(e){}
   const valid=[];
   const excelFiles=[];
   for(const f of fileList){
-    const ext=f.name.split('.').pop().toLowerCase();
+    const ext=(f.name.split('.').pop()||'').toLowerCase();
+    console.log('[handleFiles] File: '+f.name+', ext: '+ext+', size: '+f.size);
     if(['csv','tsv','txt','dat'].includes(ext))valid.push(f);
     else if(['xlsx','xls'].includes(ext))excelFiles.push(f);
+    else{console.warn('[handleFiles] Unsupported extension: '+ext)}
   }
   // Convert Excel files to CSV in-memory
   if(excelFiles.length){
-    if(typeof XLSX==='undefined'){showError('XLSX kütüphanesi henüz yüklenmedi, lütfen birkaç saniye bekleyin.');return}
+    if(typeof XLSX==='undefined'){showError('XLSX kütüphanesi henüz yüklenmedi, lütfen birkaç saniye bekleyin.');if(!valid.length)return;/* Continue with non-Excel files */}
     for(const ef of excelFiles){
       try{
         const ab=await ef.arrayBuffer();
@@ -2327,6 +2432,21 @@ async function handleFiles(fileList){
     uploadedFiles=uploadedFiles.slice(0,20);
   }
   fileLabels=uploadedFiles.map(f=>f._originalName||f.name.replace(/\.[^.]+$/,''));
+  // Peek at first file to estimate column count for size warning
+  try{
+    const peek=uploadedFiles[0];
+    if(peek&&!peek._peekCols){
+      const slice=await peek.slice(0,4096).text();
+      const lines=slice.split(/\r?\n/).filter(l=>l.trim());
+      if(lines.length){
+        // Try common delimiters
+        const delims=[',','\t',';','|'];
+        let bestD=',',bestC=1;
+        delims.forEach(d=>{const c=lines[0].split(d).length;if(c>bestC){bestC=c;bestD=d}});
+        peek._peekCols=bestC;
+      }
+    }
+  }catch(e){console.warn('[handleFiles] peek error:',e)}
   renderFileList();
 }
 
@@ -2361,15 +2481,35 @@ function removeFile(i){uploadedFiles.splice(i,1);fileLabels.splice(i,1);if(!uplo
 function clearFiles(){uploadedFiles=[];fileLabels=[];document.getElementById('fileListArea').classList.add('hidden')}
 
 async function proceedWithFiles(){
-  if(!uploadedFiles.length)return;
+  if(!uploadedFiles.length){showError('Lütfen önce dosya seçin.');return}
   hideError();
-  // Single file → go directly to delimiter (no merge/join needed)
-  if(uploadedFiles.length===1){
-    currentFile=uploadedFiles[0];
-    loadFileForDelimiter(currentFile);
+  // === BÜYÜK DOSYA KONTROLÜ: Python Motor zorunluluğu ===
+  let _totalFileSize=0;
+  uploadedFiles.forEach(f=>_totalFileSize+=f.size);
+  const _FORCE_PYTHON_THRESHOLD=500*1024*1024; // 500 MB
+  const _WARN_PYTHON_THRESHOLD=200*1024*1024;  // 200 MB
+  if(_totalFileSize>=_FORCE_PYTHON_THRESHOLD&&!window._BACKEND_ACTIVE){
+    const totalMB=(_totalFileSize/(1024*1024)).toFixed(0);
+    showError('🚨 '+totalMB+' MB boyutunda veri tespit edildi. Bu boyutta veri tarayıcı modunda işlenemez. Lütfen önce Python Veri Motoru\'nu başlatın (cd server && python engine.py), ardından sayfayı yenileyin.');
+    try{_addLog('Devam engellendi: '+totalMB+'MB dosya, Python Motor gerekli','err')}catch(e){}
     return;
   }
+  if(_totalFileSize>=_WARN_PYTHON_THRESHOLD&&!window._BACKEND_ACTIVE){
+    const totalMB=(_totalFileSize/(1024*1024)).toFixed(0);
+    const confirmed=confirm('⚠️ '+totalMB+' MB boyutunda veri yüklüyorsunuz.\n\nTarayıcı modunda bu boyut donma veya çökmeye neden olabilir.\nPython Veri Motoru kullanmanız şiddetle önerilir.\n\nYine de tarayıcı modunda devam etmek istiyor musunuz?');
+    if(!confirmed){
+      try{_addLog('Kullanıcı '+totalMB+'MB dosyada tarayıcı modunu reddetti','info')}catch(e){}
+      return;
+    }
+    try{_addLog('Kullanıcı '+totalMB+'MB dosyada tarayıcı modunda devam etti (uyarı kabul edildi)','info')}catch(e){}
+  }
   try{
+    // Single file → go directly to delimiter (no merge/join needed)
+    if(uploadedFiles.length===1){
+      currentFile=uploadedFiles[0];
+      await loadFileForDelimiter(currentFile);
+      return;
+    }
     // Read headers from each file
     const fileHeaders=[];
     for(const f of uploadedFiles){
@@ -2387,7 +2527,10 @@ async function proceedWithFiles(){
     }
     // 2+ files → always show mode selection
     showModeSelectStep(fileHeaders);
-  }catch(e){showError('Birleştirme hatası: '+e.message)}
+  }catch(e){
+    console.error('[proceedWithFiles] Error:',e);
+    showError('Dosya işleme hatası: '+e.message);
+  }
 }
 
 // Mode selection state
@@ -2541,12 +2684,17 @@ async function doMergePath(){
 
 async function loadFileForDelimiter(file){
   try{
-    rawText=await file.slice(0,32768).text();
+    if(!file||!(file instanceof Blob)){showError('Geçersiz dosya.');return}
+    const sliceSize=Math.min(file.size,65536);
+    rawText=await file.slice(0,sliceSize).text();
     rawLines=rawText.split(/\r?\n/).filter(l=>l.trim());
-    if(!rawLines.length){showError('Dosya boş.');return}
+    if(!rawLines.length){showError('Dosya boş veya okunamadı. Lütfen dosya formatını kontrol edin.');return}
     delimiterMode=detectDelimiter(rawLines.slice(0,10));
     showDelimiterStep();
-  }catch(e){showError('Hata: '+e.message)}
+  }catch(e){
+    console.error('[loadFileForDelimiter] Error:',e);
+    showError('Dosya okuma hatası: '+e.message);
+  }
 }
 
 // === Delimiter Step ===
@@ -11923,8 +12071,19 @@ function _renderLogs(){
   const body=document.getElementById('logBody');if(!body)return;
   const countEl=document.getElementById('logCount');
   if(countEl){countEl.textContent=_logEntries.length;countEl.style.display=_logEntries.length>0?'inline':'none'}
-  if(!_logEntries.length){body.innerHTML='<div class="log-entry"><span class="log-time">--:--</span><span class="log-msg" style="color:#94a3b8">Henüz log kaydı yok.</span></div>';return}
+  // Settings panel log count badge
+  const sCountEl=document.getElementById('settingsLogCount');
+  if(sCountEl){sCountEl.textContent=_logEntries.length;sCountEl.style.display=_logEntries.length>0?'inline':'none'}
+  if(!_logEntries.length){body.innerHTML='<div class="log-entry"><span class="log-time">--:--</span><span class="log-msg" style="color:#94a3b8">Henüz log kaydı yok.</span></div>';_renderSettingsLogPreview();return}
   body.innerHTML=_logEntries.slice().reverse().map(e=>'<div class="log-entry'+(e.type==='err'?' log-err':e.type==='ok'?' log-ok':'')+'"><span class="log-time">'+e.time+'</span><span class="log-msg">'+escHtml(e.msg)+'</span></div>').join('');
+  _renderSettingsLogPreview();
+}
+function _renderSettingsLogPreview(){
+  const prev=document.getElementById('settingsLogPreview');if(!prev)return;
+  if(!_logEntries.length){prev.innerHTML='<div style="color:#64748b">Henüz log kaydı yok.</div>';return}
+  const last5=_logEntries.slice(-5).reverse();
+  prev.innerHTML=last5.map(e=>'<div style="margin-bottom:2px;'+(e.type==='err'?'color:#f87171':e.type==='ok'?'color:#34d399':'color:#94a3b8')+'"><span style="color:#64748b;margin-right:4px">'+e.time+'</span>'+escHtml(e.msg)+'</div>').join('')+
+    (_logEntries.length>5?'<div style="color:#64748b;margin-top:4px;font-size:9px">...ve '+(_logEntries.length-5)+' kayıt daha. Tam liste için Log Panelini açın.</div>':'');
 }
 function _clearLogs(){_logEntries=[];_renderLogs();showSuccess('Loglar temizlendi.')}
 function _exportLogs(){
@@ -15310,8 +15469,6 @@ function _generateRuleBasedInterpretation(r){
 <div class="bottom-toolbar">
   <button class="glossary-toggle" id="glossaryToggleBtn" onclick="toggleGlossary()" title="Kullanım kılavuzu ve terimler sözlüğünü aç/kapat">📖 Kılavuz</button>
   <button class="settings-toggle" id="settingsToggleBtn" onclick="toggleSettings()" title="Uygulama ayarları ve yapılandırma">⚙ Ayarlar</button>
-  <button class="log-toggle" id="logToggleBtn" onclick="toggleLogPanel()" title="İşlem geçmişi logları">📋 Log <span id="logCount" style="background:#ef4444;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px;display:none">0</span></button>
-  <button class="fullscreen-toggle" id="fullscreenToggleBtn" onclick="toggleFullscreen()" title="Tam ekran moduna geç/çık">⛶ Tam Ekran</button>
 </div>
 
 <!-- Settings Panel -->
@@ -15429,17 +15586,52 @@ function _generateRuleBasedInterpretation(r){
       <div class="settings-row"><label>Tablo önizleme satır sayısı</label>
         <select id="setPreviewRows" onchange="_applySetting('previewRows',+this.value)"><option value="5">5</option><option value="8" selected>8</option><option value="15">15</option><option value="25">25</option></select>
       </div>
-      <div class="settings-row"><label>Log tutma</label>
-        <label class="toggle-switch"><input type="checkbox" id="setLogEnabled" checked onchange="_applySetting('logEnabled',this.checked)"><span class="toggle-slider"></span></label>
-      </div>
-      <div class="settings-row"><label>Maks log sayısı</label>
-        <select id="setMaxLogs" onchange="_applySetting('maxLogs',+this.value)"><option value="50">50</option><option value="100" selected>100</option><option value="250">250</option><option value="500">500</option></select>
-      </div>
       <div style="margin-top:8px;padding:8px 10px;background:#1e293b;border-radius:6px;font-size:11px;color:#94a3b8;line-height:1.6">
         <div style="color:#f8fafc;font-weight:600;margin-bottom:4px">🛡️ Hücre & JOIN Güvenlik Limitleri</div>
         <div>Toplam hücre limiti: <span style="color:#fbbf24;font-weight:600">5B</span> (ön uyarı: <span style="color:#60a5fa">1B</span>, ciddi uyarı: <span style="color:#fb923c">2B</span>)</div>
         <div>JOIN sol tablo: <span style="color:#fbbf24;font-weight:600">100M satır</span> üst limit (uyarı: <span style="color:#fb923c">50M</span>)</div>
         <div style="margin-top:4px;font-size:10px;color:#64748b">Hücre = satır × sütun. Limitler büyük veri işlemlerinde tarayıcı çökmesini önler.</div>
+      </div>
+    </div>
+
+    <!-- PYTHON MOTOR / BACKEND -->
+    <div class="settings-group">
+      <h4>🐍 Python Motor (Backend)</h4>
+      <div class="settings-row"><label>Durum</label>
+        <span id="settingsPythonStatus" style="font-size:12px;font-weight:600;color:#94a3b8">Kontrol ediliyor...</span>
+      </div>
+      <div class="settings-row"><label>Backend URL</label>
+        <input type="text" id="setBackendURL" value="http://localhost:7860" style="width:160px;font-size:11px" onchange="_applySetting('backendURL',this.value)">
+      </div>
+      <div class="settings-row"><label>Çalışma modu</label>
+        <span id="settingsEngineMode" style="font-size:11px;color:#94a3b8">Tarayıcı (JavaScript)</span>
+      </div>
+      <div style="margin-top:8px;padding:8px 10px;background:#1e293b;border-radius:6px;font-size:11px;color:#94a3b8;line-height:1.6">
+        <div style="color:#f8fafc;font-weight:600;margin-bottom:4px">ℹ️ Motor Bilgisi</div>
+        <div>Python Motor aktifken: FastAPI + Polars (Rust tabanlı) kullanılır.</div>
+        <div>Tarayıcı modunda: Tüm işlemler JavaScript ile yapılır.</div>
+        <div style="margin-top:4px;font-size:10px;color:#64748b">Python Motor'u başlatmak için: <code style="background:#334155;padding:1px 4px;border-radius:3px">cd server && python engine.py</code></div>
+      </div>
+    </div>
+
+    <!-- İŞLEM LOGLARI -->
+    <div class="settings-group">
+      <h4 style="cursor:pointer;user-select:none" onclick="document.getElementById('settingsLogSection').style.display=document.getElementById('settingsLogSection').style.display==='none'?'block':'none';this.querySelector('.log-toggle-arrow').textContent=document.getElementById('settingsLogSection').style.display==='none'?'▶':'▼'">📋 İşlem Logları <span class="log-toggle-arrow" style="font-size:10px;margin-left:4px">▶</span> <span id="settingsLogCount" style="background:#3b82f6;color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;margin-left:6px;display:none">0</span></h4>
+      <div id="settingsLogSection" style="display:none">
+        <div class="settings-row"><label>Log tutma</label>
+          <label class="toggle-switch"><input type="checkbox" id="setLogEnabled" checked onchange="_applySetting('logEnabled',this.checked)"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="settings-row"><label>Maks log sayısı</label>
+          <select id="setMaxLogs" onchange="_applySetting('maxLogs',+this.value)"><option value="50">50</option><option value="100" selected>100</option><option value="250">250</option><option value="500">500</option></select>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;margin-bottom:8px">
+          <button onclick="toggleLogPanel()" style="flex:1;background:#334155;border:1px solid #64748b;color:#fff;font-size:11px;padding:6px 10px;border-radius:6px;cursor:pointer;font-weight:600">📋 Log Panelini Aç</button>
+          <button onclick="_exportLogs()" style="background:#334155;border:1px solid #64748b;color:#fff;font-size:11px;padding:6px 10px;border-radius:6px;cursor:pointer">İndir</button>
+          <button onclick="_clearLogs()" style="background:#ef4444;border:none;color:#fff;font-size:11px;padding:6px 10px;border-radius:6px;cursor:pointer">Temizle</button>
+        </div>
+        <div id="settingsLogPreview" style="background:#0f172a;border-radius:6px;padding:6px 8px;max-height:150px;overflow-y:auto;font-size:10px;color:#94a3b8;line-height:1.5">
+          <div style="color:#64748b">Henüz log kaydı yok.</div>
+        </div>
       </div>
     </div>
 
