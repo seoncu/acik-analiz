@@ -199,6 +199,10 @@
   .quick-btns button:hover{border-color:#3b82f6;color:#3b82f6;background:#eff6ff}
   @keyframes spin{to{transform:rotate(360deg)}}
   .computing-spinner{width:20px;height:20px;border:3px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin .6s linear infinite;display:inline-block;margin-right:8px;vertical-align:middle}
+  #globalBusyOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.7);z-index:99999;display:none;align-items:center;justify-content:center;flex-direction:column;backdrop-filter:blur(2px)}
+  #globalBusyOverlay.active{display:flex}
+  #globalBusyOverlay .busy-spinner{width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin .8s linear infinite}
+  #globalBusyOverlay .busy-text{margin-top:12px;font-size:14px;color:#334155;font-weight:600}
   .join-panel{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:16px}
   .join-key-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 0}
   .join-key-select{flex:1;min-width:160px;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;background:#fff}
@@ -371,6 +375,8 @@
 </style>
 </head>
 <body>
+<!-- Global Busy Overlay — prevents interaction during heavy computations -->
+<div id="globalBusyOverlay"><div class="busy-spinner"></div><div class="busy-text" id="busyText">Hesaplanıyor...</div></div>
 <!-- Top Menu Bar -->
 <div class="top-menu-bar" id="topMenuBar">
   <div class="top-menu-left">
@@ -1574,6 +1580,20 @@ function _cellLimitCheck(rows,cols,context){
   }
   return 'ok';
 }
+// === PERFORMANCE: Global busy overlay helpers ===
+function _showBusy(msg){const o=document.getElementById('globalBusyOverlay');if(o){o.classList.add('active');const t=document.getElementById('busyText');if(t)t.textContent=msg||'Hesaplanıyor...'}}
+function _hideBusy(){const o=document.getElementById('globalBusyOverlay');if(o)o.classList.remove('active')}
+// Wrap a heavy sync computation: shows overlay, yields to browser, runs fn, hides overlay
+function _busyRun(msg,fn){
+  _showBusy(msg);
+  return new Promise(resolve=>{
+    requestAnimationFrame(()=>{
+      setTimeout(()=>{
+        try{const result=fn();resolve(result)}catch(e){console.error('_busyRun error:',e);resolve(null)}finally{_hideBusy()}
+      },30); // 30ms delay ensures the overlay is painted before heavy work starts
+    });
+  });
+}
 let _reservoirSample=[]; // pre-built sample during processing for fast dashboard
 let _ALLVALS_LIM=2000000,_UNIQSET_LIM=10000000; // dynamic limits for large data
 let _rsvRowCount=0; // running row counter for reservoir sampling
@@ -1805,6 +1825,12 @@ function splitLine(line,mode){
 
 function parseCSVLine(line,delim){
   if(!line)return [];
+  // PERF fast path: if no quotes in line, simple split is 5-10x faster
+  if(line.indexOf('"')<0){
+    const parts=line.split(delim);
+    for(let i=0;i<parts.length;i++)parts[i]=parts[i].trim();
+    return parts;
+  }
   const r=[];let cur='',inQ=false;
   for(let i=0;i<line.length;i++){
     const ch=line[i];
@@ -2563,6 +2589,25 @@ async function startProcessing(){
     _analysisUILastVersion=-1;
     _filteredStatsCache=null;_filteredStatsCacheHash='';
     _topFreqCache={};
+    // === PERFORMANCE: Agresif bellek temizliği (büyük veri) ===
+    if(rowCount>LARGE_DATA_THRESHOLD){
+      outHeaders.forEach(h=>{
+        const st=colStats[h];
+        // allVals artık gerekli değil (median/Q1/Q3 freq'ten hesaplandı)
+        if(st.allVals){st.allVals.length=0;st.allVals=null}
+        // _uniqSet'i kapat, uniqueCount'u sakla
+        if(st._uniqSet){st.uniqueCount=st._useHLL?st._uniqSet.count():st._uniqSet.size;st._uniqSet=null}
+      });
+      console.log('Büyük veri bellek temizliği: allVals ve _uniqSet serbest bırakıldı.');
+    }
+    // === HÜCRE SAYISI: Performans modunu belirle ===
+    const _totalCells=rowCount*outHeaders.length;
+    window._totalCellCount=_totalCells;
+    window._isHeavyDataset=_totalCells>100_000_000; // 100M+ hücre
+    window._isVeryHeavyDataset=_totalCells>500_000_000; // 500M+ hücre
+    if(window._isHeavyDataset){
+      console.log('Ağır veri modu aktif: '+_formatCells(_totalCells)+' hücre. LLM/İleri İstatistik optimizasyonları uygulanacak.');
+    }
     renderSummaryStats();
     renderColTypeChips();
     _colTypesConfirmed=false;
@@ -2570,6 +2615,8 @@ async function startProcessing(){
     onColTypeConfirmChange(false);
     if(typeof markWorkDirty==='function')markWorkDirty();
     showStep('Done');
+    // === OTOMATİK KAYDETME: İşlem tamamlandıktan sonra otomatik oturum kaydı ===
+    setTimeout(()=>{_autoSaveSession()},500);
   }catch(e){showError('Hata: '+e.message);showStep('Columns')}
 }
 
@@ -3399,15 +3446,25 @@ function switchAnalysisTab(tab,btn){
   if(_tabSwitchTimer){clearTimeout(_tabSwitchTimer);_tabSwitchTimer=null}
   _tabSwitchTimer=setTimeout(()=>{
     _tabSwitchTimer=null;
-    if(tab==='topbottom'){try{initTopBottomTab()}catch(e){console.warn('topbottom err',e)}}
-    if(tab==='quickview'){try{renderQuickView()}catch(e){console.warn('quickview err',e)}}
-    if(tab==='summary'){try{populateSummaryDropdowns()}catch(e){}}
-    if(tab==='correlation'){try{renderCorrelationMatrix()}catch(e){}}
-    if(tab==='crosstab'){try{renderCrossTab()}catch(e){}}
-    if(tab==='mapview'){try{initMapView()}catch(e){console.warn('mapview init err',e)}}
-    if(tab==='advstats'){try{advStatsInit()}catch(e){console.warn('advstats init err',e)}}
-    // Auto-init searchable selects for the visible tab
-    setTimeout(()=>{try{_initSearchableSelects(document.getElementById(map[tab]))}catch(e){}},150);
+    const _heavyTabs=['quickview','topbottom','correlation','crosstab'];
+    const isHeavy=_heavyTabs.includes(tab)&&totalRows>500000;
+    const renderTab=()=>{
+      if(tab==='topbottom'){try{initTopBottomTab()}catch(e){console.warn('topbottom err',e)}}
+      if(tab==='quickview'){try{renderQuickView()}catch(e){console.warn('quickview err',e)}}
+      if(tab==='summary'){try{populateSummaryDropdowns()}catch(e){}}
+      if(tab==='correlation'){try{renderCorrelationMatrix()}catch(e){}}
+      if(tab==='crosstab'){try{renderCrossTab()}catch(e){}}
+      if(tab==='mapview'){try{initMapView()}catch(e){console.warn('mapview init err',e)}}
+      if(tab==='advstats'){try{advStatsInit()}catch(e){console.warn('advstats init err',e)}}
+    };
+    if(isHeavy){
+      _busyRun('Sekme hesaplanıyor...',renderTab).then(()=>{
+        setTimeout(()=>{try{_initSearchableSelects(document.getElementById(map[tab]))}catch(e){}},150);
+      });
+    }else{
+      renderTab();
+      setTimeout(()=>{try{_initSearchableSelects(document.getElementById(map[tab]))}catch(e){}},150);
+    }
   },80);
 }
 
@@ -3489,10 +3546,15 @@ function getFilteredFreq(colName){
 
 function passesFilter(colName,val){
   const f=colFilters[colName];if(!f)return true;
-  if(f.excludeValues.length&&f.excludeValues.includes(val))return false;
+  // PERF: Use cached Sets for O(1) lookups instead of O(n) array.includes
+  if(f.excludeValues&&f.excludeValues.length){
+    if(!f._exclSet||f._exclSet._ver!==f.excludeValues.length){f._exclSet=new Set(f.excludeValues);f._exclSet._ver=f.excludeValues.length}
+    if(f._exclSet.has(val))return false;
+  }
   // Include filter (whitelist): if set, only allow listed values
   if(f.includeValues!==null&&f.includeValues.length>0){
-    if(!f.includeValues.includes(val))return false;
+    if(!f._inclSet||f._inclSet._ver!==f.includeValues.length){f._inclSet=new Set(f.includeValues);f._inclSet._ver=f.includeValues.length}
+    if(!f._inclSet.has(val))return false;
   }
   // Text-based filters (Looker-style)
   if(f.textFilters&&f.textFilters.length){
@@ -4940,18 +5002,23 @@ function streamOutputRows(callback){
   let rowCount=0;
   const chunkCount=outputChunks.length;
   for(let ci=0;ci<chunkCount;ci++){
-    const text=leftover+outputChunks[ci];
+    // PERF: Avoid creating huge concat string when leftover is empty (common case after consolidation)
+    const text=leftover.length>0?(leftover+outputChunks[ci]):outputChunks[ci];
     const split=csvSplitLines(text);
     const lines=split.lines;
     leftover=split.leftover;
-    for(const ln of lines){
-      if(!ln.trim())continue;
+    const lineCount=lines.length;
+    for(let li=0;li<lineCount;li++){
+      const ln=lines[li];
+      if(ln.length===0||(ln.length<3&&!ln.trim()))continue;
       if(isFirst){isFirst=false;continue}
       callback(parseCSVLine(ln,outDelim));
       rowCount++;
     }
+    // Release reference early for GC
+    lines.length=0;
   }
-  if(leftover.trim()&&!isFirst){callback(parseCSVLine(leftover,outDelim));rowCount++}
+  if(leftover.length>0&&leftover.trim()&&!isFirst){callback(parseCSVLine(leftover,outDelim));rowCount++}
   return rowCount;
 }
 
@@ -5007,14 +5074,21 @@ function computeMultiAgg(xCol,yCols,aggType){
 
   // Groups: {xVal: {count, yData: [{sum,sumSq,min,max,n,numFreq}], _dset?:Set}}
   // Uses streamOutputRows for EXACT computation over ALL rows — zero sampling
+  // PERF: Pre-compute active filter column indices to avoid checking all columns per row
+  const _activeFilterIdxs=[];
+  for(let ci=0;ci<outHeaders.length;ci++){
+    if(colFilters[outHeaders[ci]]&&hasActiveFilter(outHeaders[ci]))_activeFilterIdxs.push(ci);
+  }
+  const _hasAnyFilter=_activeFilterIdxs.length>0;
   const groups={};
   streamOutputRows(row=>{
     const xv=row[xi]||'';
-    let skip=false;
-    for(let ci=0;ci<Math.min(outHeaders.length,row.length);ci++){
-      if(colFilters[outHeaders[ci]]&&!passesFilter(outHeaders[ci],row[ci]||'')){skip=true;break}
+    if(_hasAnyFilter){
+      for(let fi=0;fi<_activeFilterIdxs.length;fi++){
+        const ci=_activeFilterIdxs[fi];
+        if(!passesFilter(outHeaders[ci],row[ci]||''))return;
+      }
     }
-    if(skip)return;
     if(!groups[xv]){
       groups[xv]={count:0,yData:yIndices.map(()=>({sum:0,sumSq:0,min:Infinity,max:-Infinity,n:0,numFreq:{}}))};
       if(_useDistinct)groups[xv]._dset=new Set();
@@ -5119,16 +5193,20 @@ function computeColorGroupAgg(xCol,colorCol,yCol,aggType){
   if(xi<0||ci<0)return{labels:[],datasets:[],colorValues:[]};
 
   // Nested grouping: {xVal: {colorVal: {count,sum,sumSq,min,max,vals}}}
+  // PERF: Pre-compute active filter column indices
+  const _afIdxs=[];
+  for(let _fi=0;_fi<outHeaders.length;_fi++){if(colFilters[outHeaders[_fi]]&&hasActiveFilter(outHeaders[_fi]))_afIdxs.push(_fi)}
+  const _hf=_afIdxs.length>0;
   const groups={};
   const colorSet=new Set();
   for(const row of rows){
     const xv=row[xi]||'';
     const cv=row[ci]||'(boş)';
-    let skip=false;
-    for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){
-      if(colFilters[outHeaders[fi]]&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
+    if(_hf){
+      let skip=false;
+      for(let fi=0;fi<_afIdxs.length;fi++){const _i=_afIdxs[fi];if(!passesFilter(outHeaders[_i],row[_i]||'')){skip=true;break}}
+      if(skip)continue;
     }
-    if(skip)continue;
     colorSet.add(cv);
     if(!groups[xv])groups[xv]={};
     if(!groups[xv][cv])groups[xv][cv]={count:0,sum:0,sumSq:0,min:Infinity,max:-Infinity,vals:[]};
@@ -6014,12 +6092,15 @@ function _computeFilteredColStats(){
   outHeaders.forEach(h=>{
     stats[h]={count:0,empty:0,numCount:0,sum:0,sumSq:0,min:Infinity,max:-Infinity,freq:{},isNumeric:colStats[h]&&colStats[h].isNumeric,uniqueCount:0,_median:undefined};
   });
+  // PERF: Pre-compute active filter indices
+  const _afIdx2=[];
+  for(let _i=0;_i<outHeaders.length;_i++){if(colFilters[outHeaders[_i]]&&hasActiveFilter(outHeaders[_i]))_afIdx2.push(_i)}
+  const _hf2=_afIdx2.length>0;
+  const _hLen=outHeaders.length;
   streamOutputRows(row=>{
-    let skip=false;
-    for(let ci2=0;ci2<Math.min(outHeaders.length,row.length);ci2++){
-      if(colFilters[outHeaders[ci2]]&&!passesFilter(outHeaders[ci2],row[ci2]||'')){skip=true;break}
+    if(_hf2){
+      for(let fi=0;fi<_afIdx2.length;fi++){const ci2=_afIdx2[fi];if(!passesFilter(outHeaders[ci2],row[ci2]||''))return}
     }
-    if(skip)return;
     outHeaders.forEach((h,hi)=>{
       const val=row[hi]||'';
       const s=stats[h];
@@ -6063,6 +6144,9 @@ function _computeFilteredColStats(){
 function refreshAllCharts(){
   _aggCache={};
   _filteredStatsCache=null;_filteredStatsCacheHash=''; // invalidate filtered stats cache
+  // PERF: show busy overlay for large datasets during chart rebuild
+  const _isLarge=totalRows>500000;
+  if(_isLarge)_showBusy('Grafikler güncelleniyor...');
   // Refresh KPI cards with filtered data
   updateKPICardsFiltered();
   // Rebuild each chart with current filters
@@ -6084,6 +6168,7 @@ function refreshAllCharts(){
   });
   // Refresh active tab content
   _refreshActiveTab();
+  if(_isLarge)_hideBusy();
 }
 
 function _refreshActiveTab(){
@@ -6177,6 +6262,12 @@ async function aiExplainChart(chartId){
   if(!targetDiv)return;
   if(targetDiv.style.display!=='none'&&targetDiv.innerHTML){targetDiv.style.display='none';return}
   targetDiv.style.display='block';
+  // 100M+ hücre → direkt otomatik yorum
+  if(_isLLMDisabledByDataSize()){
+    const autoText=generateAutoInterpretation(ch);
+    targetDiv.innerHTML='<div style="padding:12px;background:#fefce8;border-radius:8px;border:1px solid #fde68a;margin-top:8px;font-size:12px;line-height:1.7"><div style="font-weight:700;color:#92400e;margin-bottom:6px">📊 Otomatik İstatistik Yorumu <span style="font-size:10px;font-weight:400">(Büyük veri: LLM devre dışı)</span></div><div style="white-space:pre-wrap">'+escHtml(autoText)+'</div></div>';
+    return;
+  }
   targetDiv.innerHTML='<div style="padding:10px;background:#f5f3ff;border-radius:8px;border:1px solid #c4b5fd;margin-top:8px"><span class="computing-spinner" style="display:inline-block;margin-right:8px"></span><span style="color:#7c3aed;font-size:12px">Yapay zeka yorumluyor...</span></div>';
   const prompt=buildChartInterpretPrompt(ch);
   const model=document.getElementById('llmModel')?document.getElementById('llmModel').value:'llama3.1:8b';
@@ -7048,6 +7139,15 @@ function toggleGrpDetailStats(cls){
 async function askAIAboutVisibleTable(tableId){
   const tbl=document.getElementById(tableId);
   if(!tbl){showError('Tablo bulunamadı.');return}
+  // 100M+ hücre → LLM devre dışı
+  if(_isLLMDisabledByDataSize()){
+    const resultDiv=tbl.closest('div[style*="margin-bottom"]');
+    let aiDiv=resultDiv?resultDiv.querySelector('.tb-ai-result'):null;
+    if(!aiDiv){aiDiv=document.createElement('div');aiDiv.className='tb-ai-result';if(resultDiv)resultDiv.appendChild(aiDiv);else tbl.parentElement.appendChild(aiDiv)}
+    aiDiv.style.display='block';
+    aiDiv.innerHTML='<div style="padding:12px;background:#fef2f2;border-radius:8px;border:1px solid #fca5a5;margin-top:8px;font-size:12px;line-height:1.7"><div style="font-weight:700;color:#991b1b;margin-bottom:6px">🚫 LLM Devre Dışı (Büyük Veri)</div><div>100M+ hücre içeren verisetlerinde yapay zeka tablo yorumlaması devre dışıdır. Dashboard kural tabanlı raporlarını kullanabilirsiniz.</div></div>';
+    return;
+  }
   // Tablodaki verileri metin formatına çevir
   const rows=tbl.querySelectorAll('tr');
   let tableText='';
@@ -7884,6 +7984,17 @@ async function sendLLMQuery(){
   if(!input||!input.value.trim())return;
   const question=input.value.trim();
   resultDiv.classList.remove('hidden');
+  // 100M+ hücre → LLM devre dışı, kural tabanlı yanıt dene
+  if(_isLLMDisabledByDataSize()){
+    const ruleAnswer=typeof processQuestion==='function'?processQuestion(question):'';
+    if(ruleAnswer&&ruleAnswer.length>30){
+      resultDiv.innerHTML='<div style="padding:8px;font-size:12px"><div style="display:inline-block;background:#fef2f2;color:#991b1b;padding:3px 8px;border-radius:6px;font-size:10px;margin-bottom:6px">🚫 Büyük veri: LLM devre dışı — Kural Tabanlı Yanıt</div><div style="line-height:1.6">'+ruleAnswer+'</div></div>';
+    }else{
+      const dashReport=typeof generateRuleBasedDashboardReport==='function'?generateRuleBasedDashboardReport():'';
+      resultDiv.innerHTML='<div style="padding:8px;font-size:12px"><div style="display:inline-block;background:#fef2f2;color:#991b1b;padding:3px 8px;border-radius:6px;font-size:10px;margin-bottom:6px">🚫 Büyük veri: LLM devre dışı</div><div style="line-height:1.6;white-space:pre-wrap">'+(dashReport&&dashReport.length>50?escHtml(dashReport):'100M+ hücre içeren verisetlerinde LLM sorguları devre dışıdır. Dashboard raporlarını veya kural tabanlı analizleri kullanabilirsiniz.')+'</div></div>';
+    }
+    return;
+  }
   resultDiv.innerHTML='<div class="computing-overlay" style="position:relative;padding:12px"><span class="computing-spinner"></span> Yanıtlanıyor...</div>';
 
   // Build a schema-aware prompt
@@ -8188,6 +8299,17 @@ async function callLLM(prompt,model,endpoint,timeoutMs){
   }
 }
 
+// === LLM HEAVY DATA CHECK: 100M+ hücre ise LLM devre dışı ===
+const _LLM_CELL_CUTOFF=100_000_000; // 100M hücre
+function _isLLMDisabledByDataSize(){return(window._totalCellCount||0)>_LLM_CELL_CUTOFF}
+function _llmDisabledHTML(){
+  const cells=_formatCells(window._totalCellCount||0);
+  return '<div style="padding:16px 20px;background:linear-gradient(135deg,#fef3c7,#fffbeb);border:2px solid #f59e0b;border-radius:12px;margin:10px 0;text-align:center">'+
+    '<p style="font-size:15px;font-weight:700;color:#92400e;margin:0 0 6px">🚫 LLM Desteği Devre Dışı</p>'+
+    '<p style="font-size:12px;color:#78350f;margin:0">Verisetiniz <b>'+cells+'</b> hücre içermektedir (limit: '+_formatCells(_LLM_CELL_CUTOFF)+'). Bu ölçekte LLM çağrıları tarayıcıyı dondurabileceğinden devre dışı bırakılmıştır.</p>'+
+    '<p style="font-size:11px;color:#92400e;margin:6px 0 0">Kural tabanlı otomatik raporlar ve tüm istatistiksel hesaplamalar tam olarak çalışmaya devam etmektedir.</p>'+
+  '</div>';
+}
 // Main smart report dispatcher
 async function sendSmartLLM(){
   const modelEl=document.getElementById('llmModel');
@@ -8198,6 +8320,13 @@ async function sendSmartLLM(){
   const progDiv=document.getElementById('llmProgress');
   const progBar=document.getElementById('llmProgressBar');
   const progText=document.getElementById('llmProgressText');
+  // === 100M+ hücre → LLM devre dışı ===
+  if(_isLLMDisabledByDataSize()){
+    const autoReport=generateRuleBasedDashboardReport();
+    showLLMModal('📊 Otomatik İstatistik Raporu (Kural Tabanlı — Büyük Veri)',autoReport);
+    noteEl.textContent='Büyük veri: LLM devre dışı, kural tabanlı rapor oluşturuldu.';noteEl.style.color='#f59e0b';
+    return;
+  }
 
   if(llmMode==='single'){
     // Single general report
@@ -8554,9 +8683,11 @@ async function generateAPA7PDF(){
           y+=imgH+6;
         }
 
-        // LLM interpretation or auto-interpretation
+        // LLM interpretation or auto-interpretation (100M+ hücre → otomatik yorum)
         let interpretation='';
-        try{
+        if(_isLLMDisabledByDataSize()){
+          interpretation=generateAutoInterpretation(ch);
+        }else try{
           const prompt=buildChartInterpretPrompt(ch);
           interpretation=await callLLM(prompt,model,endpoint);
         }catch(e){
@@ -8582,8 +8713,12 @@ async function generateAPA7PDF(){
 
     let overallText='';
     if(chartInstances.length){
-      const overallPrompt='Aşağıdaki grafik başlıklarının temsil ettiği analizlerin genel bir akademik değerlendirmesini yapınız. APA7 stilinde, Türkçe, 150-200 kelime.\n\nGrafikler:\n'+chartInstances.map((c,i)=>(i+1)+'. '+c.title+' ('+c.type+', '+aggLabels[c.agg]+')').join('\n')+'\n\nDeğerlendirmenizde: Genel eğilimleri, değişkenler arası ilişkileri, sınırlılıkları ve önerileri belirtiniz.';
-      try{overallText=await callLLM(overallPrompt,model,endpoint)}catch(e){overallText='Bu raporda toplam '+figNum+' grafik analiz edilmiştir. Veride '+totalRows+' satır ve '+outHeaders.length+' sütun bulunmaktadır. Detaylı yorumlar için yukarıdaki grafik açıklamalarını inceleyiniz.'}
+      if(_isLLMDisabledByDataSize()){
+        overallText='Bu raporda toplam '+figNum+' grafik analiz edilmiştir. Veride '+totalRows.toLocaleString('tr-TR')+' satır ve '+outHeaders.length+' sütun ('+_formatCells(window._totalCellCount||0)+' hücre) bulunmaktadır. Büyük veri nedeniyle LLM yorumları devre dışıdır. Detaylı yorumlar için yukarıdaki grafik açıklamalarını inceleyiniz.';
+      }else{
+        const overallPrompt='Aşağıdaki grafik başlıklarının temsil ettiği analizlerin genel bir akademik değerlendirmesini yapınız. APA7 stilinde, Türkçe, 150-200 kelime.\n\nGrafikler:\n'+chartInstances.map((c,i)=>(i+1)+'. '+c.title+' ('+c.type+', '+aggLabels[c.agg]+')').join('\n')+'\n\nDeğerlendirmenizde: Genel eğilimleri, değişkenler arası ilişkileri, sınırlılıkları ve önerileri belirtiniz.';
+        try{overallText=await callLLM(overallPrompt,model,endpoint)}catch(e){overallText='Bu raporda toplam '+figNum+' grafik analiz edilmiştir. Veride '+totalRows+' satır ve '+outHeaders.length+' sütun bulunmaktadır. Detaylı yorumlar için yukarıdaki grafik açıklamalarını inceleyiniz.'}
+      }
     }else{
       overallText='Dashboard\'a grafik eklenmemiştir. Analiz için önce dashboard\'a grafik ekleyiniz.';
     }
@@ -8714,12 +8849,14 @@ async function generateFullSmartReport(){
     if(!confirm(msg))return;
   }
   const mode=document.querySelector('input[name="smartMode"]:checked').value;
-  const model=document.getElementById('llmModel')?document.getElementById('llmModel').value:'llama3.1:8b';
-  const endpoint=document.getElementById('llmEndpoint')?document.getElementById('llmEndpoint').value:'http://localhost:11434/api/generate';
+  const _llmOff=_isLLMDisabledByDataSize(); // 100M+ → LLM devre dışı, auto-interpret kullanılacak
+  const model=_llmOff?'':document.getElementById('llmModel')?document.getElementById('llmModel').value:'llama3.1:8b';
+  const endpoint=_llmOff?'':document.getElementById('llmEndpoint')?document.getElementById('llmEndpoint').value:'http://localhost:11434/api/generate';
   const progDiv=document.getElementById('smartProgress');
   const progBar=document.getElementById('smartProgressBar');
   const progText=document.getElementById('smartProgressText');
   progDiv.classList.remove('hidden');progBar.style.width='0%';
+  if(_llmOff)progText.textContent='Büyük veri modu: LLM devre dışı, kural tabanlı yorumlar kullanılacak...';
 
   try{
     if(!window.jspdf){showError('jsPDF yüklenemedi.');return}
@@ -9573,6 +9710,40 @@ async function saveSession(){
     if(typeof markWorkSaved==='function')markWorkSaved();
   }catch(e){
     noteEl.textContent='Kayıt hatası: '+e.message;noteEl.style.color='#dc2626';
+  }
+}
+
+// === OTOMATİK KAYDETME: İşlem sonrası otomatik IndexedDB kaydı ===
+async function _autoSaveSession(){
+  if(!outHeaders||!outHeaders.length||!totalRows)return;
+  try{
+    console.log('[AUTO-SAVE] Otomatik oturum kaydı başlıyor...');
+    const meta={
+      fileName:currentFile?currentFile.name:'Bilinmeyen',
+      fileSize:currentFile?currentFile.size:0,
+      totalRows:totalRows,
+      outHeaders:outHeaders,
+      headers:headers,
+      maskConfig:maskConfig,
+      colFilters:colFilters,
+      currentAgg:currentAgg,
+      selectedYCols:selectedYCols,
+      calcFields:calcFields,
+      savedAt:new Date().toISOString(),
+      autoSaved:true
+    };
+    localStorage.setItem('vma_meta',JSON.stringify(meta));
+    // colStats kaydet
+    await dbPut('colStats',colStats);
+    // outputChunks kaydet (büyük veri için chunk'ları birleştirmeden)
+    const dataBlob=outputChunks.join('');
+    await dbPut('outputData',dataBlob);
+    if(typeof markWorkSaved==='function')markWorkSaved();
+    console.log('[AUTO-SAVE] Oturum otomatik kaydedildi ('+_formatCells(totalRows)+' satır)');
+    showSuccess('Oturum otomatik kaydedildi');
+  }catch(e){
+    console.warn('[AUTO-SAVE] Otomatik kayıt başarısız:',e.message);
+    // Sessizce başarısız ol — kullanıcıyı rahatsız etme
   }
 }
 
@@ -11175,6 +11346,22 @@ setTimeout(()=>{_loadSettings();_addLog('Uygulama başlatıldı','ok')},100);
 // CLAUDE'A SOR — AI Danışma (Veri Gönderilmez)
 // =============================================
 function askClaude(){
+  // 100M+ hücre için chatbotu devre dışı bırak
+  if(_isLLMDisabledByDataSize()){
+    const cells=_formatCells?_formatCells(window._totalCellCount||0):((window._totalCellCount||0).toLocaleString('tr-TR'));
+    const modal=document.createElement('div');modal.id='claudeAskModal';
+    modal.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:10001';
+    modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:24px;max-width:520px;width:95%;text-align:center">'+
+      '<div style="font-size:48px;margin-bottom:12px">🚫</div>'+
+      '<h3 style="margin:0 0 8px;color:#dc2626">Claude\'a Sor — Devre Dışı</h3>'+
+      '<p style="font-size:13px;color:#475569;margin:0 0 12px">Verisetiniz <b>'+cells+'</b> hücre içermektedir. Tarayıcı stabilitesi için 100 milyon hücreyi aşan verisetlerinde bu özellik otomatik olarak devre dışı bırakılmıştır.</p>'+
+      '<p style="font-size:12px;color:#64748b;margin:0 0 16px">Dashboard\'daki kural tabanlı raporlar ve otomatik istatistik yorumları kullanılabilir.</p>'+
+      '<button onclick="document.getElementById(\'claudeAskModal\').remove()" style="background:#dc2626;color:#fff;border:none;padding:8px 24px;border-radius:8px;font-size:13px;cursor:pointer">Kapat</button>'+
+    '</div>';
+    document.body.appendChild(modal);
+    modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});
+    return;
+  }
   const modal=document.createElement('div');
   modal.id='claudeAskModal';
   modal.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:10001';
@@ -11841,6 +12028,8 @@ async function advStatsHypothesisSuggest(){
   const catCols=_getCatCols();
   const allCols=[...numCols,...catCols];
 
+  // 100M+ → direkt kural tabanlı hipotez üret, LLM atla
+  if(!_isLLMDisabledByDataSize())
   // Try LLM first
   try{
     const prompt='Aşağıdaki veri setindeki değişkenlere göre istatistiksel hipotez önerileri oluştur.\n\n'+
@@ -11956,10 +12145,12 @@ function advStatsRefreshIfActive(){
 }
 
 // --- Helper: get filtered numeric values for a column ---
+// For heavy datasets: reservoir sampling with metadata
 function _getFilteredNumericValues(colName){
   const ci=outHeaders.indexOf(colName);if(ci<0)return[];
   const vals=[];
-  const _MAX_VALS=500000000; // 500M values — supports up to 2B cells
+  const _useStratified=window._isHeavyDataset;
+  const _MAX_VALS=_useStratified?500000:500000000;
   const hasFilters=Object.keys(colFilters).some(k=>colFilters[k]);
   let total=0;
   streamOutputRows(row=>{
@@ -11977,6 +12168,13 @@ function _getFilteredNumericValues(colName){
       else{const j=Math.floor(Math.random()*total);if(j<_MAX_VALS)vals[j]=v}
     }
   });
+  if(_useStratified&&total>_MAX_VALS){
+    vals._sampled=true;
+    vals._sampleInfo='Rastgele örnekleme: '+vals.length.toLocaleString('tr-TR')+' / '+total.toLocaleString('tr-TR')+' gözlem';
+    vals._sampleN=vals.length;
+    vals._populationN=total;
+    window._lastSamplingInfo=vals;
+  }else{window._lastSamplingInfo=null}
   return vals;
 }
 
@@ -12012,14 +12210,18 @@ function _getFilteredRowObjects(){
 }
 
 // === MEMORY-EFFICIENT: Stream grouped numeric values for statistical tests ===
-// Returns: {groupKey: numericArray[]} — processes ALL rows without building row objects
+// Returns: {groupKey: numericArray[], _sampled: bool, _sampleInfo: string}
+// For heavy datasets (100M+ cells): stratified reservoir sampling — proportional per group
 function _streamGroupedValues(groupCol,valCol){
   const gi=outHeaders.indexOf(groupCol),vi=outHeaders.indexOf(valCol);
   if(gi<0||vi<0)return{};
   const groups={};
+  const groupCounts={};  // count per group for stratified sampling
   const _anyFilter=outHeaders.some(h=>hasActiveFilter(h));
-  const _MAX_PER_GROUP=500000000; // 500M values per group — supports up to 2B cells
-  let ri=0;
+  const _useStratified=window._isHeavyDataset;
+  // For stratified sampling: max total sample = 500K, proportionally allocated
+  const _STRATIFIED_TOTAL=500000;
+  let ri=0,totalValid=0;
   streamOutputRows(row=>{
     if(outlierFilter.enabled&&outlierFilter.excludedRows.has(ri)){ri++;return}
     if(_anyFilter){
@@ -12033,21 +12235,56 @@ function _streamGroupedValues(groupCol,valCol){
     const v=parseFloat((row[vi]||'').replace(',','.'));
     if(g&&!isNaN(v)&&isFinite(v)){
       if(!groups[g])groups[g]=[];
-      if(groups[g].length<_MAX_PER_GROUP)groups[g].push(v);
+      if(!groupCounts[g])groupCounts[g]=0;
+      groupCounts[g]++;
+      totalValid++;
+      if(_useStratified){
+        // Reservoir sampling per group — each group keeps proportional share
+        // During streaming we don't know final proportions, so use reservoir per group with generous limit
+        // After streaming, we trim to proportional allocation
+        const _PER_GROUP_MAX=Math.max(10000,_STRATIFIED_TOTAL);
+        if(groups[g].length<_PER_GROUP_MAX){groups[g].push(v)}
+        else{const j=Math.floor(Math.random()*groupCounts[g]);if(j<_PER_GROUP_MAX)groups[g][j]=v}
+      }else{
+        groups[g].push(v);
+      }
     }
     ri++;
   });
+  // Post-process: if stratified, trim each group to proportional allocation
+  if(_useStratified&&totalValid>_STRATIFIED_TOTAL){
+    const groupKeys=Object.keys(groups);
+    groupKeys.forEach(g=>{
+      const proportion=groupCounts[g]/totalValid;
+      const targetN=Math.max(30,Math.round(proportion*_STRATIFIED_TOTAL)); // min 30 per group for statistical validity
+      if(groups[g].length>targetN){
+        // Random subsample to targetN
+        for(let i=groups[g].length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[groups[g][i],groups[g][j]]=[groups[g][j],groups[g][i]]}
+        groups[g].length=targetN;
+      }
+    });
+    groups._sampled=true;
+    const totalSampled=groupKeys.reduce((s,g)=>s+groups[g].length,0);
+    groups._sampleInfo='Tabakalı örnekleme: '+totalSampled.toLocaleString('tr-TR')+' / '+totalValid.toLocaleString('tr-TR')+' gözlem ('+groupKeys.length+' grup, orantılı)';
+    groups._sampleN=totalSampled;
+    groups._populationN=totalValid;
+    window._lastSamplingInfo=groups;
+  }else{window._lastSamplingInfo=null}
+  // Store group population counts
+  groups._groupCounts=groupCounts;
   return groups;
 }
 
 // Stream paired values for paired tests (paired t-test, Wilcoxon)
+// For heavy datasets: reservoir sampling with metadata
 function _streamPairedValues(col1,col2){
   const i1=outHeaders.indexOf(col1),i2=outHeaders.indexOf(col2);
   if(i1<0||i2<0)return[];
   const pairs=[];
   const _anyFilter=outHeaders.some(h=>hasActiveFilter(h));
-  const _MAX_PAIRS=500000000; // 500M pairs — supports up to 2B cells
-  let ri=0;
+  const _useStratified=window._isHeavyDataset;
+  const _MAX_PAIRS=_useStratified?500000:500000000;
+  let ri=0,totalValid=0;
   streamOutputRows(row=>{
     if(outlierFilter.enabled&&outlierFilter.excludedRows.has(ri)){ri++;return}
     if(_anyFilter){
@@ -12060,10 +12297,20 @@ function _streamPairedValues(col1,col2){
     const v1=parseFloat((row[i1]||'').replace(',','.'));
     const v2=parseFloat((row[i2]||'').replace(',','.'));
     if(!isNaN(v1)&&!isNaN(v2)&&isFinite(v1)&&isFinite(v2)){
-      if(pairs.length<_MAX_PAIRS)pairs.push([v1,v2]);
+      totalValid++;
+      if(pairs.length<_MAX_PAIRS){pairs.push([v1,v2])}
+      else{const j=Math.floor(Math.random()*totalValid);if(j<_MAX_PAIRS)pairs[j]=[v1,v2]}
     }
     ri++;
   });
+  // Attach sampling metadata
+  if(_useStratified&&totalValid>_MAX_PAIRS){
+    pairs._sampled=true;
+    pairs._sampleInfo='Rastgele örnekleme: '+pairs.length.toLocaleString('tr-TR')+' / '+totalValid.toLocaleString('tr-TR')+' çift';
+    pairs._sampleN=pairs.length;
+    pairs._populationN=totalValid;
+    window._lastSamplingInfo=pairs;
+  }else{window._lastSamplingInfo=null}
   return pairs;
 }
 
@@ -12119,6 +12366,19 @@ function _median(arr){const s=[...arr].sort((a,b)=>a-b);const m=Math.floor(s.len
 function _skewness(arr){const m=_mean(arr),sd=_std(arr),n=arr.length;if(sd===0||n<3)return 0;return(n/((n-1)*(n-2)))*arr.reduce((s,v)=>s+Math.pow((v-m)/sd,3),0)}
 function _kurtosis(arr){const m=_mean(arr),sd=_std(arr),n=arr.length;if(sd===0||n<4)return 0;const k4=(n*(n+1))/((n-1)*(n-2)*(n-3))*arr.reduce((s,v)=>s+Math.pow((v-m)/sd,4),0);return k4-(3*(n-1)*(n-1))/((n-2)*(n-3))}
 
+// --- Helper: Sampling notification banner for İleri İstatistik ---
+// Global tracking: automatically set by _streamGroupedValues / _streamPairedValues / _getFilteredNumericValues
+window._lastSamplingInfo=null;
+function _samplingNoteBanner(dataObj){
+  const obj=dataObj||window._lastSamplingInfo;
+  if(!obj||!obj._sampled)return '';
+  return '<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#92400e;display:flex;align-items:center;gap:8px">'+
+    '<span style="font-size:16px">⚠️</span>'+
+    '<div><b>Örnekleme Aktif:</b> '+escHtml(obj._sampleInfo||'')+
+    '<br><span style="font-size:10px;color:#a16207">Büyük veri seti nedeniyle tabakalı/rastgele örnekleme uygulanmıştır. Her grup evreni orantılı şekilde temsil etmektedir. Popülasyon N='+
+    (obj._populationN||0).toLocaleString('tr-TR')+', Örneklem n='+(obj._sampleN||0).toLocaleString('tr-TR')+'</span></div></div>';
+}
+
 // --- Helper: Run t-test with user-selected 2 groups (when 3+ exist) ---
 function _runTTestWithSelectedGroups(){
   const sel1=document.getElementById('ttestGroup1');
@@ -12152,6 +12412,7 @@ function _runTTestWithSelectedGroups(){
   html+='</table>';
   function _abs(v){return Math.abs(v)}
   html+=_buildTestExplanation('ttest',resultData);
+  if(window._lastSamplingInfo&&window._lastSamplingInfo._sampled){html=_samplingNoteBanner(window._lastSamplingInfo)+html}
   const resTable=document.getElementById('advStatsResultTable');
   resTable.innerHTML=html;
   document.getElementById('advStatsResults').style.display='block';
@@ -12195,6 +12456,7 @@ function _runMWWithSelectedGroups(){
   html+=rw('Sonuç',p<0.05?'<span style="color:#dc2626">H₀ REDDEDİLDİ — Gruplar arasında anlamlı fark var (p<0.05)</span>':'<span style="color:#16a34a">H₀ REDDEDİLEMEDİ — Anlamlı fark yok (p≥0.05)</span>');
   html+='</table>';
   html+=_buildTestExplanation('mannwhitney',resultData);
+  if(window._lastSamplingInfo&&window._lastSamplingInfo._sampled){html=_samplingNoteBanner(window._lastSamplingInfo)+html}
   const resTable=document.getElementById('advStatsResultTable');
   resTable.innerHTML=html;
   document.getElementById('advStatsResults').style.display='block';
@@ -12459,6 +12721,9 @@ function advStatsRun(testId){
   if(!_hasOutputData()){resTable.innerHTML=_noDataHTML();return}
   let html='';
   let resultData={test:testId};
+  window._lastSamplingInfo=null; // Reset sampling tracking before each test
+  // Büyük veri → busy overlay göster
+  if(totalRows>500000){_showBusy('İstatistik testi hesaplanıyor...')}
   // Büyük veri uyarısı
   if(totalRows>1000000){
     resTable.innerHTML='<div style="text-align:center;padding:20px;color:#2563eb;font-weight:600"><span style="font-size:20px">⏳</span> İşleminiz biraz zaman alabilir, lütfen bekleyin... <span style="font-size:11px;opacity:0.7">('+totalRows.toLocaleString('tr-TR')+' satır)</span></div>';
@@ -13558,7 +13823,10 @@ function advStatsRun(testId){
   // İşlem süresi bilgisi
   const _testElapsed=((Date.now()-_testStart)/1000).toFixed(1);
   if(parseFloat(_testElapsed)>2){html+='<div style="margin-top:6px;font-size:10px;color:#94a3b8;text-align:right">İşlem süresi: '+_testElapsed+' sn</div>'}
+  // Örnekleme uyarı notu — büyük veri için
+  if(window._lastSamplingInfo&&window._lastSamplingInfo._sampled){html=_samplingNoteBanner(window._lastSamplingInfo)+html}
   resTable.innerHTML=html;
+  _hideBusy(); // Remove busy overlay after computation
   // Draw JASP-like chart
   try{_advStatsDrawChart(resultData)}catch(e){console.warn('advStats chart err:',e)}
   // Akıllı test yönlendirme paneli
