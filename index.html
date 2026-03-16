@@ -201,6 +201,9 @@
   .computing-spinner{width:20px;height:20px;border:3px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin .6s linear infinite;display:inline-block;margin-right:8px;vertical-align:middle}
   #globalBusyOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.7);z-index:99999;display:none;align-items:center;justify-content:center;flex-direction:column;backdrop-filter:blur(2px)}
   #globalBusyOverlay.active{display:flex}
+.engine-mode-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(5,150,105,0.4)}50%{box-shadow:0 0 0 12px rgba(5,150,105,0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
   #globalBusyOverlay .busy-spinner{width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin .8s linear infinite}
   #globalBusyOverlay .busy-text{margin-top:12px;font-size:14px;color:#334155;font-weight:600}
   .join-panel{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:16px}
@@ -508,8 +511,166 @@
     </div>
   </div>
 
+  <!-- STEP 0: Başlangıç — Mod Seçimi & Rehber -->
+  <div id="stepWelcome" class="card">
+    <div style="text-align:center;margin-bottom:20px">
+      <p style="font-size:22px;font-weight:800;color:#1e293b;margin:0">Hoş Geldiniz</p>
+      <p style="font-size:13px;color:#64748b;margin:6px 0 0">Başlamadan önce çalışma modunuzu seçin ve aşağıdaki bilgileri gözden geçirin.</p>
+    </div>
+
+    <!-- Mod Seçimi -->
+    <div id="modeSelectionPanel" style="margin-bottom:24px">
+      <p style="font-size:15px;font-weight:700;color:#1e293b;margin:0 0 14px">⚡ Çalışma Modu</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <!-- Tarayıcı Modu -->
+        <div id="modeBrowserCard" class="engine-mode-card engine-mode-active" onclick="_selectEngineMode('browser')" style="padding:18px;border-radius:14px;cursor:pointer;transition:all .2s;border:2px solid #3b82f6;background:linear-gradient(135deg,#eff6ff,#dbeafe);position:relative">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span style="font-size:32px">🌐</span>
+            <div>
+              <p style="font-size:15px;font-weight:700;color:#1e40af;margin:0">Tarayıcı Modu</p>
+              <p style="font-size:11px;color:#3b82f6;margin:2px 0 0;font-weight:600">Kurulum gerektirmez — hemen başlayın</p>
+            </div>
+          </div>
+          <p style="font-size:12px;color:#475569;margin:0;line-height:1.6">Küçük ve orta ölçekli verisetleri için idealdir. Tüm işlemler tarayıcınızda yapılır, hiçbir veri sunucuya gönderilmez.</p>
+          <div style="margin-top:12px;padding:8px 12px;background:rgba(59,130,246,0.08);border-radius:10px">
+            <p style="font-size:12px;color:#1e40af;margin:0;font-weight:600">Önerilen: 100 milyon hücreye kadar</p>
+            <p style="font-size:10.5px;color:#64748b;margin:4px 0 0">Örn: 1M satır × 8 sütun = 8M hücre ✓</p>
+            <p style="font-size:10.5px;color:#64748b;margin:2px 0 0">Örn: 10M satır × 8 sütun = 80M hücre ✓</p>
+          </div>
+          <div id="modeBrowserCheck" style="position:absolute;top:12px;right:12px;width:24px;height:24px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center"><span style="color:#fff;font-size:14px;font-weight:700">✓</span></div>
+        </div>
+        <!-- Python Motor -->
+        <div id="modePythonCard" class="engine-mode-card" onclick="_selectEngineMode('python')" style="padding:18px;border-radius:14px;cursor:pointer;transition:all .2s;border:2px solid #e2e8f0;background:#fff;position:relative">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span style="font-size:32px">🐍</span>
+            <div>
+              <p style="font-size:15px;font-weight:700;color:#065f46;margin:0">Python Veri Motoru</p>
+              <p id="pythonModeSubtitle" style="font-size:11px;color:#94a3b8;margin:2px 0 0;font-weight:600">Durum kontrol ediliyor...</p>
+            </div>
+          </div>
+          <p style="font-size:12px;color:#475569;margin:0;line-height:1.6">Büyük verisetleri için tasarlandı. Polars (Rust tabanlı) motor ile saniyeler içinde milyarlarca hücreyi analiz eder. Tarayıcı donma/çökme sorunu yaşanmaz.</p>
+          <div style="margin-top:12px;padding:8px 12px;background:rgba(5,150,105,0.06);border-radius:10px">
+            <p style="font-size:12px;color:#065f46;margin:0;font-weight:600">Önerilen: 100M+ hücre (2 milyara kadar)</p>
+            <p style="font-size:10.5px;color:#64748b;margin:4px 0 0">Örn: 60M satır × 8 sütun = 480M hücre ✓</p>
+            <p style="font-size:10.5px;color:#64748b;margin:2px 0 0">Örn: 250M satır × 8 sütun = 2B hücre ✓</p>
+          </div>
+          <div id="modePythonCheck" style="position:absolute;top:12px;right:12px;width:24px;height:24px;background:#d1d5db;border-radius:50%;display:none;align-items:center;justify-content:center"><span style="color:#fff;font-size:14px;font-weight:700">✓</span></div>
+          <div id="pythonStatusBadge" style="margin-top:12px;text-align:center"></div>
+        </div>
+      </div>
+      <!-- Python kurulum açıklaması -->
+      <div id="pythonSetupInfo" style="margin-top:14px;padding:14px 16px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1.5px solid #6ee7b7;border-radius:12px">
+        <p style="font-size:13px;font-weight:700;color:#065f46;margin:0">🐍 Python Motorunu Nasıl Başlatırım?</p>
+        <div style="margin-top:8px;font-size:12px;color:#047857;line-height:1.7">
+          <p style="margin:0"><strong>1.</strong> Bilgisayarınızda <strong>Python 3.9+</strong> kurulu olmalıdır. (<a href="https://www.python.org/downloads/" target="_blank" style="color:#2563eb">python.org</a>)</p>
+          <p style="margin:4px 0 0"><strong>2.</strong> Bu klasördeki başlatıcıyı çalıştırın:</p>
+          <p style="margin:2px 0 0 16px"><strong>macOS:</strong> <code style="background:#d1fae5;padding:2px 6px;border-radius:4px">AcikAnaliz-Baslat.command</code> dosyasını çift tıklayın</p>
+          <p style="margin:2px 0 0 16px"><strong>Windows:</strong> <code style="background:#d1fae5;padding:2px 6px;border-radius:4px">AcikAnaliz-Baslat.bat</code> dosyasını çift tıklayın</p>
+          <p style="margin:4px 0 0"><strong>3.</strong> İlk seferde bağımlılıklar (Polars, NumPy, SciPy, FastAPI) otomatik kurulur (~1-2 dk).</p>
+          <p style="margin:4px 0 0"><strong>4.</strong> Tarayıcı otomatik açılır. Sağ alt köşede <span style="background:#059669;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">🟢 Python Motor Aktif</span> rozeti görünür.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Büyük dosya uyarısı (gizli, dosya yüklendiğinde gösterilir) -->
+    <div id="bigFileForceWarning" style="display:none;margin-top:14px;padding:14px 18px;background:linear-gradient(135deg,#fef3c7,#fde68a);border:1.5px solid #f59e0b;border-radius:14px">
+      <p style="font-size:14px;color:#92400e;margin:0;font-weight:700">⚠️ Büyük Dosya Algılandı</p>
+      <p style="font-size:12px;color:#78350f;margin:6px 0 0;line-height:1.6">Yüklediğiniz dosya büyük boyutlu. Python Veri Motoru kullanmanızı <strong>şiddetle öneriyoruz</strong>. Tarayıcı modunda bu boyutta veri ile donma/çökme yaşanabilir.</p>
+    </div>
+
+    <!-- Sistem Gereksinimleri Tablosu -->
+    <div style="margin-top:20px">
+      <p style="font-size:14px;font-weight:700;color:#1e293b;margin:0 0 10px;cursor:pointer" onclick="document.getElementById('sysReqContent').classList.toggle('hidden')">📋 Sistem Gereksinimleri <span style="font-size:11px;color:#94a3b8;font-weight:400">(tıkla: aç/kapat)</span></p>
+      <div id="sysReqContent">
+        <table style="width:100%;font-size:12px;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">
+          <thead>
+            <tr style="background:#f1f5f9">
+              <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e2e8f0;font-weight:700">Veri Boyutu</th>
+              <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e2e8f0;font-weight:700">Mod</th>
+              <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e2e8f0;font-weight:700">Min. RAM</th>
+              <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e2e8f0;font-weight:700">Notlar</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9"><strong>&lt; 10M hücre</strong></td><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9">🌐 Tarayıcı</td><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9">4 GB</td><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9">Herhangi bir modern tarayıcı yeterlidir.</td></tr>
+            <tr style="background:#f8fafc"><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9"><strong>10M – 100M</strong></td><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9">🌐 Tarayıcı</td><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9">8 GB</td><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9">Chrome veya Edge önerilir.</td></tr>
+            <tr><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9"><strong>100M – 500M</strong></td><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;color:#059669;font-weight:700">🐍 Python Motor</td><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9">32 GB</td><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9">Python backend şiddetle önerilir.</td></tr>
+            <tr style="background:#f8fafc"><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9"><strong>500M – 1B</strong></td><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;color:#059669;font-weight:700">🐍 Python Motor</td><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9">64 GB</td><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9">Python backend gereklidir.</td></tr>
+            <tr><td style="padding:6px 12px"><strong>1B – 2B</strong></td><td style="padding:6px 12px;color:#059669;font-weight:700">🐍 Python Motor</td><td style="padding:6px 12px">128 GB</td><td style="padding:6px 12px">SSD önerilir (disk swap için).</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Kullanım Rehberi (detaylı) -->
+    <div style="margin-top:20px">
+      <p style="font-size:14px;font-weight:700;color:#1e293b;margin:0 0 10px;cursor:pointer" onclick="document.getElementById('usageGuideContent0').classList.toggle('hidden')">📖 Kullanım Rehberi <span style="font-size:11px;color:#94a3b8;font-weight:400">(tıkla: aç/kapat)</span></p>
+      <div id="usageGuideContent0" class="hidden">
+        <div class="guide-section">
+          <h3>1. Yatay Birleştirme (MERGE — Satırları Ekleme)</h3>
+          <p><strong>Ne zaman?</strong> Aynı formattaki dosyaları alt alta birleştirmek için (orn: Güz + Bahar dönemi notları).</p>
+          <p><strong>Nasıl?</strong> Birden fazla dosya seçin → başlıklar eşleşirse otomatik "Yatay Birleştir" seçeneği sunulur. "Kaynak" sütunu otomatik eklenir.</p>
+        </div>
+        <div class="guide-section">
+          <h3>2. Dikey Birleştirme (JOIN — Sütunları Eşleştirme)</h3>
+          <p><strong>Ne zaman?</strong> Farklı sütunlara sahip dosyaları ortak anahtar üzerinden yanyana birleştirmek için.</p>
+          <p><strong>Nasıl?</strong> 2+ dosya seçin → başlıklar farklıysa JOIN adımına yönlendirilirsiniz. Ortak anahtar(lar) seçin, JOIN tipini belirleyin.</p>
+          <p><strong>Önemli:</strong> JOIN maskeleme öncesinde yapılır — anahtarlar hash'lenmeden eşleştirilir.</p>
+        </div>
+        <div class="guide-section">
+          <h3>3. Maskeleme & Veri Gizleme</h3>
+          <p><strong>Hash:</strong> Benzersiz kod ile kimlik gizleme (geri döndürülemez).</p>
+          <p><strong>Kısmi:</strong> İlk/son harf görünür, ortası yıldız (A***t gibi).</p>
+          <p><strong>Kaldır:</strong> Sütunu tamamen çıkarır.</p>
+        </div>
+        <div class="guide-section">
+          <h3>4. Analiz Araçları</h3>
+          <p><strong>Dashboard:</strong> Otomatik grafikler, KPI'lar, drill-down ve filtreler.</p>
+          <p><strong>Özet İstatistik:</strong> Ortalama, medyan, standart sapma, çeyrekler.</p>
+          <p><strong>İleri İstatistik:</strong> t-testi, ANOVA, Mann-Whitney, Ki-kare, Shapiro-Wilk, Pearson/Spearman korelasyon.</p>
+          <p><strong>Korelasyon Matrisi:</strong> Tüm sayısal sütunlar arası ilişki haritası.</p>
+          <p><strong>Çapraz Tablo:</strong> Kategorik değişkenler arası frekans/yüzde analizi.</p>
+        </div>
+        <div class="guide-section">
+          <h3>5. LLM (Yapay Zeka) Desteği</h3>
+          <p>Lokal <strong>Ollama</strong> kurulumu ile grafikler için AI destekli akademik yorumlar alabilirsiniz.</p>
+          <p><strong>Kurulum:</strong> <a href="https://ollama.ai" target="_blank" style="color:#2563eb">ollama.ai</a> adresinden Ollama'yı yükleyin → <code>ollama pull llama3.1</code></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lokal çalışma uyarısı -->
+    <div style="margin-top:20px;padding:14px 18px;background:linear-gradient(135deg,#fefce8,#fef9c3);border:1.5px solid #fde047;border-radius:12px" id="localWorkWarning0">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+        <input type="checkbox" id="localWorkAcknowledge0" style="margin-top:3px;width:18px;height:18px;accent-color:#ca8a04;flex-shrink:0" onchange="localStorage.setItem('vmaLocalAck','1');if(this.checked){this.parentElement.parentElement.style.borderColor='#86efac';this.parentElement.parentElement.style.background='linear-gradient(135deg,#f0fdf4,#dcfce7)'}">
+        <div>
+          <p style="font-size:13px;font-weight:700;color:#854d0e;margin:0">⚠️ Önemli Bilgilendirme</p>
+          <p style="font-size:12px;color:#713f12;margin:6px 0 0;line-height:1.6">Bu uygulama tamamen tarayıcınızda (lokalde) çalışır. Çalışmanıza daha sonra devam etmek için <strong>"Kaydet"</strong> butonuyla oturumunuzu kaydedin. Farklı bir cihazda devam etmek için <strong>"Dışa Aktar"</strong> kullanın.</p>
+        </div>
+      </label>
+    </div>
+
+    <!-- Gizlilik -->
+    <div style="margin-top:14px;padding:10px 16px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px">
+      <p style="font-size:12px;color:#166534;margin:0"><strong>🔒 Gizlilik:</strong> Tüm işlemler cihazınızda yapılır. Hiçbir veri internete gönderilmez.</p>
+    </div>
+
+    <!-- Devam Et Butonu -->
+    <div style="margin-top:24px;text-align:center">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;transition:all .2s" id="step0ConfirmLabel">
+          <input type="checkbox" id="step0ConfirmCheck" style="width:20px;height:20px;accent-color:#059669;cursor:pointer" onchange="_onStep0ConfirmChange(this.checked)">
+          <span style="font-size:13px;color:#334155;font-weight:600">Yukarıdaki bilgileri okudum, çalışma modumu seçtim.</span>
+        </label>
+        <button class="btn btn-success" id="step0ContinueBtn" onclick="_step0Continue()" style="font-size:15px;padding:12px 40px;border-radius:12px;font-weight:700;opacity:0.4;cursor:not-allowed;transition:all .3s" disabled>Dosya Yüklemeye Geç →</button>
+        <p id="step0Hint" style="font-size:11px;color:#94a3b8;margin:0;transition:all .3s">Devam etmek için yukarıdaki onay kutusunu işaretleyin.</p>
+      </div>
+    </div>
+  </div>
+
   <!-- STEP 1: Upload -->
-  <div id="stepUpload" class="card">
+  <div id="stepUpload" class="card hidden">
+
     <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
       <div style="font-size:48px;margin-bottom:12px">📂</div>
       <p style="font-size:16px;font-weight:600;color:#334155">Dosyalarınızı sürükleyin veya tıklayarak seçin</p>
@@ -548,86 +709,6 @@
       </div>
     </div>
 
-    <!-- Usage Guide -->
-    <div class="mt-16" id="usageGuideArea">
-      <div class="flex flex-between flex-center mb-8">
-        <p class="text-sm" style="font-weight:700;color:#1e40af;cursor:pointer" onclick="document.getElementById('usageGuideContent').classList.toggle('hidden')">📖 Kullanım Rehberi <span class="text-xs text-muted">(tıkla: aç/kapat)</span></p>
-      </div>
-      <div id="usageGuideContent" class="hidden">
-        <div class="guide-section">
-          <h3>1. Yatay Birleştirme (MERGE — Satırları Ekleme)</h3>
-          <p><strong>Ne zaman?</strong> Aynı formattaki dosyaları alt alta birleştirmek için (orn: Güz dönemi + Bahar dönemi notları, aynı sütunlar).</p>
-          <p><strong>Nasıl?</strong> Birden fazla dosya seçin → başlıklar eşleşirse otomatik "Yatay Birleştir" seçeneği sunulur. Her satırı "Kaynak" sütunu eklenir.</p>
-        </div>
-        <div class="guide-section">
-          <h3>2. Dikey Birleştirme (JOIN — Sütunları Eşleştirme)</h3>
-          <p><strong>Ne zaman?</strong> Farklı sütunlara sahip dosyaları ortak anahtar üzerinden yanyana birleştirmek için (orn: TCKN ile öğrenci notları + LMS verilerini eşleştirme).</p>
-          <p><strong>Nasıl?</strong> 2+ dosya seçin → başlıklar farklı ise otomatik JOIN adımına yönlendirilirsiniz. Ortak anahtar(lar) seçin, JOIN tipini belirleyin.</p>
-          <p><strong>Önemli:</strong> JOIN maskeleme öncesinde yapılır, bu sayede TCKN gibi anahtarlar hash'lenmeden eşleştirilir.</p>
-        </div>
-        <div class="guide-section">
-          <h3>3. Maskeleme & Analiz</h3>
-          <p><strong>Maskeleme:</strong> Hash (benzersiz kod), Kısmi (A***t), Kaldır (sütunu çıkar). Hassas verileri gizlerken analiz yapmanızı sağlar.</p>
-          <p><strong>Analiz:</strong> Dashboard grafikleri, özet istatistik, korelasyon matrisi, çapraz tablo, filtreler ve LLM destekli doğal dil sorgusu.</p>
-        </div>
-        <div class="guide-section" style="border-left:4px solid #059669;padding-left:12px">
-          <h3>4. Python Veri Motoru (Büyük Veri İçin — Önerilen)</h3>
-          <p>500 milyon+ hücre ile çalışırken tarayıcı tek başına yetersiz kalabilir. Bu durumda <strong>Python backend</strong> motorunu kullanmanızı öneriyoruz. Motor aktifken tüm ağır hesaplamalar (agregasyon, istatistik testleri, korelasyon, çapraz tablo) Python + Polars ile yapılır; tarayıcı sadece arayüzü gösterir.</p>
-          <p><strong>Nasıl başlatılır?</strong></p>
-          <p style="margin-left:12px"><strong>macOS:</strong> <code>AcikAnaliz-Baslat.command</code> dosyasını çift tıklayın.</p>
-          <p style="margin-left:12px"><strong>Windows:</strong> <code>AcikAnaliz-Baslat.bat</code> dosyasını çift tıklayın.</p>
-          <p>İlk çalıştırmada gerekli kütüphaneler (Polars, NumPy, SciPy vb.) otomatik yüklenir. Sonraki açılışlarda doğrudan başlar.</p>
-          <p>Motor çalışırken sağ alt köşede <span style="background:#059669;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">🟢 Python Motor Aktif</span> rozeti görünür.</p>
-        </div>
-        <div class="guide-section" style="border-left:4px solid #2563eb;padding-left:12px">
-          <h3>5. Sistem Gereksinimleri (Veri Boyutuna Göre)</h3>
-          <table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:8px">
-            <thead>
-              <tr style="background:#f1f5f9">
-                <th style="padding:6px 10px;text-align:left;border-bottom:2px solid #e2e8f0">Veri Boyutu</th>
-                <th style="padding:6px 10px;text-align:left;border-bottom:2px solid #e2e8f0">Mod</th>
-                <th style="padding:6px 10px;text-align:left;border-bottom:2px solid #e2e8f0">RAM</th>
-                <th style="padding:6px 10px;text-align:left;border-bottom:2px solid #e2e8f0">Notlar</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9"><strong>< 10M hücre</strong></td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">Tarayıcı</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">4 GB+</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">Herhangi bir modern tarayıcı yeterlidir.</td></tr>
-              <tr style="background:#f8fafc"><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9"><strong>10M – 100M hücre</strong></td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">Tarayıcı</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">8 GB+</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">Chrome veya Edge önerilir. Sekme başına bellek limiti ~4 GB.</td></tr>
-              <tr><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9"><strong>100M – 500M hücre</strong></td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;color:#059669;font-weight:600">Python Motor</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">32 GB+</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">Python backend şiddetle önerilir. Tarayıcı modu çok yavaş kalabilir.</td></tr>
-              <tr style="background:#f8fafc"><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9"><strong>500M – 1B hücre</strong></td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;color:#059669;font-weight:600">Python Motor</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">64 GB+</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9">Python backend gereklidir. Polars sütun bazlı çalışır, RAM verimli kullanılır.</td></tr>
-              <tr><td style="padding:5px 10px"><strong>1B – 2B hücre</strong></td><td style="padding:5px 10px;color:#059669;font-weight:600">Python Motor</td><td style="padding:5px 10px">128 GB+</td><td style="padding:5px 10px">Sadece Python backend ile mümkün. SSD önerilir (disk swap için).</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="guide-section" style="border-left:4px solid #f59e0b;padding-left:12px">
-          <h3>6. LLM (Yapay Zeka) Desteği</h3>
-          <p>Lokal <strong>Ollama</strong> kurulumu ile grafikler ve istatistikler için yapay zeka destekli akademik yorumlar alabilirsiniz.</p>
-          <p><strong>Kurulum:</strong> <a href="https://ollama.ai" target="_blank" style="color:#2563eb">ollama.ai</a> adresinden Ollama'yı yükleyin, ardından terminalde <code>ollama pull llama3.1</code> ile model indirin.</p>
-          <p>LLM aktif olduğunda "🤖 AI Yorumla" butonu ve "Claude'a Sor" chatbot kullanılabilir hale gelir.</p>
-        </div>
-        <div class="guide-section" style="border-left:4px solid #8b5cf6;padding-left:12px">
-          <h3>7. Hızlı Başlangıç</h3>
-          <p><strong>Küçük veri (< 100M hücre):</strong> Bu sayfayı doğrudan tarayıcınızda açın → Dosya yükleyin → Analiz yapın.</p>
-          <p><strong>Büyük veri (100M+ hücre):</strong> <code>AcikAnaliz-Baslat</code> başlatıcısını çalıştırın → Tarayıcı otomatik açılır → Dosya yükleyin → Python motor devreye girer.</p>
-          <p><strong>Gereksinimler (Python Motoru):</strong> Python 3.9+ kurulu olmalıdır. Bağımlılıklar ilk çalıştırmada otomatik kurulur.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Lokal çalışma uyarısı + onay -->
-    <div style="margin-top:16px;padding:14px 18px;background:linear-gradient(135deg,#fefce8,#fef9c3);border:1.5px solid #fde047;border-radius:12px" id="localWorkWarning">
-      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
-        <input type="checkbox" id="localWorkAcknowledge" style="margin-top:3px;width:18px;height:18px;accent-color:#ca8a04;flex-shrink:0" onchange="localStorage.setItem('vmaLocalAck','1');if(this.checked){this.parentElement.parentElement.style.borderColor='#86efac';this.parentElement.parentElement.style.background='linear-gradient(135deg,#f0fdf4,#dcfce7)'}">
-        <div>
-          <p style="font-size:13px;font-weight:700;color:#854d0e;margin:0">⚠️ Önemli Bilgilendirme</p>
-          <p style="font-size:12px;color:#713f12;margin:6px 0 0;line-height:1.6">Bu uygulama tamamen tarayıcınızda (lokalde) çalışır. Çalışmanıza daha sonra devam edebilmek için <strong>"Kaydet"</strong> butonuyla oturumunuzu bu cihaza kaydetmeniz gerekir. Farklı bir cihazda devam etmek istiyorsanız <strong>"Dışa Aktar"</strong> ile çalışmanızı dosyaya aktarabilirsiniz.</p>
-        </div>
-      </label>
-    </div>
-
-    <div class="info-box mt-16">
-      <p style="font-size:13px;color:#166534"><strong>Gizlilik:</strong> Tüm işlemler tarayıcınızda yapılır. Hiçbir veri internete gönderilmez.</p>
-    </div>
   </div>
 
   <!-- STEP 1.1: Mode Selection (Merge vs Join) -->
@@ -1625,6 +1706,103 @@ function _cellLimitCheck(rows,cols,context){
 // === PERFORMANCE: Global busy overlay helpers ===
 function _showBusy(msg){const o=document.getElementById('globalBusyOverlay');if(o){o.classList.add('active');const t=document.getElementById('busyText');if(t)t.textContent=msg||'Hesaplanıyor...'}}
 function _hideBusy(){const o=document.getElementById('globalBusyOverlay');if(o)o.classList.remove('active')}
+
+// === ENGINE MODE SELECTION ===
+window._selectedEngineMode='browser';
+function _onStep0ConfirmChange(checked){
+  const btn=document.getElementById('step0ContinueBtn');
+  const hint=document.getElementById('step0Hint');
+  const lbl=document.getElementById('step0ConfirmLabel');
+  if(checked){
+    btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';
+    hint.textContent='✓ Hazırsınız! Devam edebilirsiniz.';hint.style.color='#059669';
+    lbl.style.borderColor='#86efac';lbl.style.background='#f0fdf4';
+  }else{
+    btn.disabled=true;btn.style.opacity='0.4';btn.style.cursor='not-allowed';
+    hint.textContent='Devam etmek için yukarıdaki onay kutusunu işaretleyin.';hint.style.color='#94a3b8';
+    lbl.style.borderColor='#e2e8f0';lbl.style.background='#f8fafc';
+  }
+}
+function _step0Continue(){
+  const chk=document.getElementById('step0ConfirmCheck');
+  if(!chk||!chk.checked){
+    // Shake the label
+    const lbl=document.getElementById('step0ConfirmLabel');
+    if(lbl){lbl.style.animation='shake .4s';setTimeout(()=>lbl.style.animation='',500)}
+    return;
+  }
+  // If Python mode selected but backend not active, show final warning
+  if(window._selectedEngineMode==='python'&&!window._BACKEND_ACTIVE){
+    if(!confirm('Python Veri Motoru seçtiniz ancak motor henüz çalışmıyor.\n\nDevam ederseniz tarayıcı modunda çalışacaksınız.\nMotoru başlatmak için AcikAnaliz-Baslat dosyasını çalıştırın.\n\nYine de devam etmek istiyor musunuz?'))return;
+  }
+  showStep('Upload');
+} // 'browser' or 'python'
+function _selectEngineMode(mode){
+  window._selectedEngineMode=mode;
+  const bCard=document.getElementById('modeBrowserCard');
+  const pCard=document.getElementById('modePythonCard');
+  const bCheck=document.getElementById('modeBrowserCheck');
+  const pCheck=document.getElementById('modePythonCheck');
+  if(mode==='python'){
+    pCard.style.border='2px solid #059669';pCard.style.background='linear-gradient(135deg,#ecfdf5,#d1fae5)';
+    bCard.style.border='2px solid #e2e8f0';bCard.style.background='#fff';
+    pCheck.style.display='flex';pCheck.style.background='#059669';
+    bCheck.style.display='none';
+    // Python seçildi ama motor aktif değilse uyar
+    if(!window._BACKEND_ACTIVE){
+      const badge=document.getElementById('pythonStatusBadge');
+      if(badge)badge.innerHTML='<div style="padding:8px 12px;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;font-size:11px;color:#92400e"><strong>Motor çalışmıyor.</strong> Önce <code>AcikAnaliz-Baslat</code> dosyasını çalıştırın, sonra bu sayfayı yenileyin.</div>';
+    }
+  }else{
+    bCard.style.border='2px solid #3b82f6';bCard.style.background='linear-gradient(135deg,#eff6ff,#dbeafe)';
+    pCard.style.border='2px solid #e2e8f0';pCard.style.background='#fff';
+    bCheck.style.display='flex';bCheck.style.background='#3b82f6';
+    pCheck.style.display='none';
+    const badge=document.getElementById('pythonStatusBadge');
+    if(badge)badge.innerHTML='';
+  }
+}
+
+// Detect Python backend status and update UI
+function _updateEngineModeUI(){
+  const sub=document.getElementById('pythonModeSubtitle');
+  const badge=document.getElementById('pythonStatusBadge');
+  if(window._BACKEND_ACTIVE){
+    if(sub){sub.textContent='Motor Aktif ✓';sub.style.color='#059669'}
+    if(badge)badge.innerHTML='<span style="display:inline-block;padding:4px 12px;background:#059669;color:#fff;border-radius:20px;font-size:11px;font-weight:600">🟢 Bağlı — Kullanıma Hazır</span>';
+    // Auto-select python mode if backend is active
+    _selectEngineMode('python');
+  }else{
+    if(sub){sub.textContent='Motor Bağlı Değil';sub.style.color='#dc2626'}
+    if(badge)badge.innerHTML='<span style="display:inline-block;padding:4px 12px;background:#fef3c7;color:#92400e;border-radius:20px;font-size:11px;font-weight:600">⚠ Başlatılmadı</span>';
+  }
+}
+// Check on page load (api-bridge.js sets _BACKEND_ACTIVE after health check)
+setTimeout(_updateEngineModeUI,1500);
+setTimeout(_updateEngineModeUI,4000); // retry — bridge may be slow
+
+// Big file warning: check file size after upload
+const _origHandleFiles=typeof handleFiles==='function'?handleFiles:null;
+function _checkBigFileWarning(){
+  const warn=document.getElementById('bigFileForceWarning');
+  if(!warn||!uploadedFiles||!uploadedFiles.length)return;
+  let totalSize=0;
+  uploadedFiles.forEach(f=>totalSize+=f.size);
+  // Heuristic: >200MB file likely has 100M+ cells
+  const BIG_THRESHOLD=200*1024*1024; // 200 MB
+  if(totalSize>BIG_THRESHOLD&&!window._BACKEND_ACTIVE){
+    warn.style.display='block';
+    // Also suggest Python mode
+    if(window._selectedEngineMode==='browser'){
+      const pCard=document.getElementById('modePythonCard');
+      if(pCard){pCard.style.animation='pulse 1.5s ease-in-out 3'}
+    }
+  }else{
+    warn.style.display='none';
+  }
+}
+// Patch renderFileList to also check big file warning
+const _origRenderFileList=typeof renderFileList==='function'?renderFileList:null;
 // Wrap a heavy sync computation: shows overlay, yields to browser, runs fn, hides overlay
 function _busyRun(msg,fn){
   _showBusy(msg);
@@ -1932,12 +2110,12 @@ const maskColors={none:'#94a3b8',hash:'#f59e0b',partial:'#8b5cf6',remove:'#ef444
 
 // === UI ===
 function showStep(name){
-  ['stepUpload','stepModeSelect','stepJoin','stepDelimiter','stepColumns','stepProcessing','stepDone','stepAnalysis'].forEach(id=>{
+  ['stepWelcome','stepUpload','stepModeSelect','stepJoin','stepDelimiter','stepColumns','stepProcessing','stepDone','stepAnalysis'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.classList.toggle('hidden',id!=='step'+name)
   });
   // Hero banner sadece Upload adımında görünür
   const _heroBanner=document.getElementById('heroBanner');
-  if(_heroBanner)_heroBanner.style.display=(name==='Upload')?'':'none';
+  if(_heroBanner)_heroBanner.style.display=(name==='Welcome'||name==='Upload')?'':'none';
   if(name==='Analysis'){
     // PERFORMANCE: free reservoir sample when entering analysis — colStats + streamOutputRows cover all needs
     if(totalRows>500000&&_reservoirSample.length>500000){
@@ -1949,7 +2127,7 @@ function showStep(name){
     setTimeout(()=>{if(parseOutputRows._caches){const ks=Object.keys(parseOutputRows._caches);if(ks.length>3){ks.forEach(k=>{if(k==='_full')delete parseOutputRows._caches[k]});console.log('parseOutputRows cache temizlendi')}}},1000);
   }
   // Update step nav bar
-  const stepOrder=['Upload','ModeSelect','Join','Delimiter','Columns','Processing','Done','Analysis'];
+  const stepOrder=['Welcome','Upload','ModeSelect','Join','Delimiter','Columns','Processing','Done','Analysis'];
   const activeIdx=stepOrder.indexOf(name);
   const navName=name;
   document.querySelectorAll('.step-nav-item').forEach(el=>{
@@ -2074,7 +2252,7 @@ async function handleFiles(fileList){
   renderFileList();
 }
 
-function renderFileList(){
+function renderFileList(){setTimeout(_checkBigFileWarning,100);
   const area=document.getElementById('fileListArea');area.classList.remove('hidden');
   const list=document.getElementById('fileListItems');list.innerHTML='';
   let totalSize=0;
@@ -11562,7 +11740,7 @@ function _switchClaudeTab(tab){
 function _buildContextSummary(){
   let label='',text='';
   // Hangi adım/panel aktif?
-  const steps=['stepUpload','stepModeSelect','stepJoin','stepDelimiter','stepColumns','stepProcessing','stepDone','stepAnalysis'];
+  const steps=['stepWelcome','stepUpload','stepModeSelect','stepJoin','stepDelimiter','stepColumns','stepProcessing','stepDone','stepAnalysis'];
   const stepLabels=['Dosya Yükle','Mod Seç','Birleştir','Ayırıcı','Maskeleme','İşlem','Tamamlandı','Analiz & Dashboard'];
   let activeStep='',activeLabel='';
   steps.forEach((id,i)=>{const el=document.getElementById(id);if(el&&!el.classList.contains('hidden')){activeStep=id;activeLabel=stepLabels[i]}});
