@@ -2829,23 +2829,37 @@ async function startProcessing(){
   // PYTHON MOTOR FAST-PATH: Tüm işlemi Python'a devret
   // ============================================================
   if(window._BACKEND_ACTIVE&&typeof window._backendProcess==='function'){
+    let _pyProgressTimer=null;
+    let _pyBanner=null;
     try{
       document.getElementById('progressFill').style.width='10%';
       document.getElementById('progressPct').textContent='10%';
       document.getElementById('processedCount').textContent='🐍 Python Motor ile işleniyor...';
       // Banner
-      const _pyBanner=document.createElement('div');
+      _pyBanner=document.createElement('div');
       _pyBanner.id='longOpBanner';
       _pyBanner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#059669,#10b981);color:#fff;padding:12px 24px;text-align:center;font-size:15px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;gap:12px';
       _pyBanner.innerHTML='<span style="font-size:20px">🐍</span> Python Motor ile işleniyor — Polars (Rust) kullanılıyor, tarayıcıdan çok daha hızlı...';
       document.body.appendChild(_pyBanner);
+
+      // Progress animation — %10'dan %85'e yavaşça ilerle (yanıt gelene kadar)
+      let _pyProg=10;
+      const _pyProgStart=Date.now();
+      _pyProgressTimer=setInterval(()=>{
+        const elapsed=(Date.now()-_pyProgStart)/1000;
+        // Yavaşlayan ilerleme: 10% → 85% arası, asimptotik
+        _pyProg=10+75*(1-Math.exp(-elapsed/30));
+        document.getElementById('progressFill').style.width=_pyProg.toFixed(0)+'%';
+        document.getElementById('progressPct').textContent=_pyProg.toFixed(0)+'%';
+        const elapsedTxt=elapsed<60?Math.floor(elapsed)+'s':Math.floor(elapsed/60)+'dk '+Math.floor(elapsed%60)+'s';
+        document.getElementById('processedCount').textContent='🐍 Python Motor ile işleniyor... ('+elapsedTxt+')';
+      },500);
 
       let pyResult=null;
 
       // === Determine which path: single, merge, or joined ===
       if(currentFile._isJoined&&joinedOutput){
         // JOINED DATA: Send joined CSV as blob to backend
-        document.getElementById('processedCount').textContent='🐍 Python Motor: Birleştirilmiş veri gönderiliyor...';
         const csvLines=[joinedOutput.headers.map(h=>'"'+h.replace(/"/g,'""')+'"').join(',')];
         for(const row of joinedOutput.rows){
           csvLines.push(row.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(','));
@@ -2855,15 +2869,19 @@ async function startProcessing(){
         pyResult=await window._backendProcess(csvFile,maskConfig,',');
       }else if(currentFile._isMerged&&currentFile._files&&currentFile._files.length>1){
         // MERGED FILES: Send all files to backend for server-side merge
-        document.getElementById('processedCount').textContent='🐍 Python Motor: '+currentFile._files.length+' dosya birleştiriliyor...';
         pyResult=await window._backendProcessMulti(currentFile._files,maskConfig,delimiterMode,fileLabels);
       }else{
         // SINGLE FILE: Send directly
         pyResult=await window._backendProcess(currentFile,maskConfig,delimiterMode);
       }
+
+      // Progress timer durdur
+      if(_pyProgressTimer){clearInterval(_pyProgressTimer);_pyProgressTimer=null}
+
       if(pyResult&&pyResult.ok){
         // Python başarılı — JS loop tamamen atlanıyor!
         console.log('[PYTHON FAST-PATH] '+pyResult.cells.toLocaleString('tr-TR')+' hücre '+pyResult.processing_time+'s\'de işlendi');
+        if(pyResult._error){console.warn('[PYTHON FAST-PATH] Kısmi hata:',pyResult._error)}
         totalRows=pyResult.rows;
         outHeaders=pyResult.headers;
 
@@ -2893,7 +2911,7 @@ async function startProcessing(){
         if(pyResult.sample_rows&&pyResult.sample_rows.length){
           const outDelim=document.getElementById('outputFormat').value==='tsv'?'\t':',';
           pyResult.sample_rows.forEach(row=>{
-            const line=outHeaders.map(h=>'"'+(String(row[h]||'').replace(/"/g,'""'))+'"').join(outDelim);
+            const line=outHeaders.map(h=>'"'+(String(row[h]!=null?row[h]:'')).replace(/"/g,'""')+'"').join(outDelim);
             _reservoirSample.push(line);
           });
         }
@@ -2905,7 +2923,7 @@ async function startProcessing(){
         outputChunks=[headerLine];
         if(pyResult.preview_rows){
           pyResult.preview_rows.forEach(row=>{
-            const line=outHeaders.map(h=>'"'+(String(row[h]||'').replace(/"/g,'""'))+'"').join(outDelim2)+'\n';
+            const line=outHeaders.map(h=>'"'+(String(row[h]!=null?row[h]:'')).replace(/"/g,'""')+'"').join(outDelim2)+'\n';
             outputChunks.push(line);
           });
         }
@@ -2925,7 +2943,7 @@ async function startProcessing(){
         window._totalCellCount=_doneCells;
         window._isHeavyDataset=_doneCells>100000000;
         window._isVeryHeavyDataset=_doneCells>500000000;
-        _pyBanner.remove();
+        if(_pyBanner){_pyBanner.remove();_pyBanner=null}
 
         renderSummaryStats();
         renderColTypeChips();
@@ -2938,15 +2956,22 @@ async function startProcessing(){
         try{_addLog('Python Motor ile işlendi: '+_formatCells(_doneCells)+' hücre, '+pyResult.processing_time+'s','ok')}catch(e){}
         return; // JS loop tamamen atlandı!
       }else{
-        console.warn('[PYTHON FAST-PATH] Başarısız, JS fallback...');
-        _pyBanner.remove();
+        const errDetail=pyResult&&pyResult._error?' ('+pyResult._error+')':'';
+        const errTB=pyResult&&pyResult._traceback?'\n'+pyResult._traceback:'';
+        console.warn('[PYTHON FAST-PATH] Başarısız'+errDetail+errTB+', JS fallback...');
+        document.getElementById('processedCount').textContent='⚠️ Python Motor yanıt başarısız'+errDetail+' — JS fallback kullanılıyor...';
+        if(_pyBanner){_pyBanner.remove();_pyBanner=null}
       }
     }catch(e){
+      if(_pyProgressTimer){clearInterval(_pyProgressTimer);_pyProgressTimer=null}
       console.error('[PYTHON FAST-PATH] Hata:',e);
-      const _pyB=document.getElementById('longOpBanner');if(_pyB)_pyB.remove();
+      if(_pyBanner){_pyBanner.remove();_pyBanner=null}
+      const _pyB2=document.getElementById('longOpBanner');if(_pyB2)_pyB2.remove();
       const isTimeout=e.name==='AbortError';
       const errMsg=isTimeout?'Zaman aşımı (10 dk) — dosya çok büyük veya backend yanıt vermiyor':e.message;
       document.getElementById('processedCount').textContent='⚠️ Python Motor hatası: '+errMsg+' — JS fallback kullanılıyor...';
+      document.getElementById('progressFill').style.width='0%';
+      document.getElementById('progressPct').textContent='0%';
       try{_addLog('Python Motor hatası, JS fallback: '+errMsg,'err')}catch(e2){}
     }
   }
