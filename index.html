@@ -8067,8 +8067,7 @@ function renderTopBottomGroupDataJS(area,indepVar,subVar,direction,metric,backen
     const mean=a.count?a.sum/a.count:0;
     return{mean,median:calcMedian(a.vals),std:calcStd(a.vals,mean),min:a.count?a.min:0,max:a.count?a.max:0,sum:a.sum,count:a.count,metric:calcMetricFor(a)};
   }
-  // ── Frekans Ölçütü (Kırılım) ──
-  const _tbFcCol=document.getElementById('tbGrpFreqCriterion')?document.getElementById('tbGrpFreqCriterion').value:'';
+  // ── Frekans Ölçütü (Kırılım) ── (üstte zaten tanımlı, tekrar kullan)
   const _tbFcIdx=_tbFcCol?outHeaders.indexOf(_tbFcCol):-1;
 
   // ── Backend sonuçlarını kullan veya stream et ──
@@ -9884,7 +9883,7 @@ async function sendSmartLLM(){
 }
 
 // Show modal with report content
-function showRuleBasedReport(){
+async function showRuleBasedReport(){
   // Alan Bazlı modda ise grup bazlı kural tabanlı rapor oluştur
   if(llmMode==='batch'){
     const groupCol=document.getElementById('llmGroupCol').value;
