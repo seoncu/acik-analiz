@@ -1878,6 +1878,15 @@ window._updateEngineModeUI=function _updateEngineModeUI(){
       // Yeniden Bağlan butonunu gizle (bağlı olduğumuz için)
       var reconnBtn=document.getElementById('btnReconnectPython');
       if(reconnBtn){reconnBtn.textContent='✓ Bağlı';reconnBtn.style.background='#059669';reconnBtn.disabled=true}
+      // Onay kutusunu ve devam butonunu otomatik aktifleştir
+      var chk0=document.getElementById('step0ConfirmCheck');
+      var btn0=document.getElementById('step0ContinueBtn');
+      var hint0=document.getElementById('step0Hint');
+      var lbl0=document.getElementById('step0ConfirmLabel');
+      if(chk0&&!chk0.checked){chk0.checked=true}
+      if(btn0){btn0.disabled=false;btn0.style.opacity='1';btn0.style.cursor='pointer'}
+      if(hint0){hint0.textContent='✓ Python Motor bağlı — devam edebilirsiniz!';hint0.style.color='#059669'}
+      if(lbl0){lbl0.style.borderColor='#86efac';lbl0.style.background='#f0fdf4'}
     }else{
       if(sub){sub.textContent='Motor Bağlı Değil';sub.style.color='#dc2626'}
       if(badge)badge.innerHTML='<span style="display:inline-block;padding:4px 12px;background:#fef3c7;color:#92400e;border-radius:20px;font-size:11px;font-weight:600">⚠ Başlatılmadı</span>';
