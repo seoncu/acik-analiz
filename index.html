@@ -1865,13 +1865,12 @@
                   </select>
                 </div>
 
-                <!-- Column Dimension (for true pivot/crosstab) -->
+                <!-- Column Dimensions (for multi-level groupby / pivot — max 5) -->
                 <div>
-                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">📏 Sütun Boyutu (PIVOT — opsiyonel)</label>
-                  <select id="pivotColDim" style="width:100%;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px" onchange="pivotUpdatePreview()">
-                    <option value="">Yok (sadece GROUP BY)</option>
-                  </select>
-                  <p style="margin:2px 0 0;font-size:10px;color:#9ca3af">Seçilirse çapraz tablo oluşturulur (satır × sütun)</p>
+                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">📏 Sütun Boyutları (Gruplama — opsiyonel, max 5)</label>
+                  <div id="pivotColDims" style="display:flex;flex-direction:column;gap:4px"></div>
+                  <button onclick="pivotAddColDim()" id="pivotAddColDimBtn" style="margin-top:4px;background:#ede9fe;border:1px solid #c4b5fd;color:#5b21b6;padding:3px 10px;border-radius:6px;font-size:10px;cursor:pointer">+ Sütun Boyutu Ekle</button>
+                  <p style="margin:2px 0 0;font-size:10px;color:#9ca3af">1 boyut = çapraz tablo (pivot). 2+ boyut = çoklu gruplama (GROUP BY)</p>
                 </div>
 
                 <!-- Value columns + metrics -->
@@ -6877,10 +6876,40 @@ function addDashboardChart(){
   box.innerHTML='<div class="computing-overlay"><span class="computing-spinner"></span> Hesaplanıyor...</div>';
   document.getElementById('chartArea').appendChild(box);
 
-  // Debounce actual computation
-  setTimeout(()=>{
-    _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups);
-  },50);
+  // === BACKEND-FIRST: If backend active, pre-fetch data before building chart ===
+  if(window._BACKEND_ACTIVE && typeof window._backendAggregate==='function' && type!=='scatter' && type!=='histogram' && type!=='boxplot' && type!=='bubble' && type!=='pivotTable'){
+    const sortMode=document.getElementById('dashSort')?document.getElementById('dashSort').value:'desc';
+    const limitVal=document.getElementById('dashLimit')?parseInt(document.getElementById('dashLimit').value)||15:15;
+    const _fetchPromise=colorCol
+      ? window._backendAggregate(xCol,yCols.length?yCols:[],agg,sortMode,limitVal,colorCol)
+      : window._backendAggregate(xCol,yCols,agg,sortMode,limitVal,'');
+    _fetchPromise.then(backendResult=>{
+      if(backendResult&&backendResult.labels){
+        // Cache result so _buildChart's computeMultiAgg/computeColorGroupAgg finds it
+        backendResult._fromBackend=true;
+        if(colorCol){
+          const ck='color:'+xCol+'|'+colorCol+'|'+(yCols[0]||'')+':'+agg+':'+filterHash()+':'+drillStack.length;
+          _aggCache[ck]=backendResult;
+        }else{
+          const ck=xCol+'|'+yCols.join(',')+':'+agg+':'+filterHash()+':'+drillStack.length+':fc='+(_freqCriterionCol||'');
+          _aggCache[ck]=backendResult;
+        }
+        console.log('[CHART] Backend data pre-fetched:',backendResult.labels.length,'labels');
+      }
+      // Now build chart — data is in cache, _buildChart will find it instantly
+      _buildChart._noLoop=true; // Skip redundant async refresh since we already have backend data
+      _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups);
+      _buildChart._noLoop=false;
+    }).catch(err=>{
+      console.warn('[CHART] Backend pre-fetch failed, falling back to JS:',err);
+      _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups);
+    });
+  }else{
+    // Non-backend or special chart types: use existing sync flow
+    setTimeout(()=>{
+      _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups);
+    },50);
+  }
 }
 
 function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
@@ -7061,7 +7090,10 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
 
   if(typeof Chart==='undefined'){showError('Chart.js yüklenemedi.');box.remove();return}
 
-  const ctx=document.getElementById(id).getContext('2d');
+  const _canvasEl=document.getElementById(id);
+  if(!_canvasEl){console.error('[CHART] Canvas element not found:',id);box.innerHTML+='<div style="padding:20px;text-align:center;color:#dc2626;font-size:12px">⚠️ Canvas bulunamadı ('+id+')</div>';return}
+  const ctx=_canvasEl.getContext('2d');
+  if(!ctx){console.error('[CHART] Canvas context null:',id);return}
   let chartConfig;
 
   if(type==='scatter'){
@@ -7362,7 +7394,56 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
     chartConfig.options.scales={y:{beginAtZero:_yZero,grid:{display:_gridLines}},x:{grid:{display:_gridLines}}};
     if(_rotateX){chartConfig.options.scales.x.ticks={maxRotation:90,minRotation:45}}
   }
-  const inst=new Chart(ctx,chartConfig);
+  // === CHART CREATION with error handling + empty data fallback ===
+  let inst=null;
+  const _chartHasData=chartConfig.data&&chartConfig.data.datasets&&chartConfig.data.datasets.some(ds=>ds.data&&ds.data.length>0&&ds.data.some(v=>v!==null&&v!==undefined&&v!==0));
+  if(!_chartHasData){
+    // No data → show fallback HTML table instead of empty chart
+    console.warn('[CHART] Empty data for chart:',id,title);
+    const _fbLabels=chartConfig.data?.labels||[];
+    const _fbDs=chartConfig.data?.datasets||[];
+    let _fbHtml='<div style="padding:12px;text-align:center;color:#92400e;font-size:12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;margin-top:8px">';
+    _fbHtml+='<b>⚠️ Grafik verisi boş veya sıfır.</b><br><span style="font-size:11px">Filtre veya veri seçimlerini kontrol edin.</span>';
+    if(_fbLabels.length>0&&_fbDs.length>0){
+      _fbHtml+='<table style="margin:10px auto;border-collapse:collapse;font-size:11px;text-align:left"><thead><tr><th style="padding:4px 8px;border-bottom:2px solid #f59e0b">Kategori</th>';
+      _fbDs.forEach(ds=>{_fbHtml+='<th style="padding:4px 8px;border-bottom:2px solid #f59e0b">'+escHtml(ds.label||'Değer')+'</th>'});
+      _fbHtml+='</tr></thead><tbody>';
+      _fbLabels.forEach((lbl,i)=>{
+        _fbHtml+='<tr><td style="padding:3px 8px;border-bottom:1px solid #fde68a">'+escHtml(lbl)+'</td>';
+        _fbDs.forEach(ds=>{const v=ds.data?.[i];_fbHtml+='<td style="padding:3px 8px;border-bottom:1px solid #fde68a">'+(v!=null?v.toLocaleString('tr-TR'):'—')+'</td>'});
+        _fbHtml+='</tr>';
+      });
+      _fbHtml+='</tbody></table>';
+    }
+    _fbHtml+='</div>';
+    _canvasEl.style.display='none';
+    box.insertAdjacentHTML('beforeend',_fbHtml);
+  }
+  try{
+    inst=new Chart(ctx,chartConfig);
+  }catch(chartErr){
+    console.error('[CHART] Chart.js creation error:',chartErr);
+    // Fallback: show data as HTML table
+    _canvasEl.style.display='none';
+    const _errLabels=chartConfig.data?.labels||[];
+    const _errDs=chartConfig.data?.datasets||[];
+    let _errHtml='<div style="padding:12px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;margin-top:8px;font-size:12px">';
+    _errHtml+='<b>⚠️ Grafik oluşturulamadı:</b> '+escHtml(chartErr.message)+'<br>';
+    if(_errLabels.length>0){
+      _errHtml+='<table style="margin:8px 0;border-collapse:collapse;font-size:11px;width:100%"><thead><tr><th style="padding:4px 8px;border-bottom:2px solid #f87171;text-align:left">Kategori</th>';
+      _errDs.forEach(ds=>{_errHtml+='<th style="padding:4px 8px;border-bottom:2px solid #f87171;text-align:right">'+escHtml(ds.label||'Değer')+'</th>'});
+      _errHtml+='</tr></thead><tbody>';
+      _errLabels.slice(0,50).forEach((lbl,i)=>{
+        _errHtml+='<tr><td style="padding:3px 8px;border-bottom:1px solid #fee2e2">'+escHtml(lbl)+'</td>';
+        _errDs.forEach(ds=>{const v=ds.data?.[i];_errHtml+='<td style="padding:3px 8px;border-bottom:1px solid #fee2e2;text-align:right">'+(v!=null?(typeof v==='number'?v.toLocaleString('tr-TR'):v):'—')+'</td>'});
+        _errHtml+='</tr>';
+      });
+      if(_errLabels.length>50)_errHtml+='<tr><td colspan="'+(1+_errDs.length)+'" style="padding:4px 8px;color:#6b7280;font-style:italic">... ve '+(_errLabels.length-50)+' satır daha</td></tr>';
+      _errHtml+='</tbody></table>';
+    }
+    _errHtml+='</div>';
+    box.insertAdjacentHTML('beforeend',_errHtml);
+  }
   chartInstances.push({id,instance:inst,title,type,xCol,yCols,agg,colorCol:colorCol||'',subGroups:subGroups.slice(),filterSnapshot:JSON.stringify(colFilters),showLabels:_showLabels});
   // === BACKEND: If chart was built from JS sample, async-refresh with full backend data ===
   if(!_buildChart._noLoop && window._BACKEND_ACTIVE && typeof window._backendAggregate==='function' && type!=='scatter' && type!=='histogram' && type!=='bubble'){
@@ -17253,20 +17334,19 @@ function askClaudeSQL(){
 let _pivotResultData=null;
 let _pivotValueFieldCount=0;
 
+let _pivotColDimCount=0;
+
 function initPivotBuilder(){
   if(!outHeaders||outHeaders.length===0)return;
-  // Populate row/col dimension dropdowns
-  ['pivotRowDim','pivotColDim'].forEach(id=>{
-    const sel=document.getElementById(id);
-    if(!sel)return;
-    const existing=sel.querySelectorAll('option[data-auto]');
-    if(existing.length>0)return; // already populated
+  // Populate row dimension dropdown
+  const rowSel=document.getElementById('pivotRowDim');
+  if(rowSel&&rowSel.querySelectorAll('option[data-auto]').length===0){
     outHeaders.forEach(h=>{
       const opt=document.createElement('option');
       opt.value=h;opt.textContent=h;opt.dataset.auto='1';
-      sel.appendChild(opt);
+      rowSel.appendChild(opt);
     });
-  });
+  }
   // Populate order by dropdown with metric options
   const orderSel=document.getElementById('pivotOrderBy');
   if(orderSel&&orderSel.querySelectorAll('option[data-auto]').length===0){
@@ -17354,9 +17434,54 @@ function pivotGetValueFields(){
   return fields;
 }
 
+// --- Multi-column pivot dimension management ---
+function pivotAddColDim(){
+  const container=document.getElementById('pivotColDims');
+  if(!container)return;
+  const existing=container.querySelectorAll('.pvtColDimRow');
+  if(existing.length>=5){showInfo('En fazla 5 sütun boyutu ekleyebilirsiniz.');return}
+  _pivotColDimCount++;
+  const row=document.createElement('div');
+  row.className='pvtColDimRow';
+  row.id='pvtColDim_'+_pivotColDimCount;
+  row.style.cssText='display:flex;gap:4px;align-items:center';
+  let opts='<option value="">Seçin...</option>';
+  outHeaders.forEach(h=>{opts+='<option value="'+h.replace(/"/g,'&quot;')+'">'+h+'</option>'});
+  row.innerHTML='<span style="font-size:10px;color:#7c3aed;font-weight:600;min-width:16px">'+(existing.length+1)+'.</span>'+
+    '<select class="pvtColDimSel" style="flex:1;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px" onchange="pivotUpdatePreview()">'+opts+'</select>'+
+    '<button onclick="pivotRemoveColDim(\'pvtColDim_'+_pivotColDimCount+'\')" style="background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:2px 6px;border-radius:4px;font-size:10px;cursor:pointer">✕</button>';
+  container.appendChild(row);
+  // Hide add button if at max
+  const addBtn=document.getElementById('pivotAddColDimBtn');
+  if(addBtn&&container.querySelectorAll('.pvtColDimRow').length>=5)addBtn.style.display='none';
+  pivotUpdatePreview();
+}
+
+function pivotRemoveColDim(id){
+  const el=document.getElementById(id);
+  if(el)el.remove();
+  // Re-number remaining
+  const container=document.getElementById('pivotColDims');
+  if(container)container.querySelectorAll('.pvtColDimRow').forEach((row,i)=>{
+    const numSpan=row.querySelector('span');
+    if(numSpan)numSpan.textContent=(i+1)+'.';
+  });
+  const addBtn=document.getElementById('pivotAddColDimBtn');
+  if(addBtn)addBtn.style.display='';
+  pivotUpdatePreview();
+}
+
+function pivotGetColDims(){
+  const dims=[];
+  document.querySelectorAll('.pvtColDimSel').forEach(sel=>{
+    if(sel.value)dims.push(sel.value);
+  });
+  return dims;
+}
+
 function pivotUpdatePreview(){
   const rowDim=document.getElementById('pivotRowDim')?.value||'';
-  const colDim=document.getElementById('pivotColDim')?.value||'';
+  const colDims=pivotGetColDims();
   const valueFields=pivotGetValueFields();
   const whereClause=document.getElementById('pivotWhereClause')?.value||'';
   const orderBy=document.getElementById('pivotOrderBy')?.value||'';
@@ -17367,9 +17492,12 @@ function pivotUpdatePreview(){
   if(!rowDim){preview.textContent='-- Satır boyutu seçin';return}
   if(valueFields.length===0){preview.textContent='-- Değer alanı ekleyin';return}
 
+  const allGroupCols=[rowDim,...colDims];
   let sql='';
-  if(colDim){
-    // True pivot mode — simplified view
+
+  if(colDims.length===1){
+    // True pivot mode (single col dimension) — simplified view
+    const colDim=colDims[0];
     const vf=valueFields[0];
     const aggLabel=vf.aggs[0]||'count';
     const aggUpper=aggLabel.toUpperCase()==='MEAN'?'AVG':aggLabel.toUpperCase();
@@ -17382,18 +17510,19 @@ function pivotUpdatePreview(){
     if(whereClause)sql+='\nWHERE '+whereClause;
     sql+='\nORDER BY "'+rowDim+'" '+orderDir;
   }else{
-    // GROUP BY mode
-    let selectParts=['"'+rowDim+'"','COUNT(*) AS _n'];
+    // GROUP BY mode (0 or 2+ col dimensions)
+    let selectParts=allGroupCols.map(c=>'"'+c+'"');
+    selectParts.push('COUNT(*) AS _n');
     valueFields.forEach(vf=>{
       vf.aggs.forEach(agg=>{
-        if(agg==='count')return; // already have COUNT(*)
+        if(agg==='count')return;
         const fn=agg.toUpperCase()==='MEAN'?'AVG':agg.toUpperCase();
         selectParts.push(fn+'("'+vf.col+'") AS "'+vf.col+'_'+agg+'"');
       });
     });
     sql='SELECT '+selectParts.join(',\n       ')+'\nFROM veri';
     if(whereClause)sql+='\nWHERE '+whereClause;
-    sql+='\nGROUP BY "'+rowDim+'"';
+    sql+='\nGROUP BY '+allGroupCols.map(c=>'"'+c+'"').join(', ');
     if(orderBy){
       const orderCol=orderBy==='_row_'?'"'+rowDim+'"':'"'+orderBy+'"';
       sql+='\nORDER BY '+orderCol+' '+orderDir;
@@ -17408,15 +17537,15 @@ function pivotCopyToEditor(){
   const preview=document.getElementById('pivotSQLPreview');
   const editor=document.getElementById('sqlEditor');
   if(preview&&editor){
-    // For GROUP BY mode, copy clean SQL. For pivot mode, copy GROUP BY equivalent
     const rowDim=document.getElementById('pivotRowDim')?.value||'';
-    const colDim=document.getElementById('pivotColDim')?.value||'';
-    if(colDim){
-      // Can't directly express pivot in SQL — copy GROUP BY with both dims
+    const colDims=pivotGetColDims();
+    if(colDims.length===1){
+      // Single col pivot — copy GROUP BY equivalent
       const vf=pivotGetValueFields()[0];
       if(vf){
         const aggFn=vf.aggs[0]==='mean'?'AVG':vf.aggs[0].toUpperCase();
-        editor.value='SELECT "'+rowDim+'", "'+colDim+'", '+aggFn+'("'+vf.col+'") AS val\nFROM veri\nGROUP BY "'+rowDim+'", "'+colDim+'"\nORDER BY "'+rowDim+'"';
+        const allCols=[rowDim,...colDims].map(c=>'"'+c+'"').join(', ');
+        editor.value='SELECT '+allCols+', '+aggFn+'("'+vf.col+'") AS val\nFROM veri\nGROUP BY '+allCols+'\nORDER BY "'+rowDim+'"';
       }
     }else{
       // Clean SQL (remove comments)
@@ -17428,7 +17557,9 @@ function pivotCopyToEditor(){
 
 async function pivotExecute(){
   const rowDim=document.getElementById('pivotRowDim')?.value||'';
-  const colDim=document.getElementById('pivotColDim')?.value||'';
+  const colDims=pivotGetColDims();
+  const colDim=colDims.length===1?colDims[0]:''; // single = true pivot
+  const extraGroupCols=colDims.length>=2?colDims:[]; // multi = extra GROUP BY cols
   const valueFields=pivotGetValueFields();
   const whereClause=document.getElementById('pivotWhereClause')?.value||'';
   const orderBy=document.getElementById('pivotOrderBy')?.value||'';
@@ -17449,18 +17580,17 @@ async function pivotExecute(){
         const resp=await fetch('http://localhost:8765/api/sql-pivot',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({rowDim,colDim,valueFields,where:whereClause,orderBy:orderBy||'_row_',orderDir})
+          body:JSON.stringify({rowDim,colDim,extraGroupCols,valueFields,where:whereClause,orderBy:orderBy||'_row_',orderDir})
         });
         const data=await resp.json();
         if(data.error)throw new Error(data.error);
         result={columns:data.columns,rows:data.rows,mode:data.mode};
       }catch(backendErr){
         console.warn('[PIVOT] Backend error, trying SQL fallback:',backendErr.message);
-        // Fallback: generate GROUP BY SQL and run via AlaSQL
-        result=await pivotFallbackAlaSQL(rowDim,colDim,valueFields,whereClause,orderBy,orderDir);
+        result=await pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderBy,orderDir);
       }
     }else{
-      result=await pivotFallbackAlaSQL(rowDim,colDim,valueFields,whereClause,orderBy,orderDir);
+      result=await pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderBy,orderDir);
     }
 
     _pivotResultData=result;
@@ -17476,11 +17606,13 @@ async function pivotExecute(){
   }
 }
 
-async function pivotFallbackAlaSQL(rowDim,colDim,valueFields,whereClause,orderBy,orderDir){
+async function pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderBy,orderDir){
+  // colDims can be string (legacy) or array
+  const colDimArr=Array.isArray(colDims)?colDims:(colDims?[colDims]:[]);
   // Build GROUP BY SQL for AlaSQL
-  let selectParts=['"'+rowDim+'"','COUNT(*) AS _n'];
-  const groupCols=colDim?[rowDim,colDim]:[rowDim];
-  if(colDim)selectParts.splice(1,0,'"'+colDim+'"');
+  const groupCols=[rowDim,...colDimArr];
+  let selectParts=groupCols.map(c=>'"'+c+'"');
+  selectParts.push('COUNT(*) AS _n');
   valueFields.forEach(vf=>{
     vf.aggs.forEach(agg=>{
       if(agg==='count')return;
