@@ -209,6 +209,7 @@
 .engine-mode-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(5,150,105,0.4)}50%{box-shadow:0 0 0 12px rgba(5,150,105,0)}}
 @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@keyframes fadeInBanner{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
   #globalBusyOverlay .busy-spinner{width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin .8s linear infinite}
   #globalBusyOverlay .busy-text{margin-top:12px;font-size:14px;color:#334155;font-weight:600}
   .join-panel{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:16px}
@@ -1786,6 +1787,16 @@
                 </div>
               </div>
 
+              <!-- Hesaplanmış Alan (Calculated Field) for SQL Builder -->
+              <div>
+                <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">🧮 Hesaplanmış Alan (SELECT'e Ekle — opsiyonel)</label>
+                <div id="sqlCalcFields" style="display:flex;flex-direction:column;gap:4px"></div>
+                <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">
+                  <button onclick="sqlCalcAddField()" style="background:#ede9fe;border:1px solid #c4b5fd;color:#5b21b6;padding:3px 10px;border-radius:6px;font-size:10px;cursor:pointer">+ Alan Arası İşlem</button>
+                  <button onclick="sqlCalcAddCustom()" style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:3px 10px;border-radius:6px;font-size:10px;cursor:pointer">✏️ Özel SQL Formülü</button>
+                </div>
+              </div>
+
               <!-- WHERE conditions -->
               <div>
                 <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">🔍 Filtre (WHERE)</label>
@@ -1879,6 +1890,16 @@
                   <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">📊 Değer Alanları ve Metrikler</label>
                   <div id="pivotValueFields"></div>
                   <button onclick="pivotAddValueField()" style="margin-top:6px;background:#ede9fe;border:1px solid #c4b5fd;color:#5b21b6;padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer">+ Değer Alanı Ekle</button>
+                </div>
+
+                <!-- Hesaplanmış Alan for Pivot -->
+                <div>
+                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">🧮 Hesaplanmış Alan (opsiyonel)</label>
+                  <div id="pivotCalcFields" style="display:flex;flex-direction:column;gap:4px"></div>
+                  <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">
+                    <button onclick="pivotCalcAddField()" style="background:#ede9fe;border:1px solid #c4b5fd;color:#5b21b6;padding:3px 10px;border-radius:6px;font-size:10px;cursor:pointer">+ Alan Arası İşlem</button>
+                    <button onclick="pivotCalcAddCustom()" style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:3px 10px;border-radius:6px;font-size:10px;cursor:pointer">✏️ Özel SQL Formülü</button>
+                  </div>
                 </div>
 
                 <!-- WHERE filter -->
@@ -2373,16 +2394,84 @@ function _fmtNum(n){
 // Patch renderFileList to also check big file warning
 const _origRenderFileList=typeof renderFileList==='function'?renderFileList:null;
 // Wrap a heavy sync computation: shows overlay, yields to browser, runs fn, hides overlay
-function _busyRun(msg,fn){
+// Eğer hesaplama _SQL_SUGGEST_THRESHOLD_MS'den uzun sürerse, aktif sekmeye SQL önerisi banner'ı gösterir
+function _busyRun(msg,fn,_skipSqlBanner){
   _showBusy(msg);
   return new Promise(resolve=>{
     requestAnimationFrame(()=>{
       setTimeout(()=>{
-        try{const result=fn();resolve(result)}catch(e){console.error('_busyRun error:',e);resolve(null)}finally{_hideBusy()}
-      },30); // 30ms delay ensures the overlay is painted before heavy work starts
+        const _t0=performance.now();
+        try{const result=fn();resolve(result)}catch(e){console.error('_busyRun error:',e);resolve(null)}finally{
+          _hideBusy();
+          // SQL önerisi: hesaplama uzun sürdüyse aktif sekmeye banner göster
+          if(!_skipSqlBanner){
+            const _elapsed=performance.now()-_t0;
+            if(_elapsed>_SQL_SUGGEST_THRESHOLD_MS&&!_sqlBannerDismissed){
+              const _activeTab=document.querySelector('.tab-btn.active');
+              const _tabKey=_activeTab?.getAttribute('data-tab')||'';
+              if(_tabKey&&!_SQL_EXCLUDED_TABS.includes(_tabKey)){
+                const _tabMap={dashboard:'tabDashboard',quickview:'tabQuickview',topbottom:'tabTopBottom',summary:'tabSummary',stats:'tabStats',correlation:'tabCorrelation',crosstab:'tabCrosstab',mapview:'tabMapView'};
+                const _tabEl=document.getElementById(_tabMap[_tabKey]||'');
+                if(_tabEl)_showSQLSuggestionBanner(_tabEl);
+                console.log('[PERF] _busyRun hesaplama süresi: '+(_elapsed/1000).toFixed(1)+'s → SQL önerisi gösteriliyor');
+              }
+            }
+          }
+        }
+      },30);
     });
   });
 }
+
+// === SQL SUGGESTION BANNER — Yavaş hesaplamalarda SQL önerisi ===
+const _SQL_SUGGEST_THRESHOLD_MS=3000; // 3 saniyeden uzun süren hesaplamalarda banner göster
+const _SQL_EXCLUDED_TABS=['sql','advstats']; // Bu sekmelerde gösterme
+let _sqlBannerDismissed=false; // Kullanıcı kapattıysa bir daha gösterme (oturum boyunca)
+
+function _showSQLSuggestionBanner(targetEl){
+  if(_sqlBannerDismissed)return;
+  if(!targetEl)return;
+  // Zaten banner varsa tekrar ekleme
+  if(targetEl.querySelector('.sql-suggest-banner'))return;
+  const banner=document.createElement('div');
+  banner.className='sql-suggest-banner';
+  banner.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 14px;margin:8px 0 12px 0;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #93c5fd;border-radius:10px;font-size:12.5px;color:#1e40af;animation:fadeInBanner .4s ease';
+  banner.innerHTML='<span style="font-size:18px;flex-shrink:0">💡</span>'
+    +'<div style="flex:1"><b>Daha hızlı sonuç almak ister misiniz?</b><br>'
+    +'<span style="color:#1e3a8a">Büyük verilerde <a href="javascript:void(0)" onclick="switchAnalysisTab(\'sql\',document.querySelector(\'[data-tab=sql]\'));this.closest(\'.sql-suggest-banner\').remove()" style="color:#2563eb;font-weight:600;text-decoration:underline">SQL Sorgusu</a> ile aynı analizi çok daha hızlı yapabilirsiniz.</span></div>'
+    +'<button onclick="_sqlBannerDismissed=true;this.closest(\'.sql-suggest-banner\').remove()" style="background:none;border:none;color:#60a5fa;font-size:16px;cursor:pointer;padding:2px 6px;flex-shrink:0" title="Kapat">&times;</button>';
+  // İlk çocuk olarak ekle (başlık altına)
+  const firstChild=targetEl.firstElementChild;
+  if(firstChild)targetEl.insertBefore(banner,firstChild);
+  else targetEl.appendChild(banner);
+}
+
+// Zamanlayıcılı hesaplama wrapper'ı — belirli süreyi aşarsa banner gösterir
+function _timedCalc(fn,tabId){
+  const t0=performance.now();
+  const result=fn();
+  const elapsed=performance.now()-t0;
+  if(elapsed>_SQL_SUGGEST_THRESHOLD_MS&&tabId&&!_SQL_EXCLUDED_TABS.includes(tabId)){
+    const tabEl=document.getElementById({dashboard:'tabDashboard',quickview:'tabQuickview',topbottom:'tabTopBottom',summary:'tabSummary',stats:'tabStats',correlation:'tabCorrelation',crosstab:'tabCrosstab',mapview:'tabMapView'}[tabId]||'');
+    if(tabEl)_showSQLSuggestionBanner(tabEl);
+    console.log('[PERF] '+tabId+' hesaplama süresi: '+(elapsed/1000).toFixed(1)+'s → SQL önerisi gösteriliyor');
+  }
+  return result;
+}
+
+// Async versiyonu
+async function _timedCalcAsync(fn,tabId){
+  const t0=performance.now();
+  const result=await fn();
+  const elapsed=performance.now()-t0;
+  if(elapsed>_SQL_SUGGEST_THRESHOLD_MS&&tabId&&!_SQL_EXCLUDED_TABS.includes(tabId)){
+    const tabEl=document.getElementById({dashboard:'tabDashboard',quickview:'tabQuickview',topbottom:'tabTopBottom',summary:'tabSummary',stats:'tabStats',correlation:'tabCorrelation',crosstab:'tabCrosstab',mapview:'tabMapView'}[tabId]||'');
+    if(tabEl)_showSQLSuggestionBanner(tabEl);
+    console.log('[PERF] '+tabId+' async hesaplama süresi: '+(elapsed/1000).toFixed(1)+'s → SQL önerisi gösteriliyor');
+  }
+  return result;
+}
+
 let _reservoirSample=[]; // pre-built sample during processing for fast dashboard
 let _ALLVALS_LIM=2000000,_UNIQSET_LIM=10000000; // dynamic limits for large data
 let _rsvRowCount=0; // running row counter for reservoir sampling
@@ -6183,10 +6272,10 @@ async function computeMultiAggAsync(xCol,yCols,aggType){
         if(!result.groups){
           result.groups=result.labels.map((lbl,i)=>{
             const yData=(result.datasets||[]).map(ds=>{
-              const v=ds.data?.[i]||0;
+              const v=(ds.data?.[i]!=null)?ds.data[i]:0;
               return{sum:v,n:1,min:v,max:v,sumSq:v*v,numFreq:{},vals:[v]};
             });
-            return[lbl,{count:result.datasets?.[0]?.data?.[i]||0,yData}];
+            return[lbl,{count:(result._counts&&result._counts[i])||1,yData}];
           });
         }
         _aggCache[cacheKey]=result;
@@ -6202,6 +6291,16 @@ function computeMultiAgg(xCol,yCols,aggType){
   const _fcCol=_freqCriterionCol||'';
   const cacheKey=xCol+'|'+yCols.join(',')+':'+aggType+':'+filterHash()+':'+drillStack.length+':fc='+_fcCol;
   if(_aggCache[cacheKey])return _aggCache[cacheKey];
+
+  // BACKEND ACTIVE but no cache: trigger async pre-fetch and return sample-based result
+  // This prevents returning zeros when outputChunks is incomplete in backend mode
+  if(window._BACKEND_ACTIVE&&typeof window._backendAggregate==='function'&&aggType!=='count'){
+    console.log('[CHART] computeMultiAgg: cache miss with backend active, triggering async fetch for',xCol,yCols,aggType);
+    // Fire async fetch to populate cache for next call
+    computeMultiAggAsync(xCol,yCols,aggType).then(r=>{
+      if(r&&r._fromBackend){console.log('[CHART] Backend data received, cache populated')}
+    }).catch(()=>{});
+  }
 
   // Check if output data is available (may be empty in restored sessions)
   if(!_hasOutputData()&&!(aggType==='count'&&colStats[xCol]&&colStats[xCol].freq)){
@@ -6296,13 +6395,35 @@ function computeMultiAgg(xCol,yCols,aggType){
   const sortMode=document.getElementById('dashSort')?document.getElementById('dashSort').value:'desc';
   const limitVal=document.getElementById('dashLimit')?parseInt(document.getElementById('dashLimit').value)||15:15;
   let sorted=Object.entries(groups);
+  // extractAgg'ı sıralama için de kullanılacak şekilde önceden tanımla
+  function _sortExtractAgg(yData,agg){
+    if(agg==='count')return yData.n||0;
+    if(agg==='sum')return yData.sum;
+    if(agg==='avg'||agg==='mean')return yData.n?yData.sum/yData.n:0;
+    if(agg==='min')return yData.min===Infinity?0:yData.min;
+    if(agg==='max')return yData.max===-Infinity?0:yData.max;
+    if(agg==='std'){
+      if(yData.n<2)return 0;
+      const mn=yData.sum/yData.n;
+      return Math.sqrt(Math.max(0,yData.sumSq/yData.n-mn*mn));
+    }
+    if(agg==='median'){
+      if(!yData.n)return 0;
+      const numE=[];
+      Object.entries(yData.numFreq).forEach(([vk,cnt])=>{const v=parseFloat(vk);if(!isNaN(v))numE.push({v,c:cnt})});
+      numE.sort((a,b)=>a.v-b.v);
+      let cum=0;for(const e of numE){cum+=e.c;if(cum>=yData.n*0.5)return e.v}
+      return 0;
+    }
+    return yData.sum;
+  }
   if(sortMode==='alpha'){sorted.sort((a,b)=>a[0].localeCompare(b[0],'tr'))}
   else{
-    // Sort by first Y's agg value or count
+    // Sort by first Y's ACTUAL agg value (not raw sum) or count
     sorted.sort((a,b)=>{
       let av,bv;
       if(aggType==='count'){av=a[1].count;bv=b[1].count}
-      else if(a[1].yData.length){av=a[1].yData[0].sum;bv=b[1].yData[0].sum}
+      else if(a[1].yData.length){av=_sortExtractAgg(a[1].yData[0],aggType);bv=_sortExtractAgg(b[1].yData[0],aggType)}
       else{av=a[1].count;bv=b[1].count}
       return sortMode==='asc'?av-bv:bv-av;
     });
@@ -6344,7 +6465,13 @@ function computeMultiAgg(xCol,yCols,aggType){
     datasets.push({label:_fcLabel,data:sorted.map(([,g])=>g.count)});
   }
 
-  const result={labels,datasets,groups:sorted};
+  const result={labels,datasets,groups:sorted,fullLabels:sorted.map(e=>e[0])};
+  // Debug: log aggregation results
+  const _totalN=sorted.reduce((s,[,g])=>s+g.count,0);
+  const _firstVals=datasets.length?datasets[0].data.slice(0,3):[];
+  console.log('[CHART] computeMultiAgg JS:',xCol,'×',yCols.join(','),'agg='+aggType,
+    'groups='+sorted.length,'totalN='+_totalN,'firstVals='+JSON.stringify(_firstVals),
+    'yIndices='+JSON.stringify(yIndices.map(y=>({idx:y.idx,calc:y.calc}))));
   _aggCache[cacheKey]=result;
   return result;
 }
@@ -6912,13 +7039,14 @@ function addDashboardChart(){
           // Build groups array: [[label, {count, yData:[{sum,n,...}]}], ...]
           backendResult.groups=backendResult.labels.map((lbl,i)=>{
             const yData=(backendResult.datasets||[]).map(ds=>{
-              const v=ds.data?.[i]||0;
+              const v=(ds.data?.[i]!=null)?ds.data[i]:0;
               return{sum:v,n:1,min:v,max:v,sumSq:v*v,numFreq:{},vals:[v]};
             });
-            const cnt=backendResult.datasets?.[0]?.data?.[i]||0;
+            const cnt=(backendResult._counts&&backendResult._counts[i])||1;
             return[lbl,{count:cnt,yData}];
           });
         }
+        console.log('[CHART] Backend pre-fetch OK:',backendResult.labels.length,'labels, first values:',backendResult.datasets?.map(ds=>ds.data?.[0]));
         if(colorCol){
           const ck='color:'+xCol+'|'+colorCol+'|'+(yCols[0]||'')+':'+agg+':'+filterHash()+':'+drillStack.length;
           _aggCache[ck]=backendResult;
@@ -7254,8 +7382,14 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
     }else if(type==='dualAxis'){
       showError('Çift Eksen çok ölçülü mod için tasarlanmıştır.');box.remove();return;
     }else{
-      // Grouped or Stacked bar
-      chartConfig={type:'bar',data:{labels:result.labels,datasets:result.datasets},options:{plugins:{legend:{display:true,labels:{font:{size:10}}}},scales:{x:{stacked:isStacked},y:{stacked:isStacked}},interaction:{mode:'index',intersect:false}}};
+      // Grouped or Stacked bar — ensure datasets have colors
+      const _coloredDs=result.datasets.map((ds,di)=>({
+        label:ds.label,data:ds.data,
+        backgroundColor:ds.backgroundColor||CHART_COLORS[di%CHART_COLORS.length]+'cc',
+        borderColor:ds.borderColor||CHART_COLORS[di%CHART_COLORS.length],
+        borderWidth:1
+      }));
+      chartConfig={type:'bar',data:{labels:result.labels,datasets:_coloredDs},options:{plugins:{legend:{display:multiY,labels:{font:{size:10}}}},scales:{x:{stacked:isStacked},y:{stacked:isStacked,beginAtZero:true}},interaction:{mode:'index',intersect:false}}};
     }
 
   }else{
@@ -7431,7 +7565,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
   let inst=null;
   const _cLabels=chartConfig.data?.labels||[];
   const _cDs=chartConfig.data?.datasets||[];
-  const _chartHasData=_cDs.some(ds=>ds.data&&ds.data.length>0&&ds.data.some(v=>v!==null&&v!==undefined&&v!==0));
+  const _chartHasData=_cDs.some(ds=>ds.data&&ds.data.length>0);
 
   // Always try Chart.js first
   let _chartOK=false;
@@ -7460,6 +7594,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
         const allZero=imgData.data.every(v=>v===0);
         if(allZero&&_vrfCanvas.width>0&&_vrfCanvas.height>0){
           console.warn('[CHART] Post-render check: canvas is blank, adding HTML fallback');
+          _vrfCanvas.style.display='none';
           _vrfBox.insertAdjacentHTML('beforeend',_renderHTMLBarChart(_cLabels,_cDs,title));
         }
       }catch(e){}
@@ -7788,14 +7923,27 @@ function refreshAllCharts(){
     (async()=>{
       try{
         // Sync filters to backend FIRST so aggregate uses correct filter state
-        const anyF=outHeaders.some(h=>hasActiveFilter(h));
-        if(anyF&&typeof window._backendSetFilters==='function'){
+        // HER ZAMAN çağır — filtre temizlendiğinde de backend'e boş filtre göndermeli
+        if(typeof window._backendSetFilters==='function'){
           const fObj=_getActiveFiltersObj();
           await window._backendSetFilters(fObj);
         }
         for(const ci of chartInstances){
           if(ci.type!=='pivotTable'){
-            await computeMultiAggAsync(ci.xCol,ci.yCols,ci.agg);
+            if(ci.colorCol){
+              // Color-grouped chart: pre-fetch via backend
+              try{
+                const sortMode=document.getElementById('dashSort')?document.getElementById('dashSort').value:'desc';
+                const limitVal=document.getElementById('dashLimit')?parseInt(document.getElementById('dashLimit').value)||15:15;
+                const cr=await window._backendAggregate(ci.xCol,ci.yCols.length?ci.yCols:[],ci.agg,sortMode,limitVal,ci.colorCol);
+                if(cr&&cr.labels){
+                  const ck='color:'+ci.xCol+'|'+ci.colorCol+'|'+(ci.yCols[0]||'')+':'+ci.agg+':'+filterHash()+':'+drillStack.length;
+                  cr._fromBackend=true;_aggCache[ck]=cr;
+                }
+              }catch(e){}
+            }else{
+              await computeMultiAggAsync(ci.xCol,ci.yCols,ci.agg);
+            }
           }
         }
       }catch(e){console.warn('[BACKEND] Pre-fetch failed:',e)}
@@ -7808,6 +7956,7 @@ function refreshAllCharts(){
 }
 
 function _rebuildAllCharts(){
+  const _rebuildT0=performance.now();
   // Rebuild each chart with current filters
   chartInstances.forEach(ci=>{
     const box=document.getElementById(ci.id+'_box');
@@ -7815,6 +7964,12 @@ function _rebuildAllCharts(){
     // Destroy old chart instance
     if(ci.instance){try{ci.instance.destroy()}catch(e){}}
     ci.instance=null;
+    // Clear ALL old content (canvas, HTML fallback, etc.) to prevent empty space
+    const oldCanvases=box.querySelectorAll('canvas');
+    oldCanvases.forEach(c=>c.remove());
+    // Remove old HTML bar fallback divs
+    const oldFallbacks=box.querySelectorAll('div[style*="overflow-y:auto"]');
+    oldFallbacks.forEach(f=>f.remove());
     // Rebuild chart
     _buildChart(ci.id,box,ci.xCol,ci.yCols,ci.type,ci.agg,ci.colorCol||'',ci.subGroups||[]);
     // Update instance reference from chartInstances (buildChart pushes new entry)
@@ -7828,6 +7983,12 @@ function _rebuildAllCharts(){
   // Refresh active tab content
   _refreshActiveTab();
   if(totalRows>500000)_hideBusy();
+  // SQL önerisi: grafik yenileme uzun sürdüyse
+  const _rebuildElapsed=performance.now()-_rebuildT0;
+  if(_rebuildElapsed>_SQL_SUGGEST_THRESHOLD_MS&&!_sqlBannerDismissed){
+    const _dashEl=document.getElementById('tabDashboard');
+    if(_dashEl&&!_dashEl.classList.contains('hidden'))_showSQLSuggestionBanner(_dashEl);
+  }
 }
 
 function _refreshActiveTab(){
@@ -8619,7 +8780,13 @@ function renderTopBottomGroupData(){
       try{
         area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px"><span class="computing-spinner"></span> Python motorunda hesaplanıyor...</p>';
         const numCols=outHeaders.filter(h=>colStats[h]&&colStats[h].isNumeric);
+        const _grpT0=performance.now();
         const result=await window._backendGroupAnalysis(indepVar,subVar,numCols,metric,direction,20,_tbFcCol);
+        const _grpElapsed=performance.now()-_grpT0;
+        if(_grpElapsed>_SQL_SUGGEST_THRESHOLD_MS){
+          const _tbEl=document.getElementById('tabTopBottom');
+          if(_tbEl)_showSQLSuggestionBanner(_tbEl);
+        }
         if(result&&result.groups){
           return renderTopBottomGroupDataJS(area,indepVar,subVar,direction,metric,result);
         }
@@ -17146,6 +17313,205 @@ function sqlBuilderRemoveCondition(id){
   sqlBuilderUpdatePreview();
 }
 
+// ========== SQL BUILDER — HESAPLANMIŞ ALAN (Calculated Fields) ==========
+let _sqlCalcFieldCount=0;
+function _sqlCalcColOptions(){
+  let o='<option value="">Sütun seç...</option>';
+  outHeaders.forEach(h=>{o+='<option value="'+h.replace(/"/g,'&quot;')+'">'+h+'</option>'});
+  return o;
+}
+
+function sqlCalcAddField(){
+  _sqlCalcFieldCount++;
+  const container=document.getElementById('sqlCalcFields');
+  if(!container)return;
+  const id='sqlCalc_'+_sqlCalcFieldCount;
+  const div=document.createElement('div');
+  div.id=id;
+  div.style.cssText='display:flex;gap:4px;align-items:center;flex-wrap:wrap;padding:6px;background:#f5f3ff;border:1px solid #e9d5ff;border-radius:6px';
+  div.innerHTML=
+    '<select class="sqlCalcCol1" style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;flex:1;min-width:80px" onchange="sqlBuilderUpdatePreview()">'+_sqlCalcColOptions()+'</select>'+
+    '<select class="sqlCalcOp" style="padding:3px 4px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;width:38px;text-align:center" onchange="sqlBuilderUpdatePreview()">'+
+      '<option value="/">÷</option><option value="*">×</option><option value="+">+</option><option value="-">−</option>'+
+    '</select>'+
+    '<select class="sqlCalcCol2" style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;flex:1;min-width:80px" onchange="sqlBuilderUpdatePreview()">'+_sqlCalcColOptions()+'</select>'+
+    '<select class="sqlCalcTmpl" style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:10px;min-width:90px" onchange="sqlCalcTmplChange(this);sqlBuilderUpdatePreview()">'+
+      '<option value="">A İşlem B</option>'+
+      '<option value="pct">(A/B)×100</option>'+
+      '<option value="pctChange">((A−B)/B)×100</option>'+
+      '<option value="round2">ROUND(A/B, 2)</option>'+
+      '<option value="abs">ABS(A−B)</option>'+
+    '</select>'+
+    '<input class="sqlCalcAlias" type="text" placeholder="Adı (ör: oran)" style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;width:70px" onchange="sqlBuilderUpdatePreview()">'+
+    '<button onclick="sqlCalcRemoveField(\''+id+'\')" style="background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:2px 6px;border-radius:4px;font-size:11px;cursor:pointer;flex-shrink:0">✕</button>';
+  container.appendChild(div);
+  sqlBuilderUpdatePreview();
+}
+
+function sqlCalcAddCustom(){
+  _sqlCalcFieldCount++;
+  const container=document.getElementById('sqlCalcFields');
+  if(!container)return;
+  const id='sqlCalc_'+_sqlCalcFieldCount;
+  const div=document.createElement('div');
+  div.id=id;
+  div.dataset.custom='1';
+  div.style.cssText='display:flex;gap:4px;align-items:center;flex-wrap:wrap;padding:6px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px';
+  div.innerHTML=
+    '<span style="font-size:10px;color:#92400e;font-weight:600;flex-shrink:0">SQL:</span>'+
+    '<input class="sqlCalcExpr" type="text" placeholder=\'Ör: ROUND("NOT1"/"NOT2"*100, 2)\' style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;flex:1;min-width:200px;font-family:monospace" onchange="sqlBuilderUpdatePreview()">'+
+    '<span style="font-size:10px;color:#92400e;flex-shrink:0">AS</span>'+
+    '<input class="sqlCalcAlias" type="text" placeholder="Adı" style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;width:70px" onchange="sqlBuilderUpdatePreview()">'+
+    '<button onclick="sqlCalcRemoveField(\''+id+'\')" style="background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:2px 6px;border-radius:4px;font-size:11px;cursor:pointer;flex-shrink:0">✕</button>';
+  container.appendChild(div);
+  sqlBuilderUpdatePreview();
+}
+
+function sqlCalcRemoveField(id){
+  const el=document.getElementById(id);if(el)el.remove();
+  sqlBuilderUpdatePreview();
+}
+
+function sqlCalcTmplChange(sel){
+  // When template changes, show/hide operator based on template
+  const row=sel.closest('[id^="sqlCalc_"]');
+  if(!row)return;
+  const opSel=row.querySelector('.sqlCalcOp');
+  if(opSel)opSel.style.display=sel.value?'none':'';
+}
+
+function _getSQLCalcFieldExpressions(){
+  const exprs=[];
+  document.querySelectorAll('#sqlCalcFields [id^="sqlCalc_"]').forEach(div=>{
+    if(div.dataset.custom==='1'){
+      // Custom SQL expression
+      const expr=div.querySelector('.sqlCalcExpr')?.value?.trim()||'';
+      const alias=div.querySelector('.sqlCalcAlias')?.value?.trim()||'';
+      if(expr){
+        exprs.push(expr+(alias?' AS "'+alias+'"':' AS hesap_'+(exprs.length+1)));
+      }
+    }else{
+      // Field-based operation
+      const c1=div.querySelector('.sqlCalcCol1')?.value||'';
+      const c2=div.querySelector('.sqlCalcCol2')?.value||'';
+      const op=div.querySelector('.sqlCalcOp')?.value||'/';
+      const tmpl=div.querySelector('.sqlCalcTmpl')?.value||'';
+      const alias=div.querySelector('.sqlCalcAlias')?.value?.trim()||'';
+      if(!c1||!c2)return;
+      let expr='';
+      if(tmpl==='pct') expr='(CAST("'+c1+'" AS REAL)/NULLIF(CAST("'+c2+'" AS REAL),0))*100';
+      else if(tmpl==='pctChange') expr='((CAST("'+c1+'" AS REAL)-CAST("'+c2+'" AS REAL))/NULLIF(CAST("'+c2+'" AS REAL),0))*100';
+      else if(tmpl==='round2') expr='ROUND(CAST("'+c1+'" AS REAL)/NULLIF(CAST("'+c2+'" AS REAL),0), 2)';
+      else if(tmpl==='abs') expr='ABS(CAST("'+c1+'" AS REAL)-CAST("'+c2+'" AS REAL))';
+      else expr='CAST("'+c1+'" AS REAL)'+op+'NULLIF(CAST("'+c2+'" AS REAL),0)';
+      const name=alias||c1+'_'+c2+'_'+(tmpl||'op');
+      exprs.push(expr+' AS "'+name+'"');
+    }
+  });
+  return exprs;
+}
+
+// ========== PIVOT — HESAPLANMIŞ ALAN (Calculated Fields) ==========
+let _pivotCalcFieldCount=0;
+function pivotCalcAddField(){
+  _pivotCalcFieldCount++;
+  const container=document.getElementById('pivotCalcFields');
+  if(!container)return;
+  const id='pvtCalc_'+_pivotCalcFieldCount;
+  const div=document.createElement('div');
+  div.id=id;
+  div.style.cssText='display:flex;gap:4px;align-items:center;flex-wrap:wrap;padding:6px;background:#f5f3ff;border:1px solid #e9d5ff;border-radius:6px';
+  div.innerHTML=
+    '<select class="pvtCalcCol1" style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;flex:1;min-width:80px" onchange="pivotUpdatePreview()">'+_sqlCalcColOptions()+'</select>'+
+    '<select class="pvtCalcOp" style="padding:3px 4px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;width:38px;text-align:center" onchange="pivotUpdatePreview()">'+
+      '<option value="/">÷</option><option value="*">×</option><option value="+">+</option><option value="-">−</option>'+
+    '</select>'+
+    '<select class="pvtCalcCol2" style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;flex:1;min-width:80px" onchange="pivotUpdatePreview()">'+_sqlCalcColOptions()+'</select>'+
+    '<select class="pvtCalcTmpl" style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:10px;min-width:90px" onchange="pvtCalcTmplChange(this);pivotUpdatePreview()">'+
+      '<option value="">A İşlem B</option>'+
+      '<option value="pct">(A/B)×100</option>'+
+      '<option value="pctChange">((A−B)/B)×100</option>'+
+      '<option value="round2">ROUND(A/B, 2)</option>'+
+      '<option value="abs">ABS(A−B)</option>'+
+    '</select>'+
+    '<div class="pvtCalcAggs" style="display:flex;flex-wrap:wrap;gap:3px">'+
+      '<label style="font-size:10px;display:flex;align-items:center;gap:1px;cursor:pointer"><input type="checkbox" class="pvtCalcAgg" value="sum" checked onchange="pivotUpdatePreview()"> Toplam</label>'+
+      '<label style="font-size:10px;display:flex;align-items:center;gap:1px;cursor:pointer"><input type="checkbox" class="pvtCalcAgg" value="mean" checked onchange="pivotUpdatePreview()"> Ort.</label>'+
+      '<label style="font-size:10px;display:flex;align-items:center;gap:1px;cursor:pointer"><input type="checkbox" class="pvtCalcAgg" value="min" onchange="pivotUpdatePreview()"> Min</label>'+
+      '<label style="font-size:10px;display:flex;align-items:center;gap:1px;cursor:pointer"><input type="checkbox" class="pvtCalcAgg" value="max" onchange="pivotUpdatePreview()"> Max</label>'+
+    '</div>'+
+    '<input class="pvtCalcAlias" type="text" placeholder="Adı" style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;width:60px" onchange="pivotUpdatePreview()">'+
+    '<button onclick="pivotCalcRemoveField(\''+id+'\')" style="background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:2px 6px;border-radius:4px;font-size:11px;cursor:pointer;flex-shrink:0">✕</button>';
+  container.appendChild(div);
+  pivotUpdatePreview();
+}
+
+function pivotCalcAddCustom(){
+  _pivotCalcFieldCount++;
+  const container=document.getElementById('pivotCalcFields');
+  if(!container)return;
+  const id='pvtCalc_'+_pivotCalcFieldCount;
+  const div=document.createElement('div');
+  div.id=id;
+  div.dataset.custom='1';
+  div.style.cssText='display:flex;gap:4px;align-items:center;flex-wrap:wrap;padding:6px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px';
+  div.innerHTML=
+    '<span style="font-size:10px;color:#92400e;font-weight:600;flex-shrink:0">SQL:</span>'+
+    '<input class="pvtCalcExpr" type="text" placeholder=\'Ör: ROUND("NOT1"/"NOT2"*100, 2)\' style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;flex:1;min-width:180px;font-family:monospace" onchange="pivotUpdatePreview()">'+
+    '<div class="pvtCalcAggs" style="display:flex;flex-wrap:wrap;gap:3px">'+
+      '<label style="font-size:10px;display:flex;align-items:center;gap:1px;cursor:pointer"><input type="checkbox" class="pvtCalcAgg" value="sum" checked onchange="pivotUpdatePreview()"> Toplam</label>'+
+      '<label style="font-size:10px;display:flex;align-items:center;gap:1px;cursor:pointer"><input type="checkbox" class="pvtCalcAgg" value="mean" checked onchange="pivotUpdatePreview()"> Ort.</label>'+
+      '<label style="font-size:10px;display:flex;align-items:center;gap:1px;cursor:pointer"><input type="checkbox" class="pvtCalcAgg" value="min" onchange="pivotUpdatePreview()"> Min</label>'+
+      '<label style="font-size:10px;display:flex;align-items:center;gap:1px;cursor:pointer"><input type="checkbox" class="pvtCalcAgg" value="max" onchange="pivotUpdatePreview()"> Max</label>'+
+    '</div>'+
+    '<span style="font-size:10px;color:#92400e;flex-shrink:0">AS</span>'+
+    '<input class="pvtCalcAlias" type="text" placeholder="Adı" style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;width:60px" onchange="pivotUpdatePreview()">'+
+    '<button onclick="pivotCalcRemoveField(\''+id+'\')" style="background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:2px 6px;border-radius:4px;font-size:11px;cursor:pointer;flex-shrink:0">✕</button>';
+  container.appendChild(div);
+  pivotUpdatePreview();
+}
+
+function pivotCalcRemoveField(id){
+  const el=document.getElementById(id);if(el)el.remove();
+  pivotUpdatePreview();
+}
+
+function pvtCalcTmplChange(sel){
+  const row=sel.closest('[id^="pvtCalc_"]');
+  if(!row)return;
+  const opSel=row.querySelector('.pvtCalcOp');
+  if(opSel)opSel.style.display=sel.value?'none':'';
+}
+
+function _getPivotCalcFieldSQL(){
+  // Returns array of {expr, alias, aggs[]}
+  const fields=[];
+  document.querySelectorAll('#pivotCalcFields [id^="pvtCalc_"]').forEach(div=>{
+    const aggs=[...div.querySelectorAll('.pvtCalcAgg:checked')].map(cb=>cb.value);
+    if(aggs.length===0)return;
+    const alias=div.querySelector('.pvtCalcAlias')?.value?.trim()||'';
+    if(div.dataset.custom==='1'){
+      const expr=div.querySelector('.pvtCalcExpr')?.value?.trim()||'';
+      if(!expr)return;
+      fields.push({expr, alias: alias||'hesap_'+(fields.length+1), aggs});
+    }else{
+      const c1=div.querySelector('.pvtCalcCol1')?.value||'';
+      const c2=div.querySelector('.pvtCalcCol2')?.value||'';
+      const op=div.querySelector('.pvtCalcOp')?.value||'/';
+      const tmpl=div.querySelector('.pvtCalcTmpl')?.value||'';
+      if(!c1||!c2)return;
+      let expr='';
+      if(tmpl==='pct') expr='(CAST("'+c1+'" AS REAL)/NULLIF(CAST("'+c2+'" AS REAL),0))*100';
+      else if(tmpl==='pctChange') expr='((CAST("'+c1+'" AS REAL)-CAST("'+c2+'" AS REAL))/NULLIF(CAST("'+c2+'" AS REAL),0))*100';
+      else if(tmpl==='round2') expr='ROUND(CAST("'+c1+'" AS REAL)/NULLIF(CAST("'+c2+'" AS REAL),0), 2)';
+      else if(tmpl==='abs') expr='ABS(CAST("'+c1+'" AS REAL)-CAST("'+c2+'" AS REAL))';
+      else expr='CAST("'+c1+'" AS REAL)'+op+'NULLIF(CAST("'+c2+'" AS REAL),0)';
+      fields.push({expr, alias: alias||c1+'_'+c2, aggs});
+    }
+  });
+  return fields;
+}
+
 function sqlBuilderUpdatePreview(){
   // SELECT clause
   const aggFunc=document.getElementById('sqlBuilderAggFunc')?.value||'';
@@ -17167,6 +17533,10 @@ function sqlBuilderUpdatePreview(){
       selectParts=checked.map(c=>'"'+c+'"');
     }
   }
+
+  // Hesaplanmış alanları SELECT'e ekle
+  const calcExprs=_getSQLCalcFieldExpressions();
+  if(calcExprs.length>0) selectParts.push(...calcExprs);
 
   let sql='SELECT '+selectParts.join(', ')+' FROM veri';
 
@@ -17641,13 +18011,16 @@ function pivotUpdatePreview(){
   const preview=document.getElementById('pivotSQLPreview');
   if(!preview)return;
 
+  // Hesaplanmış alanları al
+  const calcFields=_getPivotCalcFieldSQL();
+
   if(!rowDim){preview.textContent='-- Satır boyutu seçin';return}
-  if(valueFields.length===0){preview.textContent='-- Değer alanı ekleyin';return}
+  if(valueFields.length===0&&calcFields.length===0){preview.textContent='-- Değer alanı veya hesaplanmış alan ekleyin';return}
 
   const allGroupCols=[rowDim,...colDims];
   let sql='';
 
-  if(colDims.length===1){
+  if(colDims.length===1&&calcFields.length===0){
     // True pivot mode (single col dimension) — simplified view
     const colDim=colDims[0];
     const vf=valueFields[0];
@@ -17662,7 +18035,7 @@ function pivotUpdatePreview(){
     if(whereClause)sql+='\nWHERE '+whereClause;
     sql+='\nORDER BY "'+rowDim+'" '+orderDir;
   }else{
-    // GROUP BY mode (0 or 2+ col dimensions)
+    // GROUP BY mode (0 or 2+ col dimensions, or has calc fields)
     let selectParts=allGroupCols.map(c=>'"'+c+'"');
     selectParts.push('COUNT(*) AS _n');
     valueFields.forEach(vf=>{
@@ -17670,6 +18043,13 @@ function pivotUpdatePreview(){
         if(agg==='count')return;
         const fn=agg.toUpperCase()==='MEAN'?'AVG':agg.toUpperCase();
         selectParts.push(fn+'("'+vf.col+'") AS "'+vf.col+'_'+agg+'"');
+      });
+    });
+    // Hesaplanmış alanları da ekle
+    calcFields.forEach(cf=>{
+      cf.aggs.forEach(agg=>{
+        const fn=agg.toUpperCase()==='MEAN'?'AVG':agg.toUpperCase();
+        selectParts.push(fn+'('+cf.expr+') AS "'+cf.alias+'_'+agg+'"');
       });
     });
     sql='SELECT '+selectParts.join(',\n       ')+'\nFROM veri';
