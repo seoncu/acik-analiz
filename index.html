@@ -209,6 +209,7 @@
 .engine-mode-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(5,150,105,0.4)}50%{box-shadow:0 0 0 12px rgba(5,150,105,0)}}
 @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@keyframes fadeInBanner{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
   #globalBusyOverlay .busy-spinner{width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin .8s linear infinite}
   #globalBusyOverlay .busy-text{margin-top:12px;font-size:14px;color:#334155;font-weight:600}
   .join-panel{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:16px}
@@ -2373,16 +2374,84 @@ function _fmtNum(n){
 // Patch renderFileList to also check big file warning
 const _origRenderFileList=typeof renderFileList==='function'?renderFileList:null;
 // Wrap a heavy sync computation: shows overlay, yields to browser, runs fn, hides overlay
-function _busyRun(msg,fn){
+// Eğer hesaplama _SQL_SUGGEST_THRESHOLD_MS'den uzun sürerse, aktif sekmeye SQL önerisi banner'ı gösterir
+function _busyRun(msg,fn,_skipSqlBanner){
   _showBusy(msg);
   return new Promise(resolve=>{
     requestAnimationFrame(()=>{
       setTimeout(()=>{
-        try{const result=fn();resolve(result)}catch(e){console.error('_busyRun error:',e);resolve(null)}finally{_hideBusy()}
-      },30); // 30ms delay ensures the overlay is painted before heavy work starts
+        const _t0=performance.now();
+        try{const result=fn();resolve(result)}catch(e){console.error('_busyRun error:',e);resolve(null)}finally{
+          _hideBusy();
+          // SQL önerisi: hesaplama uzun sürdüyse aktif sekmeye banner göster
+          if(!_skipSqlBanner){
+            const _elapsed=performance.now()-_t0;
+            if(_elapsed>_SQL_SUGGEST_THRESHOLD_MS&&!_sqlBannerDismissed){
+              const _activeTab=document.querySelector('.tab-btn.active');
+              const _tabKey=_activeTab?.getAttribute('data-tab')||'';
+              if(_tabKey&&!_SQL_EXCLUDED_TABS.includes(_tabKey)){
+                const _tabMap={dashboard:'tabDashboard',quickview:'tabQuickview',topbottom:'tabTopBottom',summary:'tabSummary',stats:'tabStats',correlation:'tabCorrelation',crosstab:'tabCrosstab',mapview:'tabMapView'};
+                const _tabEl=document.getElementById(_tabMap[_tabKey]||'');
+                if(_tabEl)_showSQLSuggestionBanner(_tabEl);
+                console.log('[PERF] _busyRun hesaplama süresi: '+(_elapsed/1000).toFixed(1)+'s → SQL önerisi gösteriliyor');
+              }
+            }
+          }
+        }
+      },30);
     });
   });
 }
+
+// === SQL SUGGESTION BANNER — Yavaş hesaplamalarda SQL önerisi ===
+const _SQL_SUGGEST_THRESHOLD_MS=3000; // 3 saniyeden uzun süren hesaplamalarda banner göster
+const _SQL_EXCLUDED_TABS=['sql','advstats']; // Bu sekmelerde gösterme
+let _sqlBannerDismissed=false; // Kullanıcı kapattıysa bir daha gösterme (oturum boyunca)
+
+function _showSQLSuggestionBanner(targetEl){
+  if(_sqlBannerDismissed)return;
+  if(!targetEl)return;
+  // Zaten banner varsa tekrar ekleme
+  if(targetEl.querySelector('.sql-suggest-banner'))return;
+  const banner=document.createElement('div');
+  banner.className='sql-suggest-banner';
+  banner.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 14px;margin:8px 0 12px 0;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #93c5fd;border-radius:10px;font-size:12.5px;color:#1e40af;animation:fadeInBanner .4s ease';
+  banner.innerHTML='<span style="font-size:18px;flex-shrink:0">💡</span>'
+    +'<div style="flex:1"><b>Daha hızlı sonuç almak ister misiniz?</b><br>'
+    +'<span style="color:#1e3a8a">Büyük verilerde <a href="javascript:void(0)" onclick="switchAnalysisTab(\'sql\',document.querySelector(\'[data-tab=sql]\'));this.closest(\'.sql-suggest-banner\').remove()" style="color:#2563eb;font-weight:600;text-decoration:underline">SQL Sorgusu</a> ile aynı analizi çok daha hızlı yapabilirsiniz.</span></div>'
+    +'<button onclick="_sqlBannerDismissed=true;this.closest(\'.sql-suggest-banner\').remove()" style="background:none;border:none;color:#60a5fa;font-size:16px;cursor:pointer;padding:2px 6px;flex-shrink:0" title="Kapat">&times;</button>';
+  // İlk çocuk olarak ekle (başlık altına)
+  const firstChild=targetEl.firstElementChild;
+  if(firstChild)targetEl.insertBefore(banner,firstChild);
+  else targetEl.appendChild(banner);
+}
+
+// Zamanlayıcılı hesaplama wrapper'ı — belirli süreyi aşarsa banner gösterir
+function _timedCalc(fn,tabId){
+  const t0=performance.now();
+  const result=fn();
+  const elapsed=performance.now()-t0;
+  if(elapsed>_SQL_SUGGEST_THRESHOLD_MS&&tabId&&!_SQL_EXCLUDED_TABS.includes(tabId)){
+    const tabEl=document.getElementById({dashboard:'tabDashboard',quickview:'tabQuickview',topbottom:'tabTopBottom',summary:'tabSummary',stats:'tabStats',correlation:'tabCorrelation',crosstab:'tabCrosstab',mapview:'tabMapView'}[tabId]||'');
+    if(tabEl)_showSQLSuggestionBanner(tabEl);
+    console.log('[PERF] '+tabId+' hesaplama süresi: '+(elapsed/1000).toFixed(1)+'s → SQL önerisi gösteriliyor');
+  }
+  return result;
+}
+
+// Async versiyonu
+async function _timedCalcAsync(fn,tabId){
+  const t0=performance.now();
+  const result=await fn();
+  const elapsed=performance.now()-t0;
+  if(elapsed>_SQL_SUGGEST_THRESHOLD_MS&&tabId&&!_SQL_EXCLUDED_TABS.includes(tabId)){
+    const tabEl=document.getElementById({dashboard:'tabDashboard',quickview:'tabQuickview',topbottom:'tabTopBottom',summary:'tabSummary',stats:'tabStats',correlation:'tabCorrelation',crosstab:'tabCrosstab',mapview:'tabMapView'}[tabId]||'');
+    if(tabEl)_showSQLSuggestionBanner(tabEl);
+    console.log('[PERF] '+tabId+' async hesaplama süresi: '+(elapsed/1000).toFixed(1)+'s → SQL önerisi gösteriliyor');
+  }
+  return result;
+}
+
 let _reservoirSample=[]; // pre-built sample during processing for fast dashboard
 let _ALLVALS_LIM=2000000,_UNIQSET_LIM=10000000; // dynamic limits for large data
 let _rsvRowCount=0; // running row counter for reservoir sampling
@@ -6183,10 +6252,10 @@ async function computeMultiAggAsync(xCol,yCols,aggType){
         if(!result.groups){
           result.groups=result.labels.map((lbl,i)=>{
             const yData=(result.datasets||[]).map(ds=>{
-              const v=ds.data?.[i]||0;
+              const v=(ds.data?.[i]!=null)?ds.data[i]:0;
               return{sum:v,n:1,min:v,max:v,sumSq:v*v,numFreq:{},vals:[v]};
             });
-            return[lbl,{count:result.datasets?.[0]?.data?.[i]||0,yData}];
+            return[lbl,{count:(result._counts&&result._counts[i])||1,yData}];
           });
         }
         _aggCache[cacheKey]=result;
@@ -6202,6 +6271,16 @@ function computeMultiAgg(xCol,yCols,aggType){
   const _fcCol=_freqCriterionCol||'';
   const cacheKey=xCol+'|'+yCols.join(',')+':'+aggType+':'+filterHash()+':'+drillStack.length+':fc='+_fcCol;
   if(_aggCache[cacheKey])return _aggCache[cacheKey];
+
+  // BACKEND ACTIVE but no cache: trigger async pre-fetch and return sample-based result
+  // This prevents returning zeros when outputChunks is incomplete in backend mode
+  if(window._BACKEND_ACTIVE&&typeof window._backendAggregate==='function'&&aggType!=='count'){
+    console.log('[CHART] computeMultiAgg: cache miss with backend active, triggering async fetch for',xCol,yCols,aggType);
+    // Fire async fetch to populate cache for next call
+    computeMultiAggAsync(xCol,yCols,aggType).then(r=>{
+      if(r&&r._fromBackend){console.log('[CHART] Backend data received, cache populated')}
+    }).catch(()=>{});
+  }
 
   // Check if output data is available (may be empty in restored sessions)
   if(!_hasOutputData()&&!(aggType==='count'&&colStats[xCol]&&colStats[xCol].freq)){
@@ -6344,7 +6423,13 @@ function computeMultiAgg(xCol,yCols,aggType){
     datasets.push({label:_fcLabel,data:sorted.map(([,g])=>g.count)});
   }
 
-  const result={labels,datasets,groups:sorted};
+  const result={labels,datasets,groups:sorted,fullLabels:sorted.map(e=>e[0])};
+  // Debug: log aggregation results
+  const _totalN=sorted.reduce((s,[,g])=>s+g.count,0);
+  const _firstVals=datasets.length?datasets[0].data.slice(0,3):[];
+  console.log('[CHART] computeMultiAgg JS:',xCol,'×',yCols.join(','),'agg='+aggType,
+    'groups='+sorted.length,'totalN='+_totalN,'firstVals='+JSON.stringify(_firstVals),
+    'yIndices='+JSON.stringify(yIndices.map(y=>({idx:y.idx,calc:y.calc}))));
   _aggCache[cacheKey]=result;
   return result;
 }
@@ -6912,13 +6997,14 @@ function addDashboardChart(){
           // Build groups array: [[label, {count, yData:[{sum,n,...}]}], ...]
           backendResult.groups=backendResult.labels.map((lbl,i)=>{
             const yData=(backendResult.datasets||[]).map(ds=>{
-              const v=ds.data?.[i]||0;
+              const v=(ds.data?.[i]!=null)?ds.data[i]:0;
               return{sum:v,n:1,min:v,max:v,sumSq:v*v,numFreq:{},vals:[v]};
             });
-            const cnt=backendResult.datasets?.[0]?.data?.[i]||0;
+            const cnt=(backendResult._counts&&backendResult._counts[i])||1;
             return[lbl,{count:cnt,yData}];
           });
         }
+        console.log('[CHART] Backend pre-fetch OK:',backendResult.labels.length,'labels, first values:',backendResult.datasets?.map(ds=>ds.data?.[0]));
         if(colorCol){
           const ck='color:'+xCol+'|'+colorCol+'|'+(yCols[0]||'')+':'+agg+':'+filterHash()+':'+drillStack.length;
           _aggCache[ck]=backendResult;
@@ -7254,8 +7340,14 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
     }else if(type==='dualAxis'){
       showError('Çift Eksen çok ölçülü mod için tasarlanmıştır.');box.remove();return;
     }else{
-      // Grouped or Stacked bar
-      chartConfig={type:'bar',data:{labels:result.labels,datasets:result.datasets},options:{plugins:{legend:{display:true,labels:{font:{size:10}}}},scales:{x:{stacked:isStacked},y:{stacked:isStacked}},interaction:{mode:'index',intersect:false}}};
+      // Grouped or Stacked bar — ensure datasets have colors
+      const _coloredDs=result.datasets.map((ds,di)=>({
+        label:ds.label,data:ds.data,
+        backgroundColor:ds.backgroundColor||CHART_COLORS[di%CHART_COLORS.length]+'cc',
+        borderColor:ds.borderColor||CHART_COLORS[di%CHART_COLORS.length],
+        borderWidth:1
+      }));
+      chartConfig={type:'bar',data:{labels:result.labels,datasets:_coloredDs},options:{plugins:{legend:{display:multiY,labels:{font:{size:10}}}},scales:{x:{stacked:isStacked},y:{stacked:isStacked,beginAtZero:true}},interaction:{mode:'index',intersect:false}}};
     }
 
   }else{
@@ -7431,7 +7523,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
   let inst=null;
   const _cLabels=chartConfig.data?.labels||[];
   const _cDs=chartConfig.data?.datasets||[];
-  const _chartHasData=_cDs.some(ds=>ds.data&&ds.data.length>0&&ds.data.some(v=>v!==null&&v!==undefined&&v!==0));
+  const _chartHasData=_cDs.some(ds=>ds.data&&ds.data.length>0);
 
   // Always try Chart.js first
   let _chartOK=false;
@@ -7460,6 +7552,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
         const allZero=imgData.data.every(v=>v===0);
         if(allZero&&_vrfCanvas.width>0&&_vrfCanvas.height>0){
           console.warn('[CHART] Post-render check: canvas is blank, adding HTML fallback');
+          _vrfCanvas.style.display='none';
           _vrfBox.insertAdjacentHTML('beforeend',_renderHTMLBarChart(_cLabels,_cDs,title));
         }
       }catch(e){}
@@ -7795,7 +7888,20 @@ function refreshAllCharts(){
         }
         for(const ci of chartInstances){
           if(ci.type!=='pivotTable'){
-            await computeMultiAggAsync(ci.xCol,ci.yCols,ci.agg);
+            if(ci.colorCol){
+              // Color-grouped chart: pre-fetch via backend
+              try{
+                const sortMode=document.getElementById('dashSort')?document.getElementById('dashSort').value:'desc';
+                const limitVal=document.getElementById('dashLimit')?parseInt(document.getElementById('dashLimit').value)||15:15;
+                const cr=await window._backendAggregate(ci.xCol,ci.yCols.length?ci.yCols:[],ci.agg,sortMode,limitVal,ci.colorCol);
+                if(cr&&cr.labels){
+                  const ck='color:'+ci.xCol+'|'+ci.colorCol+'|'+(ci.yCols[0]||'')+':'+ci.agg+':'+filterHash()+':'+drillStack.length;
+                  cr._fromBackend=true;_aggCache[ck]=cr;
+                }
+              }catch(e){}
+            }else{
+              await computeMultiAggAsync(ci.xCol,ci.yCols,ci.agg);
+            }
           }
         }
       }catch(e){console.warn('[BACKEND] Pre-fetch failed:',e)}
@@ -7808,6 +7914,7 @@ function refreshAllCharts(){
 }
 
 function _rebuildAllCharts(){
+  const _rebuildT0=performance.now();
   // Rebuild each chart with current filters
   chartInstances.forEach(ci=>{
     const box=document.getElementById(ci.id+'_box');
@@ -7815,6 +7922,12 @@ function _rebuildAllCharts(){
     // Destroy old chart instance
     if(ci.instance){try{ci.instance.destroy()}catch(e){}}
     ci.instance=null;
+    // Clear ALL old content (canvas, HTML fallback, etc.) to prevent empty space
+    const oldCanvases=box.querySelectorAll('canvas');
+    oldCanvases.forEach(c=>c.remove());
+    // Remove old HTML bar fallback divs
+    const oldFallbacks=box.querySelectorAll('div[style*="overflow-y:auto"]');
+    oldFallbacks.forEach(f=>f.remove());
     // Rebuild chart
     _buildChart(ci.id,box,ci.xCol,ci.yCols,ci.type,ci.agg,ci.colorCol||'',ci.subGroups||[]);
     // Update instance reference from chartInstances (buildChart pushes new entry)
@@ -7828,6 +7941,12 @@ function _rebuildAllCharts(){
   // Refresh active tab content
   _refreshActiveTab();
   if(totalRows>500000)_hideBusy();
+  // SQL önerisi: grafik yenileme uzun sürdüyse
+  const _rebuildElapsed=performance.now()-_rebuildT0;
+  if(_rebuildElapsed>_SQL_SUGGEST_THRESHOLD_MS&&!_sqlBannerDismissed){
+    const _dashEl=document.getElementById('tabDashboard');
+    if(_dashEl&&!_dashEl.classList.contains('hidden'))_showSQLSuggestionBanner(_dashEl);
+  }
 }
 
 function _refreshActiveTab(){
@@ -8619,7 +8738,13 @@ function renderTopBottomGroupData(){
       try{
         area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px"><span class="computing-spinner"></span> Python motorunda hesaplanıyor...</p>';
         const numCols=outHeaders.filter(h=>colStats[h]&&colStats[h].isNumeric);
+        const _grpT0=performance.now();
         const result=await window._backendGroupAnalysis(indepVar,subVar,numCols,metric,direction,20,_tbFcCol);
+        const _grpElapsed=performance.now()-_grpT0;
+        if(_grpElapsed>_SQL_SUGGEST_THRESHOLD_MS){
+          const _tbEl=document.getElementById('tabTopBottom');
+          if(_tbEl)_showSQLSuggestionBanner(_tbEl);
+        }
         if(result&&result.groups){
           return renderTopBottomGroupDataJS(area,indepVar,subVar,direction,metric,result);
         }
