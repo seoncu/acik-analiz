@@ -1725,6 +1725,51 @@
 let currentFile=null,rawText='',rawLines=[],headers=[],delimiter=',',delimiterMode=',',previewRows=[],maskConfig={},outputChunks=[],abortFlag=false;
 let colStats={},totalRows=0,outHeaders=[];
 let chartInstances=[];
+// === TABLEAU-QUALITY CHART DEFAULTS ===
+(function _initChartDefaults(){
+  function _apply(){
+    if(typeof Chart==='undefined'){setTimeout(_apply,200);return}
+    const d=Chart.defaults;
+    // Typography
+    d.font.family="'Inter','Segoe UI','Helvetica Neue',Arial,sans-serif";
+    d.font.size=12;
+    d.color='#374151';
+    // Animation
+    d.animation.duration=600;
+    d.animation.easing='easeOutQuart';
+    // Layout
+    d.layout={padding:{top:8,right:12,bottom:8,left:8}};
+    // Plugins
+    d.plugins.legend.labels.usePointStyle=true;
+    d.plugins.legend.labels.padding=14;
+    d.plugins.legend.labels.font={size:11,weight:'500'};
+    d.plugins.tooltip.backgroundColor='rgba(15,23,42,0.92)';
+    d.plugins.tooltip.titleFont={size:12,weight:'600'};
+    d.plugins.tooltip.bodyFont={size:11};
+    d.plugins.tooltip.padding=10;
+    d.plugins.tooltip.cornerRadius=8;
+    d.plugins.tooltip.displayColors=true;
+    d.plugins.tooltip.boxPadding=4;
+    d.plugins.tooltip.caretSize=6;
+    // Element defaults
+    d.elements.bar.borderRadius=4;
+    d.elements.bar.borderSkipped='bottom';
+    d.elements.line.tension=0.35;
+    d.elements.line.borderWidth=2.5;
+    d.elements.line.fill=false;
+    d.elements.point.radius=3;
+    d.elements.point.hoverRadius=6;
+    d.elements.point.borderWidth=2;
+    d.elements.point.backgroundColor='#fff';
+    d.elements.arc.borderWidth=1.5;
+    // Scale defaults
+    d.scale.grid={color:'rgba(226,232,240,0.6)',lineWidth:0.8,drawBorder:false};
+    d.scale.ticks={padding:6,font:{size:11}};
+    d.scale.border={display:false};
+    console.log('[CHART] Tableau-quality defaults applied');
+  }
+  _apply();
+})();
 let uploadedFiles=[]; // for multi-file merge
 let fileLabels=[]; // editable labels per file (e.g., "Guz", "Bahar")
 let mergedFile=null;
@@ -2291,9 +2336,12 @@ function showStep(name){
   const _heroBanner=document.getElementById('heroBanner');
   if(_heroBanner)_heroBanner.style.display=(name==='Welcome')?'':'none';
   if(name==='Analysis'){
-    // PERFORMANCE: free reservoir sample when entering analysis — colStats + streamOutputRows cover all needs
-    if(totalRows>500000&&_reservoirSample.length>500000){
-      console.log('Bellek optimizasyonu: _reservoirSample serbest bırakılıyor ('+_reservoirSample.length+' satır)');
+    // PERFORMANCE: Backend aktifse reservoir sample'ı makul boyutta tut (istatistik testleri için yeterli, bellek için güvenli)
+    if(window._BACKEND_ACTIVE&&_reservoirSample.length>500000){
+      console.log('[PERF] Backend aktif — _reservoirSample '+_reservoirSample.length+' → 500K küçültülüyor (istatistik testleri için yeterli)');
+      _reservoirSample.length=500000;
+    }else if(!window._BACKEND_ACTIVE&&totalRows>500000&&_reservoirSample.length>500000){
+      console.log('[PERF] Bellek optimizasyonu: _reservoirSample serbest bırakılıyor ('+_reservoirSample.length+' satır)');
       _reservoirSample.length=0;_reservoirSample=[];
     }
     renderAnalysisUI();setTimeout(renderGlobalFilterBar,100);setTimeout(()=>_initSearchableSelects(),300);
@@ -6416,7 +6464,7 @@ const CHART_PALETTES={
   blues:['#e3f2fd','#bbdefb','#90caf9','#64b5f6','#42a5f5','#2196f3','#1e88e5','#1976d2','#1565c0','#0d47a1'],
   greenOrange:['#d7191c','#fdae61','#ffffbf','#abd9e9','#2c7bb6']
 };
-let CHART_COLORS=CHART_PALETTES.default;
+let CHART_COLORS=CHART_PALETTES.tableau10;
 function updateChartColors(){
   const palette=document.getElementById('colorPalette')?.value||'default';
   CHART_COLORS=CHART_PALETTES[palette]||CHART_PALETTES.default;
@@ -6650,7 +6698,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
   if(type==='scatter'){
     const col2=yCols[0]||xCol;
     const pts=computeScatterData(xCol,col2);
-    chartConfig={type:'scatter',data:{datasets:[{label:xCol+' vs '+col2,data:pts,backgroundColor:'#3b82f680',pointRadius:2}]},options:{plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:xCol}},y:{title:{display:true,text:col2}}}}};
+    chartConfig={type:'scatter',data:{datasets:[{label:xCol+' vs '+col2,data:pts,backgroundColor:'rgba(78,121,167,0.45)',borderColor:'#4e79a7',pointRadius:2.5,pointHoverRadius:5,pointBorderWidth:1}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.parsed.x.toLocaleString('tr-TR')+' / '+c.parsed.y.toLocaleString('tr-TR')}}}},scales:{x:{title:{display:true,text:xCol,font:{size:12,weight:'600'}},grid:{color:'rgba(226,232,240,0.5)'}},y:{title:{display:true,text:col2,font:{size:12,weight:'600'}},grid:{color:'rgba(226,232,240,0.5)'}}}}};
 
   }else if(type==='histogram'){
     const col=yCols[0]||xCol;if(!col){showError('Histogram için sütun seçin.');box.remove();return}
@@ -6666,7 +6714,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
     const lbls=[];
     for(let b=0;b<binCount;b++)lbls.push((fMin+b*binWidth).toFixed(1));
     Object.entries(filteredFreq).forEach(([v,c])=>{const n=parseFloat(v.replace(',','.'));if(!isNaN(n)){let bi=Math.floor((n-fMin)/binWidth);if(bi>=binCount)bi=binCount-1;if(bi<0)bi=0;bins[bi]+=c}});
-    chartConfig={type:'bar',data:{labels:lbls,datasets:[{label:col,data:bins,backgroundColor:'#3b82f6',barPercentage:1,categoryPercentage:1}]},options:{plugins:{legend:{display:false}},scales:{y:{title:{display:true,text:'Frekans'}},x:{title:{display:true,text:col}}}}};
+    chartConfig={type:'bar',data:{labels:lbls,datasets:[{label:col,data:bins,backgroundColor:'rgba(78,121,167,0.75)',borderColor:'#4e79a7',borderWidth:1,barPercentage:1,categoryPercentage:1,borderRadius:0}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{title:function(c){const i=c[0].dataIndex;return lbls[i]+(i<binCount-1?' – '+lbls[i+1]:'+')}}}},scales:{y:{title:{display:true,text:'Frekans',font:{size:12,weight:'600'}}},x:{title:{display:true,text:col,font:{size:12,weight:'600'}}}}}};
 
   }else if(type==='boxplot'){
     // Box Plot (distribution chart)
@@ -7240,7 +7288,7 @@ function _refreshActiveTab(){
       if(tid==='tabTopBottom'){try{renderTopBottomData()}catch(e){}}
       if(tid==='tabQuickview'){try{renderQuickView()}catch(e){}}
       if(tid==='tabSummary'){try{renderSummaryStatsTable()}catch(e){}}
-      if(tid==='tabStats'){try{renderSummaryStats()}catch(e){}}
+      if(tid==='tabStats'){try{renderSummaryStats()}catch(e){};try{renderDetailedStats()}catch(e){}}
       if(tid==='tabCorrelation'){try{computeCorrelationMatrix()}catch(e){}}
       if(tid==='tabCrosstab'){try{computeCrossTab()}catch(e){}}
       if(tid==='tabAdvStats'){try{advStatsRefreshIfActive()}catch(e){}}
@@ -8541,7 +8589,11 @@ function renderSummaryStatsTable(){
           }
         }
 
-        if(!html)html='<p class="text-sm text-muted">Sonuç bulunamadı.</p>';
+        if(!html){
+          console.warn('[SUMMARY] Backend boş sonuç döndü, JS fallback...');
+          _renderSummaryStatsJS(catCols,numCols);
+          return;
+        }
         area.innerHTML=html;
       }catch(e){
         console.warn('[SUMMARY] Backend hatası, JS fallback:',e);
@@ -8757,17 +8809,23 @@ function renderDetailedStats(){
   const col=document.getElementById('detailStatCol').value;
   const area=document.getElementById('detailStatsArea');
   if(!col||!colStats[col]){area.innerHTML='<p class="text-sm text-muted">Sütun seçin.</p>';return}
-  const s=colStats[col];
-  const isNum=s.isNumeric&&s.numCount>0;
-  const filled=s.count-s.empty;
+  // Filtre aktifse filtrelenmiş istatistikleri kullan
+  const anyFilter=outHeaders.some(h=>hasActiveFilter(h));
+  const s=anyFilter?(_computeFilteredColStats()||{})[col]||colStats[col]:colStats[col];
+  const origS=colStats[col]; // orijinal tip bilgisi için
+  const isNum=origS.isNumeric&&origS.numCount>0;
+  const filled=s.count-(s.empty||0);
   const uniq=s.uniqueCount||(s._freqSize||Object.keys(s.freq).length);
 
   let html='<h3 style="font-size:15px;margin-bottom:12px">'+escHtml(col)+' <span class="tag '+(isNum?'tag-num':'tag-cat')+'">'+(isNum?'Sayısal':'Kategorik')+'</span></h3>';
+  if(anyFilter){
+    html+='<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:6px 12px;margin-bottom:10px;font-size:11px;color:#92400e">🔍 <strong>Filtre aktif</strong> — Aşağıdaki değerler filtrelenmiş veriye göre hesaplanmıştır.</div>';
+  }
 
   // Basic stats
   html+='<div class="stat-detail-grid mb-16">';
   html+='<div class="stat-detail-card"><div class="sdv">'+filled.toLocaleString('tr-TR')+'</div><div class="sdl">Dolu (Satır)</div></div>';
-  html+='<div class="stat-detail-card"><div class="sdv">'+s.empty.toLocaleString('tr-TR')+'</div><div class="sdl">Boş</div></div>';
+  html+='<div class="stat-detail-card"><div class="sdv">'+(s.empty||0).toLocaleString('tr-TR')+'</div><div class="sdl">Boş</div></div>';
   html+='<div class="stat-detail-card"><div class="sdv">'+uniq.toLocaleString('tr-TR')+'</div><div class="sdl">Benzersiz</div></div>';
   html+='<div class="stat-detail-card"><div class="sdv">'+(filled?((s.empty/s.count)*100).toFixed(1)+'%':'0%')+'</div><div class="sdl">Eksık Oran</div></div>';
 
@@ -9667,6 +9725,9 @@ function buildLLMPrompt(){
 
 // Call LLM API once
 async function callLLM(prompt,model,endpoint,timeoutMs){
+  // Varsayılan model/endpoint (çağıran model belirtmezse)
+  if(!model){const mEl=document.getElementById('llmModel');model=mEl?mEl.value.trim()||'llama3.1:8b':'llama3.1:8b'}
+  if(!endpoint){const eEl=document.getElementById('llmEndpoint');endpoint=eEl?eEl.value.trim()||'http://localhost:11434/api/generate':'http://localhost:11434/api/generate'}
   timeoutMs=timeoutMs||15000;
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),timeoutMs);
@@ -9757,26 +9818,19 @@ async function sendSmartLLM(){
   let groupNames=[];
 
   if(window._BACKEND_ACTIVE){
-    // Backend modu: tüm grup değerlerini al (sample API ile)
-    try{
-      const sampleResp=await window._backendSample(100,0);
-      if(sampleResp&&sampleResp.rows){
-        const uniqueGroups=new Set();
-        sampleResp.rows.forEach(row=>{
-          const gv=row[groupCol]||'(boş)';
-          uniqueGroups.add(gv);
-        });
-        groupNames=Array.from(uniqueGroups).sort();
-      }
-    }catch(e){
-      console.warn('[LLM] Backend sample hataları, JS fallback');
-      groupMap={};
-      streamOutputRows(row=>{
-        const gv=row[gi]||'(boş)';
-        if(!groupMap[gv])groupMap[gv]=[];
-        groupMap[gv].push(row);
-      });
-      groupNames=Object.keys(groupMap).sort((a,b)=>groupMap[b].length-groupMap[a].length);
+    // Backend modu: colStats.freq'den TÜM benzersiz grup değerlerini al (tam veri)
+    const gFreq=colStats[groupCol]&&colStats[groupCol].freq?colStats[groupCol].freq:{};
+    groupNames=Object.entries(gFreq).sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+    if(!groupNames.length){
+      // Fallback: backend sample ile dene
+      try{
+        const sampleResp=await window._backendSample(5000,0);
+        if(sampleResp&&sampleResp.rows){
+          const uniqueGroups=new Set();
+          sampleResp.rows.forEach(row=>{uniqueGroups.add(row[groupCol]||'(boş)')});
+          groupNames=Array.from(uniqueGroups).sort();
+        }
+      }catch(e){console.warn('[LLM] Backend sample hatası')}
     }
   }else{
     // JS modu: stream tüm satırları
@@ -9855,7 +9909,7 @@ async function sendSmartLLM(){
   compiled+='  '+(isSingleBatch?('TEK GRUP RAPORU: '+singleGroupVal):'ALAN BAZLI AKADEMİK RAPOR')+'\n';
   compiled+='  Gruplama: '+groupCol+' | Tarih: '+(new Date().toLocaleDateString('tr-TR'))+'\n';
   const totalRowsInReport=results.reduce((a,r)=>a+r.count,0);
-  compiled+='  Toplam grup: '+results.length+' | Rapordaki kayıt: '+totalRowsInReport+(isSingleBatch?(' / '+rows.length+' toplam'):'')+'\n';
+  compiled+='  Toplam grup: '+results.length+' | Rapordaki kayıt: '+totalRowsInReport+(isSingleBatch?(' / '+totalRows+' toplam'):'')+'\n';
   compiled+='═══════════════════════════════════════════════════\n\n';
 
   // Summary table
@@ -9954,7 +10008,7 @@ async function showRuleBasedReport(){
     compiled+='  '+(isSingleBatch?('TEK GRUP RAPORU: '+singleGroupVal):'ALAN BAZLI OTOMATİK RAPOR')+'\n';
     compiled+='  Gruplama: '+groupCol+' | Tarih: '+(new Date().toLocaleDateString('tr-TR'))+'\n';
     const totalRowsInReport=results.reduce((a,r)=>a+r.count,0);
-    compiled+='  Toplam grup: '+results.length+' | Rapordaki kayıt: '+totalRowsInReport+(isSingleBatch?(' / '+rows.length+' toplam'):'')+'\n';
+    compiled+='  Toplam grup: '+results.length+' | Rapordaki kayıt: '+totalRowsInReport+(isSingleBatch?(' / '+totalRows+' toplam'):'')+'\n';
     compiled+='═══════════════════════════════════════════════════\n\n';
     compiled+='OZET TABLO\n─────────────────────────────────\n';
     results.forEach(r=>{compiled+='  '+r.group+' (n='+r.count+') [OK]\n'});
@@ -10277,9 +10331,8 @@ function onSmartIndepChange(){
   if(!col)return;
   const s=colStats[col];
   if(!s||!s.freq)return;
-  // PERFORMANCE: for large freq maps, limit dropdown to top 500 entries
-  const freqLen=Object.keys(s.freq).length;
-  const keys=freqLen>500?_topNFreq(s.freq,500):Object.entries(s.freq).sort((a,b)=>b[1]-a[1]);
+  // TÜM kategorik değerler dropdown'da gösterilmeli
+  const keys=Object.entries(s.freq).sort((a,b)=>b[1]-a[1]);
   const optHtml=[];
   keys.forEach(([v,c])=>{optHtml.push('<option value="'+escHtml(v)+'">'+escHtml(v)+' (n='+c+')</option>')});
   sel.innerHTML=optHtml.join('');
@@ -10440,22 +10493,15 @@ async function buildGroupSection(indepVar,groupVal,depVars,model,endpoint,onProg
   if(window._BACKEND_ACTIVE){
     try{
       const grResp=await window._backendGroupRows(indepVar,groupVal);
-      if(grResp&&grResp.rows){
-        groupRows=grResp.rows.map((rowArr)=>{
-          // Backend satırları {headers:[], rows:[[],...]} formatında dönüyor
-          // Onları array formatına dönüştür
-          const rowObj={};
-          grResp.headers.forEach((h,ci)=>{rowObj[h]=rowArr[ci]});
-          // Original array formatını da oluştur
-          return rowArr;
+      if(grResp&&grResp.rows&&grResp.headers){
+        // Backend headers'ı outHeaders sırasına dönüştür (indeks eşleme)
+        const bHdr=grResp.headers;
+        const idxMap=outHeaders.map(h=>bHdr.indexOf(h));
+        groupRows=grResp.rows.map(rowArr=>{
+          // outHeaders sırasında yeni array oluştur
+          return idxMap.map(bi=>bi>=0?(rowArr[bi]!=null?String(rowArr[bi]):''):'');
         });
-        // Also set up map for later lookups
-        for(let i=0;i<grResp.headers.length;i++){
-          if(grResp.headers[i]===indepVar){
-            // Verify group val
-            break;
-          }
-        }
+        console.log('[buildGroupSection] Backend: '+groupRows.length+' satır ('+indepVar+'='+groupVal+')');
       }
     }catch(e){
       console.warn('[buildGroupSection] Backend hatası, JS fallback:',e);
@@ -13815,15 +13861,18 @@ function _streamGroupedValues(groupCol,valCol){
         groups[g].length=targetN;
       }
     });
-    groups._sampled=true;
     const totalSampled=groupKeys.reduce((s,g)=>s+groups[g].length,0);
-    groups._sampleInfo='Tabakalı örnekleme: '+totalSampled.toLocaleString('tr-TR')+' / '+totalValid.toLocaleString('tr-TR')+' gözlem ('+groupKeys.length+' grup, orantılı)';
-    groups._sampleN=totalSampled;
-    groups._populationN=totalValid;
+    // Non-enumerable metadata — Object.keys(groups) won't include these
+    Object.defineProperties(groups,{
+      '_sampled':{value:true,enumerable:false,writable:true},
+      '_sampleInfo':{value:'Tabakalı örnekleme: '+totalSampled.toLocaleString('tr-TR')+' / '+totalValid.toLocaleString('tr-TR')+' gözlem ('+groupKeys.length+' grup, orantılı)',enumerable:false,writable:true},
+      '_sampleN':{value:totalSampled,enumerable:false,writable:true},
+      '_populationN':{value:totalValid,enumerable:false,writable:true}
+    });
     window._lastSamplingInfo=groups;
   }else{window._lastSamplingInfo=null}
-  // Store group population counts
-  groups._groupCounts=groupCounts;
+  // Store group population counts as non-enumerable to prevent Object.keys pollution
+  Object.defineProperty(groups,'_groupCounts',{value:groupCounts,enumerable:false,writable:true});
   return groups;
 }
 
@@ -13857,10 +13906,12 @@ function _streamPairedValues(col1,col2){
   });
   // Attach sampling metadata
   if(_useStratified&&totalValid>_MAX_PAIRS){
-    pairs._sampled=true;
-    pairs._sampleInfo='Rastgele örnekleme: '+pairs.length.toLocaleString('tr-TR')+' / '+totalValid.toLocaleString('tr-TR')+' çift';
-    pairs._sampleN=pairs.length;
-    pairs._populationN=totalValid;
+    Object.defineProperties(pairs,{
+      '_sampled':{value:true,enumerable:false,writable:true},
+      '_sampleInfo':{value:'Rastgele örnekleme: '+pairs.length.toLocaleString('tr-TR')+' / '+totalValid.toLocaleString('tr-TR')+' çift',enumerable:false,writable:true},
+      '_sampleN':{value:pairs.length,enumerable:false,writable:true},
+      '_populationN':{value:totalValid,enumerable:false,writable:true}
+    });
     window._lastSamplingInfo=pairs;
   }else{window._lastSamplingInfo=null}
   return pairs;
@@ -14267,16 +14318,164 @@ function _updateSemPathDropdowns(){
 }
 
 // ========================
+// BACKEND TEST RESULT RENDERER — Tüm veriyle yapılan backend test sonuçlarını HTML'e çevirir
+// ========================
+function _renderBackendTestResult(testId,r){
+  if(!r)return null;
+  const _p=v=>v!=null?parseFloat(v).toFixed(4):'—';
+  const _n=v=>v!=null?parseFloat(v).toFixed(2):'—';
+  const _sigBadge=p=>{const pv=parseFloat(p);if(isNaN(pv))return'';return pv<0.001?'<span style="color:#dc2626;font-weight:700">p < 0.001 ***</span>':pv<0.01?'<span style="color:#dc2626;font-weight:600">p < 0.01 **</span>':pv<0.05?'<span style="color:#f59e0b;font-weight:600">p < 0.05 *</span>':'<span style="color:#16a34a">p ≥ 0.05 (anlamsız)</span>'};
+  const _fullDataBadge='<div style="margin:8px 0;padding:6px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;font-size:11px;color:#166534;text-align:center">✅ <b>Python Motor</b> ile TÜM veri kullanılarak hesaplandı'+(r.sampled?' (tabakalı örnekleme: '+r.sample_info+')':'')+' — '+(r.elapsed?r.elapsed+'s':'')+' </div>';
+  try{
+    // === T-TEST ===
+    if(testId==='ttest'){
+      if(r.needs_selection&&r.groups){
+        const gk=Object.keys(r.groups).sort((a,b)=>a.localeCompare(b,'tr'));
+        let h='<div style="padding:12px;background:#fef3c7;border:1px solid #f59e0b;border-radius:8px"><p style="margin:0 0 8px;font-size:13px;color:#92400e"><b>⚠️ '+gk.length+' grup bulundu.</b> t-Testi için 2 grup seçin:</p>';
+        h+='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">';
+        h+='<div><label style="font-size:11px;font-weight:600">Grup 1:</label><select id="ttestGroup1" class="dash-select" style="min-width:120px">';
+        gk.forEach((g,i)=>{h+='<option value="'+escHtml(g)+'"'+(i===0?' selected':'')+'>'+escHtml(g)+' (n='+(r.groups[g].n||'?')+')</option>'});
+        h+='</select></div><div><label style="font-size:11px;font-weight:600">Grup 2:</label><select id="ttestGroup2" class="dash-select" style="min-width:120px">';
+        gk.forEach((g,i)=>{h+='<option value="'+escHtml(g)+'"'+(i===1?' selected':'')+'>'+escHtml(g)+' (n='+(r.groups[g].n||'?')+')</option>'});
+        h+='</select></div><button class="btn btn-sm" onclick="_runTTestWithSelectedGroups()" style="background:#3b82f6;color:#fff">▶ Karşılaştır</button></div></div>';
+        return h+_fullDataBadge;
+      }
+      if(!r.groups||r.groups.length<2)return null;
+      let h='<table class="stats-result-table"><tr><th></th><th>'+escHtml(r.groups[0])+'</th><th>'+escHtml(r.groups[1])+'</th></tr>';
+      h+='<tr><td>n</td><td>'+r.n1+'</td><td>'+r.n2+'</td></tr>';
+      h+='<tr><td>Ortalama</td><td>'+_n(r.m1)+'</td><td>'+_n(r.m2)+'</td></tr>';
+      h+='<tr><td>SS</td><td>'+_n(r.s1)+'</td><td>'+_n(r.s2)+'</td></tr></table>';
+      h+='<div style="margin:10px 0;padding:10px 14px;background:#f1f5f9;border-radius:8px">';
+      h+='<b>t('+r.df+') = '+_n(r.t)+'</b>, '+_sigBadge(r.p)+'<br>';
+      h+='Cohen\'s d = '+_n(r.cohens_d);
+      const d=Math.abs(r.cohens_d||0);h+=' ('+( d<0.2?'ihmal edilebilir':d<0.5?'küçük':d<0.8?'orta':'büyük')+' etki)';
+      h+='</div>';
+      return h+_fullDataBadge;
+    }
+    // === ANOVA ===
+    if(testId==='anova'){
+      const gs=r.group_stats||r.groups;
+      if(!gs)return null;
+      let h='<table class="stats-result-table"><tr><th>Grup</th><th>n</th><th>Ortalama</th><th>SS</th></tr>';
+      const gKeys=Object.keys(gs).sort((a,b)=>a.localeCompare(b,'tr'));
+      gKeys.forEach(g=>{const s=gs[g];h+='<tr><td>'+escHtml(g)+'</td><td>'+(s.n||'—')+'</td><td>'+_n(s.mean)+'</td><td>'+_n(s.std)+'</td></tr>'});
+      h+='</table>';
+      h+='<div style="margin:10px 0;padding:10px 14px;background:#f1f5f9;border-radius:8px">';
+      h+='<b>F('+r.df_between+', '+r.df_within+') = '+_n(r.F||r.f)+'</b>, '+_sigBadge(r.p)+'<br>';
+      if(r.eta_squared!=null)h+='η² = '+_p(r.eta_squared)+' ('+(r.eta_squared<0.01?'ihmal edilebilir':r.eta_squared<0.06?'küçük':r.eta_squared<0.14?'orta':'büyük')+' etki)';
+      h+='</div>';
+      // Post-hoc
+      if(r.posthoc&&r.posthoc.length){
+        h+='<h4 style="margin:10px 0 6px;font-size:13px">Post-hoc Karşılaştırmalar (Tukey HSD)</h4>';
+        h+='<table class="stats-result-table"><tr><th>Karşılaştırma</th><th>Fark</th><th>p</th><th>Sonuç</th></tr>';
+        r.posthoc.forEach(ph=>{h+='<tr><td>'+escHtml(ph.pair)+'</td><td>'+_n(ph.diff)+'</td><td>'+_p(ph.p)+'</td><td>'+_sigBadge(ph.p)+'</td></tr>'});
+        h+='</table>';
+      }
+      return h+_fullDataBadge;
+    }
+    // === MANN-WHITNEY U ===
+    if(testId==='mannwhitney'){
+      if(r.needs_selection)return _renderBackendTestResult('ttest',r); // Same selection UI
+      let h='<div style="padding:10px 14px;background:#f1f5f9;border-radius:8px">';
+      h+='<b>U = '+_n(r.U||r.u)+'</b>, '+_sigBadge(r.p)+'<br>';
+      h+='n₁ = '+r.n1+', n₂ = '+r.n2;
+      if(r.r!=null)h+='<br>r = '+_n(r.r)+' (etki büyüklüğü)';
+      h+='</div>';
+      return h+_fullDataBadge;
+    }
+    // === KRUSKAL-WALLIS ===
+    if(testId==='kruskalwallis'){
+      let h='<div style="padding:10px 14px;background:#f1f5f9;border-radius:8px">';
+      h+='<b>H('+r.df+') = '+_n(r.H||r.h)+'</b>, '+_sigBadge(r.p)+'<br>';
+      if(r.groups){const gk=Object.keys(r.groups);h+='Grup sayısı: '+gk.length;gk.forEach(g=>{h+=', '+escHtml(g)+' (n='+(r.groups[g].n||'?')+')'})};
+      h+='</div>';
+      return h+_fullDataBadge;
+    }
+    // === CHI-SQUARE ===
+    if(testId==='chisquare'){
+      let h='<div style="padding:10px 14px;background:#f1f5f9;border-radius:8px">';
+      h+='<b>χ²('+r.df+') = '+_n(r.chi2)+'</b>, '+_sigBadge(r.p)+'<br>';
+      if(r.cramers_v!=null)h+='Cramér\'s V = '+_n(r.cramers_v)+' ('+(r.cramers_v<0.1?'zayıf':r.cramers_v<0.3?'zayıf-orta':r.cramers_v<0.5?'orta':'güçlü')+')';
+      h+='</div>';
+      if(r.contingency&&r.contingency.length){
+        h+='<h4 style="margin:10px 0 6px;font-size:13px">Çapraz Tablo (Gözlenen Frekanslar)</h4>';
+        h+='<table class="stats-result-table"><tr><th></th>';
+        const cols=Object.keys(r.contingency[0]).filter(k=>k!=='_row');
+        cols.forEach(c=>{h+='<th>'+escHtml(c)+'</th>'});h+='</tr>';
+        r.contingency.forEach(row=>{h+='<tr><td><b>'+escHtml(row._row||'')+'</b></td>';cols.forEach(c=>{h+='<td>'+(row[c]||0)+'</td>'});h+='</tr>'});
+        h+='</table>';
+      }
+      return h+_fullDataBadge;
+    }
+    // === CORRELATION ===
+    if(testId==='correlation'){
+      const _rVal=r.pearson_r!=null?r.pearson_r:(r.r||0);
+      const _pVal=r.pearson_p!=null?r.pearson_p:r.p;
+      let h='<div style="padding:10px 14px;background:#f1f5f9;border-radius:8px">';
+      h+='<b>Pearson r = '+_n(_rVal)+'</b>, '+_sigBadge(_pVal)+'<br>';
+      if(r.spearman_r!=null)h+='Spearman ρ = '+_n(r.spearman_r)+', '+_sigBadge(r.spearman_p)+'<br>';
+      h+='n = '+r.n;
+      const rSq=_rVal*_rVal;h+=', R² = '+_n(rSq);
+      const rAbs=Math.abs(_rVal);h+='<br>İlişki gücü: '+(rAbs<0.1?'ihmal edilebilir':rAbs<0.3?'zayıf':rAbs<0.5?'orta':rAbs<0.7?'güçlü':'çok güçlü');
+      h+='</div>';
+      return h+_fullDataBadge;
+    }
+    // === SHAPIRO ===
+    if(testId==='shapiro'){
+      let h='<div style="padding:10px 14px;background:#f1f5f9;border-radius:8px">';
+      h+='<b>W = '+_n(r.W||r.w)+'</b>, '+_sigBadge(r.p)+'<br>';
+      h+='n = '+r.n+'<br>';
+      h+=parseFloat(r.p)<0.05?'Veri normal dağılıma <b>UYMUYOR</b> (H₀ reddedildi)':'Veri normal dağılıma <b>uygun</b> (H₀ reddedilemedi)';
+      h+='</div>';
+      return h+_fullDataBadge;
+    }
+    // === PAIRED T-TEST ===
+    if(testId==='paired_ttest'){
+      let h='<div style="padding:10px 14px;background:#f1f5f9;border-radius:8px">';
+      h+='<b>t('+r.df+') = '+_n(r.t)+'</b>, '+_sigBadge(r.p)+'<br>';
+      h+='n = '+r.n+', Ort. fark = '+_n(r.mean_diff);
+      if(r.cohens_d!=null)h+=', Cohen\'s d = '+_n(r.cohens_d);
+      h+='</div>';
+      return h+_fullDataBadge;
+    }
+    // === WILCOXON ===
+    if(testId==='wilcoxon'){
+      let h='<div style="padding:10px 14px;background:#f1f5f9;border-radius:8px">';
+      h+='<b>W = '+_n(r.W||r.w)+'</b>, '+_sigBadge(r.p)+'<br>';
+      h+='n = '+r.n;
+      if(r.r!=null)h+=', r = '+_n(r.r)+' (etki büyüklüğü)';
+      h+='</div>';
+      return h+_fullDataBadge;
+    }
+    // === REGRESSION ===
+    if(testId==='regression'){
+      let h='<div style="padding:10px 14px;background:#f1f5f9;border-radius:8px">';
+      h+='<b>R² = '+_n(r.r_squared)+'</b>, Adj. R² = '+_n(r.adj_r_squared)+'<br>';
+      h+='F = '+_n(r.f)+', '+_sigBadge(r.p)+'<br>';
+      h+='n = '+r.n;
+      h+='</div>';
+      if(r.coefficients&&r.coefficients.length){
+        h+='<table class="stats-result-table"><tr><th>Değişken</th><th>B</th><th>SE</th><th>β</th><th>t</th><th>p</th></tr>';
+        r.coefficients.forEach(c=>{h+='<tr><td>'+escHtml(c.var||c.name||'')+'</td><td>'+_n(c.b)+'</td><td>'+_n(c.se)+'</td><td>'+_n(c.beta)+'</td><td>'+_n(c.t)+'</td><td>'+_sigBadge(c.p)+'</td></tr>'});
+        h+='</table>';
+      }
+      return h+_fullDataBadge;
+    }
+  }catch(e){console.warn('[_renderBackendTestResult] Render error:',e);return null}
+  return null; // Unsupported test type → fall through to JS
+}
+
+// ========================
 // TEST RUNNERS
 // ========================
-function advStatsRun(testId){
+async function advStatsRun(testId){
   const resArea=document.getElementById('advStatsResults');
   const resTable=document.getElementById('advStatsResultTable');
   const interpArea=document.getElementById('advStatsInterpretation');
   resArea.style.display='block';
   interpArea.style.display='none';
   // Check output data availability
-  if(!_hasOutputData()){resTable.innerHTML=_noDataHTML();_hideBusy();return}
+  if(!_hasOutputData()&&!window._BACKEND_ACTIVE){resTable.innerHTML=_noDataHTML();_hideBusy();return}
   let html='';
   let resultData={test:testId};
   window._lastSamplingInfo=null; // Reset sampling tracking before each test
@@ -14284,26 +14483,34 @@ function advStatsRun(testId){
   if(totalRows>500000){_showBusy('İstatistik testi hesaplanıyor...')}
   // Büyük veri uyarısı
   if(totalRows>1000000){
-    resTable.innerHTML='<div style="text-align:center;padding:20px;color:#2563eb;font-weight:600"><span style="font-size:20px">⏳</span> İşleminiz biraz zaman alabilir, lütfen bekleyin... <span style="font-size:11px;opacity:0.7">('+totalRows.toLocaleString('tr-TR')+' satır)</span></div>';
+    resTable.innerHTML='<div style="text-align:center;padding:20px;color:#2563eb;font-weight:600"><span style="font-size:20px">⏳</span> Python Motor ile TÜM veri hesaplanıyor, lütfen bekleyin... <span style="font-size:11px;opacity:0.7">('+totalRows.toLocaleString('tr-TR')+' satır)</span></div>';
   }
   const _testStart=Date.now();
-  // === BACKEND: Try statistical test from backend first ===
+  // === BACKEND: Try statistical test from backend first (TÜM VERİ ile) ===
   if(window._BACKEND_ACTIVE && typeof window._backendStatsTest==='function'){
-    (async()=>{
-      try{
-        const groupCol=document.getElementById('advGroup')?.value||'';
-        const depCol=document.getElementById('advDepVar')?.value||'';
-        const col1=document.getElementById('advVar1')?.value||'';
-        const col2=document.getElementById('advVar2')?.value||'';
-        const groupsStr=document.getElementById('advGroupList')?.value||'';
-        const groups=groupsStr?groupsStr.split(',').map(g=>g.trim()).filter(g=>g):[];
-        const result=await window._backendStatsTest(testId,groupCol,depCol,col1,col2,groups);
-        if(result){
-          console.log('[BACKEND] Statistical test completed');
-          // Backend handled it, JS fallback will provide results if backend fails
+    try{
+      const groupCol=document.getElementById('advGroup')?.value||'';
+      const depCol=document.getElementById('advDepVar')?.value||'';
+      const col1=document.getElementById('advVar1')?.value||'';
+      const col2=document.getElementById('advVar2')?.value||'';
+      const groupsStr=document.getElementById('advGroupList')?.value||'';
+      const groups=groupsStr?groupsStr.split(',').map(g=>g.trim()).filter(g=>g):[];
+      const backendResult=await window._backendStatsTest(testId,groupCol,depCol,col1,col2,groups);
+      if(backendResult&&!backendResult.error){
+        console.log('[BACKEND] Statistical test completed in '+(Date.now()-_testStart)+'ms with ALL data');
+        const renderedHTML=_renderBackendTestResult(testId,backendResult);
+        if(renderedHTML){
+          resTable.innerHTML=renderedHTML;
+          _hideBusy();
+          // Interpretation from backend
+          if(backendResult.interpretation){
+            interpArea.style.display='block';
+            interpArea.innerHTML=backendResult.interpretation;
+          }
+          return; // Backend handled it successfully — skip JS fallback
         }
-      }catch(e){console.warn('[BACKEND] Stats test fallback:',e)}
-    })();
+      }
+    }catch(e){console.warn('[BACKEND] Stats test fallback to JS:',e)}
   }
   try{
   if(testId==='ttest'){
