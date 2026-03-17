@@ -863,6 +863,7 @@
         <p class="text-sm mb-8" style="font-weight:600;color:#334155">JOIN Tipi <span class="info-tip" title="Tabloları nasıl birleştirecekini belirler. Her tipin farklı sonuçları vardır.">i</span></p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <span class="join-type-chip" data-jt="left" onclick="selectJoinType('left')" title="Sol tablodaki tüm satırları korur">LEFT JOIN</span>
+          <span class="join-type-chip" data-jt="right" onclick="selectJoinType('right')" title="Sağ tablodaki tüm satırları korur">RIGHT JOIN</span>
           <span class="join-type-chip active" data-jt="inner" onclick="selectJoinType('inner')" title="Sadece eşleşen satırları getirir">INNER JOIN</span>
           <span class="join-type-chip" data-jt="full" onclick="selectJoinType('full')" title="Her iki tablodaki tüm satırları korur">FULL OUTER</span>
         </div>
@@ -3789,6 +3790,7 @@ function selectJoinType(type){
   const hints={
     inner:'<strong>INNER JOIN</strong> — Sadece her iki tabloda <u>eşleşen</u> satırlar alınır. Eşleşmeyenler atılır.<br><span style="color:#94a3b8;font-size:11px">Örnek: Sol=5 satır, Sağ=4 satır, 3 ortak → Sonuç: 3 satır</span>',
     left:'<strong>LEFT JOIN</strong> — Sol tablodaki <u>tüm satırlar</u> korunur. Sağ tablodan eşleşenler eklenir, eşleşmeyenler boş kalır.<br><span style="color:#94a3b8;font-size:11px">Örnek: Sol=5 satır, Sağ=4 satır, 3 ortak → Sonuç: 5 satır (2 satırda sağ boş)</span>',
+    right:'<strong>RIGHT JOIN</strong> — Sağ tablodaki <u>tüm satırlar</u> korunur. Sol tablodan eşleşenler eklenir, eşleşmeyenler boş kalır.<br><span style="color:#94a3b8;font-size:11px">Örnek: Sol=5 satır, Sağ=4 satır, 3 ortak → Sonuç: 4 satır (1 satırda sol boş)</span>',
     full:'<strong>FULL OUTER</strong> — Her iki tablodaki <u>tüm satırlar</u> dahil edilir. Eşleşmeyenler boş değer ile gösterilir.<br><span style="color:#94a3b8;font-size:11px">Örnek: Sol=5 satır, Sağ=4 satır, 3 ortak → Sonuç: 6 satır (2 solda sağ boş, 1 sağda sol boş)</span>'
   };
   document.getElementById('joinTypeHint').innerHTML=hints[type]||'';
@@ -4063,6 +4065,7 @@ async function previewJoin(){
       }
     });
     if(joinType==='full'||joinType==='left'){
+      // Add unmatched left rows (not for 'right' or 'inner')
       leftMap.forEach((rows,key)=>{
         if(!matchedKeys.has(key)){
           rows.forEach(lRow=>outRows.push(mergeJoinRow(lRow,null,outHeaders,keyRightCols)));
@@ -6172,11 +6175,21 @@ async function computeMultiAggAsync(xCol,yCols,aggType){
       const sortMode=document.getElementById('dashSort')?document.getElementById('dashSort').value:'desc';
       const limitVal=document.getElementById('dashLimit')?parseInt(document.getElementById('dashLimit').value)||15:15;
       const result=await window._backendAggregate(xCol,yCols,aggType,sortMode,limitVal,'');
-      if(result&&result.labels){
-        // Cache for sync access
+      if(result&&result.labels&&result.labels.length>0){
+        // Adapt backend format: add groups + fullLabels for computeMultiAgg compat
         const cacheKey=xCol+'|'+yCols.join(',')+':'+aggType+':'+filterHash()+':'+drillStack.length+':fc='+(_freqCriterionCol||'');
         result._fromBackend=true;
-        _aggCache[cacheKey]=result; // Cache for sync access by _buildChart
+        if(!result.fullLabels)result.fullLabels=result.labels.slice();
+        if(!result.groups){
+          result.groups=result.labels.map((lbl,i)=>{
+            const yData=(result.datasets||[]).map(ds=>{
+              const v=ds.data?.[i]||0;
+              return{sum:v,n:1,min:v,max:v,sumSq:v*v,numFreq:{},vals:[v]};
+            });
+            return[lbl,{count:result.datasets?.[0]?.data?.[i]||0,yData}];
+          });
+        }
+        _aggCache[cacheKey]=result;
         return result;
       }
     }catch(e){console.warn('[BACKEND] Aggregate fallback:',e)}
@@ -6876,17 +6889,36 @@ function addDashboardChart(){
   box.innerHTML='<div class="computing-overlay"><span class="computing-spinner"></span> Hesaplanıyor...</div>';
   document.getElementById('chartArea').appendChild(box);
 
-  // === BACKEND-FIRST: If backend active, pre-fetch data before building chart ===
+  // === BACKEND-FIRST: If backend active, sync filters then pre-fetch data ===
   if(window._BACKEND_ACTIVE && typeof window._backendAggregate==='function' && type!=='scatter' && type!=='histogram' && type!=='boxplot' && type!=='bubble' && type!=='pivotTable'){
     const sortMode=document.getElementById('dashSort')?document.getElementById('dashSort').value:'desc';
     const limitVal=document.getElementById('dashLimit')?parseInt(document.getElementById('dashLimit').value)||15:15;
-    const _fetchPromise=colorCol
-      ? window._backendAggregate(xCol,yCols.length?yCols:[],agg,sortMode,limitVal,colorCol)
-      : window._backendAggregate(xCol,yCols,agg,sortMode,limitVal,'');
-    _fetchPromise.then(backendResult=>{
-      if(backendResult&&backendResult.labels){
-        // Cache result so _buildChart's computeMultiAgg/computeColorGroupAgg finds it
+    // Sync filters to backend FIRST
+    const _syncFiltersPromise=(typeof window._backendSetFilters==='function')
+      ? window._backendSetFilters(typeof _getActiveFiltersObj==='function'?_getActiveFiltersObj():{})
+      : Promise.resolve(true);
+
+    _syncFiltersPromise.then(()=>{
+      const _fetchPromise=colorCol
+        ? window._backendAggregate(xCol,yCols.length?yCols:[],agg,sortMode,limitVal,colorCol)
+        : window._backendAggregate(xCol,yCols,agg,sortMode,limitVal,'');
+      return _fetchPromise;
+    }).then(backendResult=>{
+      if(backendResult&&backendResult.labels&&backendResult.labels.length>0){
+        // Adapt backend format to computeMultiAgg format (add groups, fullLabels)
         backendResult._fromBackend=true;
+        if(!backendResult.fullLabels)backendResult.fullLabels=backendResult.labels.slice();
+        if(!backendResult.groups){
+          // Build groups array: [[label, {count, yData:[{sum,n,...}]}], ...]
+          backendResult.groups=backendResult.labels.map((lbl,i)=>{
+            const yData=(backendResult.datasets||[]).map(ds=>{
+              const v=ds.data?.[i]||0;
+              return{sum:v,n:1,min:v,max:v,sumSq:v*v,numFreq:{},vals:[v]};
+            });
+            const cnt=backendResult.datasets?.[0]?.data?.[i]||0;
+            return[lbl,{count:cnt,yData}];
+          });
+        }
         if(colorCol){
           const ck='color:'+xCol+'|'+colorCol+'|'+(yCols[0]||'')+':'+agg+':'+filterHash()+':'+drillStack.length;
           _aggCache[ck]=backendResult;
@@ -6894,14 +6926,15 @@ function addDashboardChart(){
           const ck=xCol+'|'+yCols.join(',')+':'+agg+':'+filterHash()+':'+drillStack.length+':fc='+(_freqCriterionCol||'');
           _aggCache[ck]=backendResult;
         }
-        console.log('[CHART] Backend data pre-fetched:',backendResult.labels.length,'labels');
+        console.log('[CHART] Backend data pre-fetched:',backendResult.labels.length,'labels, datasets:',backendResult.datasets?.length);
       }
       // Now build chart — data is in cache, _buildChart will find it instantly
       _buildChart._noLoop=true; // Skip redundant async refresh since we already have backend data
       _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups);
       _buildChart._noLoop=false;
+      return null;
     }).catch(err=>{
-      console.warn('[CHART] Backend pre-fetch failed, falling back to JS:',err);
+      console.warn('[CHART] Backend filter sync or pre-fetch failed, falling back to JS:',err);
       _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups);
     });
   }else{
@@ -7394,55 +7427,43 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
     chartConfig.options.scales={y:{beginAtZero:_yZero,grid:{display:_gridLines}},x:{grid:{display:_gridLines}}};
     if(_rotateX){chartConfig.options.scales.x.ticks={maxRotation:90,minRotation:45}}
   }
-  // === CHART CREATION with error handling + empty data fallback ===
+  // === CHART CREATION — Chart.js + guaranteed HTML bar fallback ===
   let inst=null;
-  const _chartHasData=chartConfig.data&&chartConfig.data.datasets&&chartConfig.data.datasets.some(ds=>ds.data&&ds.data.length>0&&ds.data.some(v=>v!==null&&v!==undefined&&v!==0));
-  if(!_chartHasData){
-    // No data → show fallback HTML table instead of empty chart
-    console.warn('[CHART] Empty data for chart:',id,title);
-    const _fbLabels=chartConfig.data?.labels||[];
-    const _fbDs=chartConfig.data?.datasets||[];
-    let _fbHtml='<div style="padding:12px;text-align:center;color:#92400e;font-size:12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;margin-top:8px">';
-    _fbHtml+='<b>⚠️ Grafik verisi boş veya sıfır.</b><br><span style="font-size:11px">Filtre veya veri seçimlerini kontrol edin.</span>';
-    if(_fbLabels.length>0&&_fbDs.length>0){
-      _fbHtml+='<table style="margin:10px auto;border-collapse:collapse;font-size:11px;text-align:left"><thead><tr><th style="padding:4px 8px;border-bottom:2px solid #f59e0b">Kategori</th>';
-      _fbDs.forEach(ds=>{_fbHtml+='<th style="padding:4px 8px;border-bottom:2px solid #f59e0b">'+escHtml(ds.label||'Değer')+'</th>'});
-      _fbHtml+='</tr></thead><tbody>';
-      _fbLabels.forEach((lbl,i)=>{
-        _fbHtml+='<tr><td style="padding:3px 8px;border-bottom:1px solid #fde68a">'+escHtml(lbl)+'</td>';
-        _fbDs.forEach(ds=>{const v=ds.data?.[i];_fbHtml+='<td style="padding:3px 8px;border-bottom:1px solid #fde68a">'+(v!=null?v.toLocaleString('tr-TR'):'—')+'</td>'});
-        _fbHtml+='</tr>';
-      });
-      _fbHtml+='</tbody></table>';
-    }
-    _fbHtml+='</div>';
-    _canvasEl.style.display='none';
-    box.insertAdjacentHTML('beforeend',_fbHtml);
-  }
+  const _cLabels=chartConfig.data?.labels||[];
+  const _cDs=chartConfig.data?.datasets||[];
+  const _chartHasData=_cDs.some(ds=>ds.data&&ds.data.length>0&&ds.data.some(v=>v!==null&&v!==undefined&&v!==0));
+
+  // Always try Chart.js first
+  let _chartOK=false;
   try{
-    inst=new Chart(ctx,chartConfig);
-  }catch(chartErr){
-    console.error('[CHART] Chart.js creation error:',chartErr);
-    // Fallback: show data as HTML table
-    _canvasEl.style.display='none';
-    const _errLabels=chartConfig.data?.labels||[];
-    const _errDs=chartConfig.data?.datasets||[];
-    let _errHtml='<div style="padding:12px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;margin-top:8px;font-size:12px">';
-    _errHtml+='<b>⚠️ Grafik oluşturulamadı:</b> '+escHtml(chartErr.message)+'<br>';
-    if(_errLabels.length>0){
-      _errHtml+='<table style="margin:8px 0;border-collapse:collapse;font-size:11px;width:100%"><thead><tr><th style="padding:4px 8px;border-bottom:2px solid #f87171;text-align:left">Kategori</th>';
-      _errDs.forEach(ds=>{_errHtml+='<th style="padding:4px 8px;border-bottom:2px solid #f87171;text-align:right">'+escHtml(ds.label||'Değer')+'</th>'});
-      _errHtml+='</tr></thead><tbody>';
-      _errLabels.slice(0,50).forEach((lbl,i)=>{
-        _errHtml+='<tr><td style="padding:3px 8px;border-bottom:1px solid #fee2e2">'+escHtml(lbl)+'</td>';
-        _errDs.forEach(ds=>{const v=ds.data?.[i];_errHtml+='<td style="padding:3px 8px;border-bottom:1px solid #fee2e2;text-align:right">'+(v!=null?(typeof v==='number'?v.toLocaleString('tr-TR'):v):'—')+'</td>'});
-        _errHtml+='</tr>';
-      });
-      if(_errLabels.length>50)_errHtml+='<tr><td colspan="'+(1+_errDs.length)+'" style="padding:4px 8px;color:#6b7280;font-style:italic">... ve '+(_errLabels.length-50)+' satır daha</td></tr>';
-      _errHtml+='</tbody></table>';
+    if(_chartHasData){
+      inst=new Chart(ctx,chartConfig);
+      _chartOK=true;
     }
-    _errHtml+='</div>';
-    box.insertAdjacentHTML('beforeend',_errHtml);
+  }catch(chartErr){
+    console.error('[CHART] Chart.js error:',chartErr.message);
+  }
+
+  // If Chart.js failed or data was empty → render guaranteed HTML bar chart
+  if(!_chartOK){
+    console.warn('[CHART] Falling back to HTML bar chart for:',id);
+    _canvasEl.style.display='none';
+    box.insertAdjacentHTML('beforeend',_renderHTMLBarChart(_cLabels,_cDs,title));
+  }else if(inst&&_chartHasData){
+    // Post-render verification: after 600ms check if Chart.js actually painted something
+    const _vrfId=id,_vrfCanvas=_canvasEl,_vrfBox=box;
+    setTimeout(()=>{
+      try{
+        const cCtx=_vrfCanvas.getContext('2d');
+        if(!cCtx)return;
+        const imgData=cCtx.getImageData(0,0,Math.min(_vrfCanvas.width,10),Math.min(_vrfCanvas.height,10));
+        const allZero=imgData.data.every(v=>v===0);
+        if(allZero&&_vrfCanvas.width>0&&_vrfCanvas.height>0){
+          console.warn('[CHART] Post-render check: canvas is blank, adding HTML fallback');
+          _vrfBox.insertAdjacentHTML('beforeend',_renderHTMLBarChart(_cLabels,_cDs,title));
+        }
+      }catch(e){}
+    },600);
   }
   chartInstances.push({id,instance:inst,title,type,xCol,yCols,agg,colorCol:colorCol||'',subGroups:subGroups.slice(),filterSnapshot:JSON.stringify(colFilters),showLabels:_showLabels});
   // === BACKEND: If chart was built from JS sample, async-refresh with full backend data ===
@@ -7478,6 +7499,63 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
     const noteDiv=document.createElement('div');noteDiv.innerHTML=_dashSamplingNote('saçılım grafiği');
     box.appendChild(noteDiv);
   }
+}
+
+// === GUARANTEED HTML BAR CHART — zero dependencies, always works ===
+function _renderHTMLBarChart(labels,datasets,title){
+  if(!labels||labels.length===0||!datasets||datasets.length===0){
+    return '<div style="padding:20px;text-align:center;color:#92400e;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;margin-top:8px;font-size:12px">⚠️ Grafik verisi boş. Filtre veya veri seçimlerini kontrol edin.</div>';
+  }
+  const COLORS=['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f','#edc948','#b07aa1','#ff9da7','#9c755f','#bab0ac'];
+  // Find max value for scaling
+  let maxVal=0;
+  datasets.forEach(ds=>{
+    if(ds.data)ds.data.forEach(v=>{if(typeof v==='number'&&v>maxVal)maxVal=v});
+  });
+  if(maxVal===0)maxVal=1;
+  const barH=24;const gap=3;const labelW=160;const valW=70;
+  const multiDs=datasets.length>1;
+  const totalH=labels.length*(barH+gap)*datasets.length+40;
+
+  let html='<div style="margin-top:8px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;overflow-y:auto;max-height:500px">';
+
+  // Legend for multi-dataset
+  if(multiDs){
+    html+='<div style="display:flex;gap:12px;margin-bottom:8px;flex-wrap:wrap">';
+    datasets.forEach((ds,di)=>{
+      html+='<span style="display:flex;align-items:center;gap:4px;font-size:11px"><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:'+COLORS[di%COLORS.length]+'"></span>'+escHtml(ds.label||'Veri '+(di+1))+'</span>';
+    });
+    html+='</div>';
+  }
+
+  // Bars
+  labels.forEach((lbl,i)=>{
+    datasets.forEach((ds,di)=>{
+      const val=ds.data?.[i];
+      const numVal=(typeof val==='number')?val:0;
+      const pct=maxVal>0?Math.max(0.5,(numVal/maxVal)*100):0;
+      const color=COLORS[di%COLORS.length];
+      const displayVal=typeof val==='number'?val.toLocaleString('tr-TR',{maximumFractionDigits:2}):'—';
+      const showLabel=(di===0||!multiDs);
+
+      html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:'+gap+'px;height:'+barH+'px">';
+      // Label
+      if(showLabel){
+        html+='<div style="min-width:'+labelW+'px;max-width:'+labelW+'px;font-size:11px;font-weight:500;color:#374151;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escHtml(lbl)+'">'+escHtml(lbl.length>22?lbl.substring(0,20)+'..':lbl)+'</div>';
+      }else{
+        html+='<div style="min-width:'+labelW+'px"></div>';
+      }
+      // Bar
+      html+='<div style="flex:1;background:#f1f5f9;border-radius:4px;overflow:hidden;height:'+barH+'px">';
+      html+='<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:4px;transition:width 0.3s;min-width:2px"></div>';
+      html+='</div>';
+      // Value
+      html+='<div style="min-width:'+valW+'px;font-size:11px;font-weight:600;color:'+color+';text-align:right">'+displayVal+'</div>';
+      html+='</div>';
+    });
+  });
+  html+='</div>';
+  return html;
 }
 
 // Data label drawing plugin factory
@@ -7569,7 +7647,14 @@ function undoRemoveChart(){
     const xSel=document.getElementById('dashXCol');
     if(xSel)xSel.value=last.xCol||'';
     // Re-create the chart
-    _buildChart(last.type,last.xCol,last.yCols,last.agg,last.colorCol,last.subGroups);
+    // Restore dashboard controls and re-add chart via addDashboardChart
+    const ySel=document.getElementById('dashYCols');
+    if(ySel){Array.from(ySel.options).forEach(o=>o.selected=(last.yCols||[]).includes(o.value))}
+    const typeSel=document.getElementById('dashChartType');
+    if(typeSel)typeSel.value=last.type||'bar';
+    const aggSel=document.getElementById('dashAggType');
+    if(aggSel)aggSel.value=last.agg||'sum';
+    addDashboardChart();
     showSuccess('Grafik geri alındı: '+last.title);
   }catch(e){showError('Grafik geri alınamadı: '+e.message)}
   _updateUndoBtn();
@@ -14453,12 +14538,33 @@ function _samplingNoteBanner(dataObj){
 }
 
 // --- Helper: Run t-test with user-selected 2 groups (when 3+ exist) ---
-function _runTTestWithSelectedGroups(){
+async function _runTTestWithSelectedGroups(){
   const sel1=document.getElementById('ttestGroup1');
   const sel2=document.getElementById('ttestGroup2');
   if(!sel1||!sel2)return;
   const g1Key=sel1.value,g2Key=sel2.value;
   if(g1Key===g2Key){document.getElementById('advStatsResultTable').innerHTML='<p style="color:#ef4444">Lütfen farklı iki grup seçin.</p>';return}
+
+  // Try backend first if available
+  if(window._BACKEND_ACTIVE && typeof window._backendStatsTest==='function'){
+    try{
+      const groupCol=window._ttestGroupCol,depCol=window._ttestDepCol;
+      const backendResult=await window._backendStatsTest('ttest',groupCol,depCol,'','',[g1Key,g2Key]);
+      if(backendResult&&!backendResult.error){
+        console.log('[BACKEND] t-test with selected groups completed');
+        const renderedHTML=_renderBackendTestResult('ttest',backendResult);
+        if(renderedHTML){
+          document.getElementById('advStatsResultTable').innerHTML=renderedHTML;
+          document.getElementById('advStatsResults').style.display='block';
+          window._lastAdvStatResult=backendResult;
+          _showSmartTestRecommendations(backendResult);
+          return;
+        }
+      }
+    }catch(e){console.warn('[BACKEND] t-test with selected groups fallback to JS:',e)}
+  }
+
+  // Fallback to JS implementation
   const groups=window._ttestGroupsData;
   if(!groups||!groups[g1Key]||!groups[g2Key])return;
   const g1=groups[g1Key],g2=groups[g2Key];
@@ -14494,12 +14600,33 @@ function _runTTestWithSelectedGroups(){
 }
 
 // --- Helper: Run Mann-Whitney U with user-selected 2 groups ---
-function _runMWWithSelectedGroups(){
+async function _runMWWithSelectedGroups(){
   const sel1=document.getElementById('mwGroup1');
   const sel2=document.getElementById('mwGroup2');
   if(!sel1||!sel2)return;
   const g1Key=sel1.value,g2Key=sel2.value;
   if(g1Key===g2Key){document.getElementById('advStatsResultTable').innerHTML='<p style="color:#ef4444">Lütfen farklı iki grup seçin.</p>';return}
+
+  // Try backend first if available
+  if(window._BACKEND_ACTIVE && typeof window._backendStatsTest==='function'){
+    try{
+      const groupCol=window._mwGroupCol,depCol=window._mwDepCol;
+      const backendResult=await window._backendStatsTest('mannwhitney',groupCol,depCol,'','',[g1Key,g2Key]);
+      if(backendResult&&!backendResult.error){
+        console.log('[BACKEND] Mann-Whitney U with selected groups completed');
+        const renderedHTML=_renderBackendTestResult('mannwhitney',backendResult);
+        if(renderedHTML){
+          document.getElementById('advStatsResultTable').innerHTML=renderedHTML;
+          document.getElementById('advStatsResults').style.display='block';
+          window._lastAdvStatResult=backendResult;
+          _showSmartTestRecommendations(backendResult);
+          return;
+        }
+      }
+    }catch(e){console.warn('[BACKEND] Mann-Whitney U with selected groups fallback to JS:',e)}
+  }
+
+  // Fallback to JS implementation
   const groups=window._mwGroupsData;
   if(!groups||!groups[g1Key]||!groups[g2Key])return;
   const g1=groups[g1Key],g2=groups[g2Key];
@@ -14539,23 +14666,23 @@ function _runMWWithSelectedGroups(){
 
 // --- Normal Distribution CDF (for p-values) ---
 function _normalCDF(x){const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;const sign=x<0?-1:1;x=Math.abs(x)/Math.sqrt(2);const t=1/(1+p*x);const y=1-((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);return 0.5*(1+sign*y)}
-function _tDistCDF(t,df){const x=df/(df+t*t);return 1-0.5*_incompleteBeta(df/2,0.5,x)}
-function _incompleteBeta(a,b,x){if(x===0)return 0;if(x===1)return 1;const maxIter=200;let sum=0,term=1;for(let n=0;n<maxIter;n++){if(n===0){term=Math.pow(x,a)/a}else{term*=x*(a+b+n-1)/(a+n)*(n)/(n)}sum+=term;if(Math.abs(term)<1e-10)break}return sum*Math.pow(x,a)*Math.pow(1-x,b)/(a*_betaFunc(a,b))}
+function _tDistCDF(t,df){const x=df/(df+t*t);return 1-0.5*_regularizedBeta(x,df/2,0.5)}
+function _incompleteBeta(a,b,x){/* Deprecated — use _regularizedBeta instead */return _regularizedBeta(x,a,b)}
 function _betaFunc(a,b){return Math.exp(_lnGamma(a)+_lnGamma(b)-_lnGamma(a+b))}
 function _lnGamma(z){const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];let x=z,y=z,tmp=x+5.5;tmp-=(x+0.5)*Math.log(tmp);let ser=1.000000000190015;for(let j=0;j<6;j++)ser+=c[j]/++y;return-tmp+Math.log(2.5066282746310005*ser/x)}
-function _chiSquareCDF(x,k){if(x<=0)return 0;return _lowerGamma(k/2,x/2)/_gammaFunc(k/2)}
+function _chiSquareCDF(x,k){if(x<=0)return 0;return _lowerGamma(k/2,x/2)/*_lowerGamma already returns regularized P(s,x)*/}
 function _lowerGamma(s,x){let sum=0,term=1/s;for(let n=0;n<200;n++){sum+=term;term*=x/(s+n+1);if(Math.abs(term)<1e-10)break}return sum*Math.exp(-x+s*Math.log(x)-_lnGamma(s))}
 function _gammaFunc(z){return Math.exp(_lnGamma(z))}
 function _fDistCDF(f,d1,d2){if(f<=0)return 0;const x=d1*f/(d1*f+d2);return _regularizedBeta(x,d1/2,d2/2)}
 function _regularizedBeta(x,a,b){if(x<=0)return 0;if(x>=1)return 1;const maxIter=200;let am=1,bm=1,az=1;const qab=a+b,qap=a+1,qam=a-1;let bz=1-qab*x/qap;for(let m=1;m<=maxIter;m++){const em=m,tem=em+em;let d=em*(b-m)*x/((qam+tem)*(a+tem));let ap=az+d*am,bp=bz+d*bm;d=-(a+em)*(qab+em)*x/((a+tem)*(qap+tem));const app=ap+d*az,bpp=bp+d*bz;const aold=az;am=ap/bpp;bm=bp/bpp;az=app/bpp;bz=1;if(Math.abs(az-aold)<1e-10*Math.abs(az))return az*Math.exp(a*Math.log(x)+b*Math.log(1-x)-Math.log(a)-_lnGamma(a)-_lnGamma(b)+_lnGamma(a+b))}return az*Math.exp(a*Math.log(x)+b*Math.log(1-x)-Math.log(a)-_lnGamma(a)-_lnGamma(b)+_lnGamma(a+b))}
 
 // --- Pearson & Spearman ---
-function _pearson(x,y){const n=Math.min(x.length,y.length);if(n<3)return{r:0,p:1};const mx=_mean(x.slice(0,n)),my=_mean(y.slice(0,n));let num=0,dx2=0,dy2=0;for(let i=0;i<n;i++){const dx=x[i]-mx,dy=y[i]-my;num+=dx*dy;dx2+=dx*dx;dy2+=dy*dy}const r=Math.sqrt(dx2*dy2)===0?0:num/Math.sqrt(dx2*dy2);const t=r*Math.sqrt((n-2)/(1-r*r+1e-15));const p=2*(1-_tDistCDF(Math.abs(t),n-2));return{r,p,t,n}}
+function _pearson(x,y){const n=Math.min(x.length,y.length);if(n<3)return{r:0,p:1};const mx=_mean(x.slice(0,n)),my=_mean(y.slice(0,n));let num=0,dx2=0,dy2=0;for(let i=0;i<n;i++){const dx=x[i]-mx,dy=y[i]-my;num+=dx*dy;dx2+=dx*dx;dy2+=dy*dy}const denom=Math.sqrt(dx2*dy2);const r=denom<1e-15?0:num/denom;const oneMinusR2=Math.max(1e-15,1-r*r);const t=r*Math.sqrt((n-2)/oneMinusR2);const p=2*(1-_tDistCDF(Math.abs(t),n-2));return{r,p,t,n}}
 function _rankArray(arr){const sorted=arr.map((v,i)=>({v,i})).sort((a,b)=>a.v-b.v);const ranks=new Array(arr.length);let i=0;while(i<sorted.length){let j=i;while(j<sorted.length&&sorted[j].v===sorted[i].v)j++;const avgRank=(i+j+1)/2;for(let k=i;k<j;k++)ranks[sorted[k].i]=avgRank;i=j}return ranks}
 function _spearman(x,y){const n=Math.min(x.length,y.length);const rx=_rankArray(x.slice(0,n)),ry=_rankArray(y.slice(0,n));return _pearson(rx,ry)}
 
 // --- Shapiro-Wilk Approximation (simplified for n<=5000) ---
-function _shapiroWilk(arr){const n=arr.length;if(n<3)return{W:1,p:1};const sorted=[...arr].sort((a,b)=>a-b);const m=_mean(sorted);const ss=sorted.reduce((s,v)=>s+(v-m)*(v-m),0);if(ss===0)return{W:1,p:1};let a=[];const n2=Math.floor(n/2);for(let i=0;i<n2;i++){const p=(i+1-0.375)/(n+0.25);a.push(_normalInv(p))}let num=0;for(let i=0;i<n2;i++){num+=a[i]*(sorted[n-1-i]-sorted[i])}const W=(num*num)/ss;const lnN=Math.log(n);const mu=0.0038915*lnN*lnN*lnN-0.083751*lnN*lnN-0.31082*lnN-1.5861;const sigma=Math.exp(0.0030302*lnN*lnN*lnN-0.082676*lnN*lnN-0.4803);const z=(Math.log(1-W)-mu)/sigma;const p=1-_normalCDF(z);return{W:Math.min(1,Math.max(0,W)),p:Math.min(1,Math.max(0,p))}}
+function _shapiroWilk(arr){const n=arr.length;if(n<3)return{W:NaN,p:NaN,error:'Shapiro-Wilk testi için en az 3 gözlem gerekli'};const sorted=[...arr].sort((a,b)=>a-b);const m=_mean(sorted);const ss=sorted.reduce((s,v)=>s+(v-m)*(v-m),0);if(ss===0)return{W:1,p:1};let a=[];const n2=Math.floor(n/2);for(let i=0;i<n2;i++){const p=(i+1-0.375)/(n+0.25);a.push(_normalInv(p))}let num=0;for(let i=0;i<n2;i++){num+=a[i]*(sorted[n-1-i]-sorted[i])}const W=(num*num)/ss;const lnN=Math.log(n);const mu=0.0038915*lnN*lnN*lnN-0.083751*lnN*lnN-0.31082*lnN-1.5861;const sigma=Math.exp(0.0030302*lnN*lnN*lnN-0.082676*lnN*lnN-0.4803);const z=(Math.log(1-W)-mu)/sigma;const p=1-_normalCDF(z);return{W:Math.min(1,Math.max(0,W)),p:Math.min(1,Math.max(0,p))}}
 function _normalInv(p){if(p<=0)return-Infinity;if(p>=1)return Infinity;if(p===0.5)return 0;const a1=-3.969683028665376e+01,a2=2.209460984245205e+02,a3=-2.759285104469687e+02,a4=1.383577518672690e+02,a5=-3.066479806614716e+01,a6=2.506628277459239e+00;const b1=-5.447609879822406e+01,b2=1.615858368580409e+02,b3=-1.556989798598866e+02,b4=6.680131188771972e+01,b5=-1.328068155288572e+01;const c1=-7.784894002430293e-03,c2=-3.223964580411365e-01,c3=-2.400758277161838e+00,c4=-2.549732539343734e+00,c5=4.374664141464968e+00,c6=2.938163982698783e+00;const d1=7.784695709041462e-03,d2=3.224671290700398e-01,d3=2.445134137142996e+00,d4=3.754408661907416e+00;const pLow=0.02425,pHigh=1-pLow;let q,r;if(p<pLow){q=Math.sqrt(-2*Math.log(p));return(((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6)/((((d1*q+d2)*q+d3)*q+d4)*q+1)}if(p<=pHigh){q=p-0.5;r=q*q;return(((((a1*r+a2)*r+a3)*r+a4)*r+a5)*r+a6)*q/(((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1)}q=Math.sqrt(-2*Math.log(1-p));return-(((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6)/((((d1*q+d2)*q+d3)*q+d4)*q+1)}
 
 // ========================
@@ -15057,6 +15184,27 @@ async function advStatsRun(testId){
     html+='<tr><td style="padding:5px 8px;border:1px solid #e2e8f0">Gruplar İçi</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+SSW.toFixed(3)+'</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+dfW+'</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+MSW.toFixed(3)+'</td><td colspan="2" style="padding:5px 8px;border:1px solid #e2e8f0"></td></tr>';
     html+='<tr style="background:#f0fdf4"><td style="padding:5px 8px;border:1px solid #e2e8f0">Toplam</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+(SSB+SSW).toFixed(3)+'</td><td style="padding:5px 8px;border:1px solid #e2e8f0">'+(N-1)+'</td><td colspan="3" style="padding:5px 8px;border:1px solid #e2e8f0">η²='+etaSq.toFixed(3)+'</td></tr>';
     html+='</table>';
+    // Post-hoc pairwise comparisons (Bonferroni-corrected t-tests)
+    if(p<0.05&&gKeys.length>=3&&gKeys.length<=20){
+      html+='<h5 style="margin:10px 0 8px;font-size:13px">Post-hoc İkili Karşılaştırmalar (Bonferroni)</h5>';
+      html+='<table class="stat-table" style="font-size:11px;width:100%;border-collapse:collapse">';
+      html+='<tr style="background:#f8fafc"><th style="padding:4px 6px;border:1px solid #e2e8f0">Karşılaştırma</th><th style="padding:4px 6px;border:1px solid #e2e8f0">Fark</th><th style="padding:4px 6px;border:1px solid #e2e8f0">t</th><th style="padding:4px 6px;border:1px solid #e2e8f0">p (düz.)</th><th style="padding:4px 6px;border:1px solid #e2e8f0">Sonuç</th></tr>';
+      const _numComp=gKeys.length*(gKeys.length-1)/2;
+      const posthocResults=[];
+      for(let gi=0;gi<gKeys.length;gi++){for(let gj=gi+1;gj<gKeys.length;gj++){
+        const g1=groups[gKeys[gi]],g2=groups[gKeys[gj]];
+        const m1=_mean(g1),m2=_mean(g2),n1=g1.length,n2=g2.length;
+        const se=Math.sqrt(MSW*(1/n1+1/n2));
+        const tVal=se>0?(m1-m2)/se:0;
+        const dfPH=dfW;
+        const pRaw=2*(1-_tDistCDF(Math.abs(tVal),dfPH));
+        const pAdj=Math.min(1,pRaw*_numComp);
+        posthocResults.push({pair:gKeys[gi]+' vs '+gKeys[gj],diff:(m1-m2).toFixed(3),t:tVal.toFixed(3),p:pAdj});
+        html+='<tr'+(pAdj<0.05?' style="background:#fef2f2"':'')+'><td style="padding:4px 6px;border:1px solid #e2e8f0">'+escHtml(gKeys[gi])+' vs '+escHtml(gKeys[gj])+'</td><td style="padding:4px 6px;border:1px solid #e2e8f0">'+(m1-m2).toFixed(3)+'</td><td style="padding:4px 6px;border:1px solid #e2e8f0">'+tVal.toFixed(3)+'</td><td style="padding:4px 6px;border:1px solid #e2e8f0;color:'+(pAdj<0.05?'#dc2626':'#16a34a')+'">'+(pAdj<0.001?'<0.001':pAdj.toFixed(4))+'</td><td style="padding:4px 6px;border:1px solid #e2e8f0">'+(pAdj<0.05?'✱ Anlamlı':'Anlamsız')+'</td></tr>';
+      }}
+      html+='</table>';
+      resultData.posthoc=posthocResults;
+    }
     html+=_buildTestExplanation('anova',resultData);
   }else if(testId==='chisquare'){
     const rowCol=document.getElementById('advChiRow').value;
@@ -15071,10 +15219,12 @@ async function advStatsRun(testId){
     rKeys.forEach(r=>{rowTotals[r]=0;cKeys.forEach(c=>{const o=freq[r+'|||'+c]||0;rowTotals[r]+=o})});
     cKeys.forEach(c=>{colTotals[c]=0;rKeys.forEach(r=>{colTotals[c]+=(freq[r+'|||'+c]||0)})});
     let chiSq=0;const df=(rKeys.length-1)*(cKeys.length-1);
-    rKeys.forEach(r=>cKeys.forEach(c=>{const o=freq[r+'|||'+c]||0;const e=rowTotals[r]*colTotals[c]/N;if(e>0)chiSq+=(o-e)*(o-e)/e}));
+    let _lowExpCount=0,_totalCells=0;
+    rKeys.forEach(r=>cKeys.forEach(c=>{const o=freq[r+'|||'+c]||0;const e=rowTotals[r]*colTotals[c]/N;_totalCells++;if(e<5)_lowExpCount++;if(e>0)chiSq+=(o-e)*(o-e)/e}));
+    const _lowExpPct=_totalCells>0?(_lowExpCount/_totalCells*100):0;
     const p=1-_chiSquareCDF(chiSq,df);
     const cramerV=Math.sqrt(chiSq/(N*Math.min(rKeys.length-1,cKeys.length-1)));
-    resultData={test:'chisquare',rowCol,colCol,chiSq,df,p,cramerV,N};
+    resultData={test:'chisquare',rowCol,colCol,chiSq,df,p,cramerV,N,lowExpPct:_lowExpPct,lowExpCount:_lowExpCount,totalCells:_totalCells};
     html='<table class="stat-table" style="font-size:12px;width:100%;border-collapse:collapse">';
     html+='<tr style="background:#f8fafc"><th style="padding:6px 10px;text-align:left;border:1px solid #e2e8f0">İstatistik</th><th style="padding:6px 10px;border:1px solid #e2e8f0">Değer</th></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>χ² (Ki-Kare)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:700">'+chiSq.toFixed(4)+'</td></tr>';
@@ -15083,6 +15233,7 @@ async function advStatsRun(testId){
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Cramer\'s V</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+cramerV.toFixed(3)+' ('+(cramerV<0.1?'İhmal edilebilir':cramerV<0.3?'Zayıf':cramerV<0.5?'Orta':'Güçlü')+')</td></tr>';
     html+='<tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><strong>Toplam gözlem (N)</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">'+N+'</td></tr>';
     html+='</table>';
+    if(_lowExpPct>20){html+='<div style="margin-top:8px;padding:8px 12px;background:#fefce8;border:1px solid #fde047;border-radius:6px;font-size:11px;color:#854d0e">⚠️ <strong>Uyarı:</strong> Beklenen frekansı 5\'ten küçük olan hücre oranı %'+_lowExpPct.toFixed(1)+' ('+_lowExpCount+'/'+_totalCells+'). Ki-Kare testi %20\'den fazla hücrede beklenen frekans <5 olduğunda güvenilir olmayabilir. Fisher\'s Exact Test veya daha büyük örneklem düşünülmelidir.</div>'}
     html+=_buildTestExplanation('chisquare',resultData);
   }else if(testId==='normality'){
     const col=document.getElementById('advNumVar').value;
@@ -17085,7 +17236,8 @@ async function executeSQLQuery(){
     // Try backend first
     if(window._BACKEND_ACTIVE){
       try{
-        const resp=await fetch('http://localhost:8765/api/sql',{
+        const _sqlBase=window._API_BASE||'http://127.0.0.1:8765';
+        const resp=await fetch(_sqlBase+'/api/sql',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({sql:sql})
@@ -17577,7 +17729,13 @@ async function pivotExecute(){
     let result;
     if(window._BACKEND_ACTIVE){
       try{
-        const resp=await fetch('http://localhost:8765/api/sql-pivot',{
+        const _pivotBase=window._API_BASE||'http://127.0.0.1:8765';
+        // Sync filters before pivot call
+        if(typeof window._backendSetFilters==='function'){
+          const _pf=(typeof _getActiveFiltersObj==='function')?_getActiveFiltersObj():{};
+          await window._backendSetFilters(_pf);
+        }
+        const resp=await fetch(_pivotBase+'/api/sql-pivot',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({rowDim,colDim,extraGroupCols,valueFields,where:whereClause,orderBy:orderBy||'_row_',orderDir})
