@@ -1844,6 +1844,109 @@
           </div>
           <div id="sqlResultTable" style="overflow-x:auto;max-height:500px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px"></div>
         </div>
+
+        <!-- ===== PIVOT TABLO OLUŞTURUCU ===== -->
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-top:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;cursor:pointer" onclick="document.getElementById('pivotBuilderBody').style.display=document.getElementById('pivotBuilderBody').style.display==='none'?'block':'none';this.querySelector('.pvtToggle').textContent=document.getElementById('pivotBuilderBody').style.display==='none'?'▶':'▼'">
+            <h4 style="margin:0;font-size:14px;color:#7c3aed;display:flex;align-items:center;gap:8px">📊 Pivot Tablo Oluşturucu <span style="font-size:11px;font-weight:normal;color:#8b5cf6">(SQL ile Çapraz Tablo / Grup Metrikleri)</span></h4>
+            <span class="pvtToggle" style="font-size:12px;color:#7c3aed">▼</span>
+          </div>
+          <div id="pivotBuilderBody">
+            <p style="margin:0 0 12px;font-size:11px;color:#6b7280">Satır ve sütun boyutlarını seçin, değer alanlarına metrikler uygulayın. Sonuç otomatik SQL sorgusuna dönüştürülür.</p>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <!-- Left: Pivot Config -->
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <!-- Row Dimension -->
+                <div>
+                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">📐 Satır Boyutu (GROUP BY)</label>
+                  <select id="pivotRowDim" style="width:100%;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px" onchange="pivotUpdatePreview()">
+                    <option value="">Seçin...</option>
+                  </select>
+                </div>
+
+                <!-- Column Dimension (for true pivot/crosstab) -->
+                <div>
+                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">📏 Sütun Boyutu (PIVOT — opsiyonel)</label>
+                  <select id="pivotColDim" style="width:100%;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px" onchange="pivotUpdatePreview()">
+                    <option value="">Yok (sadece GROUP BY)</option>
+                  </select>
+                  <p style="margin:2px 0 0;font-size:10px;color:#9ca3af">Seçilirse çapraz tablo oluşturulur (satır × sütun)</p>
+                </div>
+
+                <!-- Value columns + metrics -->
+                <div>
+                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">📊 Değer Alanları ve Metrikler</label>
+                  <div id="pivotValueFields"></div>
+                  <button onclick="pivotAddValueField()" style="margin-top:6px;background:#ede9fe;border:1px solid #c4b5fd;color:#5b21b6;padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer">+ Değer Alanı Ekle</button>
+                </div>
+
+                <!-- WHERE filter -->
+                <div>
+                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">🔍 Filtre (WHERE — opsiyonel)</label>
+                  <input type="text" id="pivotWhereClause" placeholder='Örn: "BOLUM" = &#39;Matematik&#39; AND "NOT" > 50' style="width:100%;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px" onchange="pivotUpdatePreview()">
+                </div>
+
+                <!-- ORDER BY -->
+                <div>
+                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">🔃 Sıralama</label>
+                  <div style="display:flex;gap:6px;align-items:center">
+                    <select id="pivotOrderBy" style="flex:1;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px" onchange="pivotUpdatePreview()">
+                      <option value="">Varsayılan</option>
+                      <option value="_row_">Satır Boyutu</option>
+                    </select>
+                    <select id="pivotOrderDir" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px" onchange="pivotUpdatePreview()">
+                      <option value="ASC">Artan ↑</option>
+                      <option value="DESC">Azalan ↓</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Preview + Quick Metrics -->
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <!-- Quick metric presets -->
+                <div>
+                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">⚡ Hızlı Metrik Şablonları</label>
+                  <div style="display:flex;flex-wrap:wrap;gap:4px">
+                    <button onclick="pivotQuickPreset('summary')" style="background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer" title="Sayı + Toplam + Ortalama + Min + Max">📋 Özet İstatistik</button>
+                    <button onclick="pivotQuickPreset('count')" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer" title="Sadece sayı">🔢 Sayım</button>
+                    <button onclick="pivotQuickPreset('avg')" style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer" title="Ortalama + Std Sapma">📊 Ortalama</button>
+                    <button onclick="pivotQuickPreset('dist')" style="background:#fce7f3;border:1px solid #f9a8d4;color:#9d174d;padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer" title="Min + Max + Medyan + Çeyrekler">📈 Dağılım</button>
+                  </div>
+                </div>
+
+                <!-- Generated SQL Preview -->
+                <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:10px;flex:1">
+                  <label style="font-size:10px;font-weight:600;color:#5b21b6;display:block;margin-bottom:6px">Oluşturulan SQL:</label>
+                  <pre id="pivotSQLPreview" style="font-size:11px;color:#4c1d95;margin:0;white-space:pre-wrap;word-break:break-all;min-height:60px;font-family:'Fira Code','Consolas',monospace;line-height:1.5">-- Satır boyutu ve değer alanı seçin</pre>
+                </div>
+
+                <!-- Action buttons -->
+                <div style="display:flex;gap:8px">
+                  <button onclick="pivotExecute()" style="flex:1;background:#7c3aed;color:#fff;border:none;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">▶ Pivot Çalıştır</button>
+                  <button onclick="pivotCopyToEditor()" style="background:#e2e8f0;color:#475569;border:none;padding:10px 14px;border-radius:8px;font-size:12px;cursor:pointer" title="SQL'i editöre kopyala">📋 Editöre</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pivot Result Area -->
+            <div id="pivotResultArea" style="display:none;margin-top:16px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <h4 style="margin:0;font-size:14px;color:#7c3aed">📊 Pivot Sonuçları</h4>
+                  <span id="pivotResultInfo" style="font-size:11px;color:#6b7280"></span>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <button onclick="exportPivotCSV()" style="background:#f59e0b;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer">📥 CSV İndir</button>
+                  <button onclick="exportPivotExcel()" style="background:#217346;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer">📊 Excel İndir</button>
+                </div>
+              </div>
+              <div id="pivotResultTable" style="overflow-x:auto;max-height:500px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px"></div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -4452,7 +4555,7 @@ function switchAnalysisTab(tab,btn){
         const _asBanner=document.getElementById('advStatsSamplingBanner');
         if(_asBanner)_asBanner.style.display=(window._BACKEND_ACTIVE&&window._processedByBackend)?'block':'none';
       }
-      if(tab==='sql'){try{initSQLTab()}catch(e){console.warn('sql init err',e)}}
+      if(tab==='sql'){try{initSQLTab();initPivotBuilder()}catch(e){console.warn('sql init err',e)}}
     };
     if(isHeavy){
       _busyRun('Sekme hesaplanıyor...',renderTab).then(()=>{
@@ -17142,6 +17245,338 @@ function askClaudeSQL(){
 
   // Open Claude
   window.open('https://claude.ai/new?q='+encodeURIComponent(text),'_blank');
+}
+
+// =============================================
+// PIVOT TABLO OLUŞTURUCU — Functions
+// =============================================
+let _pivotResultData=null;
+let _pivotValueFieldCount=0;
+
+function initPivotBuilder(){
+  if(!outHeaders||outHeaders.length===0)return;
+  // Populate row/col dimension dropdowns
+  ['pivotRowDim','pivotColDim'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel)return;
+    const existing=sel.querySelectorAll('option[data-auto]');
+    if(existing.length>0)return; // already populated
+    outHeaders.forEach(h=>{
+      const opt=document.createElement('option');
+      opt.value=h;opt.textContent=h;opt.dataset.auto='1';
+      sel.appendChild(opt);
+    });
+  });
+  // Populate order by dropdown with metric options
+  const orderSel=document.getElementById('pivotOrderBy');
+  if(orderSel&&orderSel.querySelectorAll('option[data-auto]').length===0){
+    outHeaders.forEach(h=>{
+      const opt=document.createElement('option');
+      opt.value=h;opt.textContent=h;opt.dataset.auto='1';
+      orderSel.appendChild(opt);
+    });
+  }
+  // Add one default value field if none exist
+  if(_pivotValueFieldCount===0)pivotAddValueField();
+  pivotUpdatePreview();
+}
+
+function pivotAddValueField(){
+  _pivotValueFieldCount++;
+  const container=document.getElementById('pivotValueFields');
+  if(!container)return;
+  const div=document.createElement('div');
+  div.id='pvtField_'+_pivotValueFieldCount;
+  div.style.cssText='display:flex;gap:4px;align-items:center;margin-bottom:6px;flex-wrap:wrap;padding:6px;background:#faf5ff;border:1px solid #e9d5ff;border-radius:6px';
+
+  let colOpts='<option value="">Sütun seç...</option>';
+  outHeaders.forEach(h=>{colOpts+='<option value="'+h.replace(/"/g,'&quot;')+'">'+h+'</option>'});
+
+  div.innerHTML=
+    '<select class="pvtFieldCol" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;flex:1;min-width:100px" onchange="pivotUpdatePreview()">'+colOpts+'</select>'+
+    '<div class="pvtFieldAggs" style="display:flex;flex-wrap:wrap;gap:3px">'+
+      '<label style="font-size:10px;display:flex;align-items:center;gap:1px;cursor:pointer"><input type="checkbox" class="pvtAgg" value="count" onchange="pivotUpdatePreview()"> Sayı</label>'+
+      '<label style="font-size:10px;display:flex;align-items:center;gap:1px;cursor:pointer"><input type="checkbox" class="pvtAgg" value="sum" checked onchange="pivotUpdatePreview()"> Toplam</label>'+
+      '<label style="font-size:10px;display:flex;align-items:center;gap:1px;cursor:pointer"><input type="checkbox" class="pvtAgg" value="mean" checked onchange="pivotUpdatePreview()"> Ort.</label>'+
+      '<label style="font-size:10px;display:flex;align-items:center;gap:1px;cursor:pointer"><input type="checkbox" class="pvtAgg" value="median" onchange="pivotUpdatePreview()"> Medyan</label>'+
+      '<label style="font-size:10px;display:flex;align-items:center;gap:1px;cursor:pointer"><input type="checkbox" class="pvtAgg" value="min" onchange="pivotUpdatePreview()"> Min</label>'+
+      '<label style="font-size:10px;display:flex;align-items:center;gap:1px;cursor:pointer"><input type="checkbox" class="pvtAgg" value="max" onchange="pivotUpdatePreview()"> Max</label>'+
+      '<label style="font-size:10px;display:flex;align-items:center;gap:1px;cursor:pointer"><input type="checkbox" class="pvtAgg" value="std" onchange="pivotUpdatePreview()"> Std</label>'+
+    '</div>'+
+    '<button onclick="pivotRemoveValueField(\'pvtField_'+_pivotValueFieldCount+'\')" style="background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:2px 6px;border-radius:4px;font-size:11px;cursor:pointer;flex-shrink:0">✕</button>';
+  container.appendChild(div);
+  pivotUpdatePreview();
+}
+
+function pivotRemoveValueField(id){
+  const el=document.getElementById(id);
+  if(el)el.remove();
+  pivotUpdatePreview();
+}
+
+function pivotQuickPreset(preset){
+  // Clear existing value fields
+  const container=document.getElementById('pivotValueFields');
+  if(container)container.innerHTML='';
+  _pivotValueFieldCount=0;
+
+  // Find first numeric column
+  const numCols=outHeaders.filter(h=>colStats[h]&&(colStats[h].numCount>0||colStats[h].isNumeric));
+  const firstNumCol=numCols.length>0?numCols[0]:outHeaders[0];
+
+  // Add a value field
+  pivotAddValueField();
+  const lastField=container.lastElementChild;
+  if(!lastField)return;
+  const colSel=lastField.querySelector('.pvtFieldCol');
+  if(colSel)colSel.value=firstNumCol;
+
+  // Set checkboxes based on preset
+  const aggs=lastField.querySelectorAll('.pvtAgg');
+  const presetMap={
+    'summary':['count','sum','mean','min','max'],
+    'count':['count'],
+    'avg':['mean','std'],
+    'dist':['min','max','median']
+  };
+  const selected=presetMap[preset]||['count'];
+  aggs.forEach(cb=>{cb.checked=selected.includes(cb.value)});
+  pivotUpdatePreview();
+}
+
+function pivotGetValueFields(){
+  const fields=[];
+  document.querySelectorAll('#pivotValueFields [id^="pvtField_"]').forEach(div=>{
+    const col=div.querySelector('.pvtFieldCol')?.value||'';
+    const aggs=[...div.querySelectorAll('.pvtAgg:checked')].map(cb=>cb.value);
+    if(col&&aggs.length>0)fields.push({col,aggs});
+  });
+  return fields;
+}
+
+function pivotUpdatePreview(){
+  const rowDim=document.getElementById('pivotRowDim')?.value||'';
+  const colDim=document.getElementById('pivotColDim')?.value||'';
+  const valueFields=pivotGetValueFields();
+  const whereClause=document.getElementById('pivotWhereClause')?.value||'';
+  const orderBy=document.getElementById('pivotOrderBy')?.value||'';
+  const orderDir=document.getElementById('pivotOrderDir')?.value||'ASC';
+  const preview=document.getElementById('pivotSQLPreview');
+  if(!preview)return;
+
+  if(!rowDim){preview.textContent='-- Satır boyutu seçin';return}
+  if(valueFields.length===0){preview.textContent='-- Değer alanı ekleyin';return}
+
+  let sql='';
+  if(colDim){
+    // True pivot mode — simplified view
+    const vf=valueFields[0];
+    const aggLabel=vf.aggs[0]||'count';
+    const aggUpper=aggLabel.toUpperCase()==='MEAN'?'AVG':aggLabel.toUpperCase();
+    sql='-- Çapraz Tablo (Pivot): "'+rowDim+'" × "'+colDim+'"\n';
+    sql+='-- Metrik: '+aggUpper+'("'+vf.col+'")\n';
+    sql+='-- Backend Polars pivot kullanılacak\n';
+    sql+='SELECT "'+rowDim+'",\n';
+    sql+='  PIVOT "'+colDim+'" → '+aggUpper+'("'+vf.col+'")\n';
+    sql+='FROM veri';
+    if(whereClause)sql+='\nWHERE '+whereClause;
+    sql+='\nORDER BY "'+rowDim+'" '+orderDir;
+  }else{
+    // GROUP BY mode
+    let selectParts=['"'+rowDim+'"','COUNT(*) AS _n'];
+    valueFields.forEach(vf=>{
+      vf.aggs.forEach(agg=>{
+        if(agg==='count')return; // already have COUNT(*)
+        const fn=agg.toUpperCase()==='MEAN'?'AVG':agg.toUpperCase();
+        selectParts.push(fn+'("'+vf.col+'") AS "'+vf.col+'_'+agg+'"');
+      });
+    });
+    sql='SELECT '+selectParts.join(',\n       ')+'\nFROM veri';
+    if(whereClause)sql+='\nWHERE '+whereClause;
+    sql+='\nGROUP BY "'+rowDim+'"';
+    if(orderBy){
+      const orderCol=orderBy==='_row_'?'"'+rowDim+'"':'"'+orderBy+'"';
+      sql+='\nORDER BY '+orderCol+' '+orderDir;
+    }else{
+      sql+='\nORDER BY "'+rowDim+'" '+orderDir;
+    }
+  }
+  preview.textContent=sql;
+}
+
+function pivotCopyToEditor(){
+  const preview=document.getElementById('pivotSQLPreview');
+  const editor=document.getElementById('sqlEditor');
+  if(preview&&editor){
+    // For GROUP BY mode, copy clean SQL. For pivot mode, copy GROUP BY equivalent
+    const rowDim=document.getElementById('pivotRowDim')?.value||'';
+    const colDim=document.getElementById('pivotColDim')?.value||'';
+    if(colDim){
+      // Can't directly express pivot in SQL — copy GROUP BY with both dims
+      const vf=pivotGetValueFields()[0];
+      if(vf){
+        const aggFn=vf.aggs[0]==='mean'?'AVG':vf.aggs[0].toUpperCase();
+        editor.value='SELECT "'+rowDim+'", "'+colDim+'", '+aggFn+'("'+vf.col+'") AS val\nFROM veri\nGROUP BY "'+rowDim+'", "'+colDim+'"\nORDER BY "'+rowDim+'"';
+      }
+    }else{
+      // Clean SQL (remove comments)
+      editor.value=preview.textContent.split('\n').filter(l=>!l.trim().startsWith('--')).join('\n');
+    }
+    showInfo('SQL editöre kopyalandı.');
+  }
+}
+
+async function pivotExecute(){
+  const rowDim=document.getElementById('pivotRowDim')?.value||'';
+  const colDim=document.getElementById('pivotColDim')?.value||'';
+  const valueFields=pivotGetValueFields();
+  const whereClause=document.getElementById('pivotWhereClause')?.value||'';
+  const orderBy=document.getElementById('pivotOrderBy')?.value||'';
+  const orderDir=document.getElementById('pivotOrderDir')?.value||'ASC';
+
+  if(!rowDim){showError('Satır boyutu seçilmedi!');return}
+  if(valueFields.length===0){showError('En az bir değer alanı ve metrik seçin!');return}
+
+  _showBusy('Pivot tablo hesaplanıyor...');
+  const resArea=document.getElementById('pivotResultArea');
+  const errDiv=document.getElementById('sqlError');
+  if(errDiv)errDiv.style.display='none';
+
+  try{
+    let result;
+    if(window._BACKEND_ACTIVE){
+      try{
+        const resp=await fetch('http://localhost:8765/api/sql-pivot',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({rowDim,colDim,valueFields,where:whereClause,orderBy:orderBy||'_row_',orderDir})
+        });
+        const data=await resp.json();
+        if(data.error)throw new Error(data.error);
+        result={columns:data.columns,rows:data.rows,mode:data.mode};
+      }catch(backendErr){
+        console.warn('[PIVOT] Backend error, trying SQL fallback:',backendErr.message);
+        // Fallback: generate GROUP BY SQL and run via AlaSQL
+        result=await pivotFallbackAlaSQL(rowDim,colDim,valueFields,whereClause,orderBy,orderDir);
+      }
+    }else{
+      result=await pivotFallbackAlaSQL(rowDim,colDim,valueFields,whereClause,orderBy,orderDir);
+    }
+
+    _pivotResultData=result;
+    renderPivotResults(result.columns,result.rows);
+    if(resArea)resArea.style.display='block';
+    const info=document.getElementById('pivotResultInfo');
+    if(info)info.textContent=result.rows.length+' satır × '+result.columns.length+' sütun — '+(result.mode==='pivot'?'Çapraz Tablo':'Grup Metrikleri')+' — '+new Date().toLocaleTimeString('tr-TR');
+  }catch(err){
+    if(errDiv){errDiv.textContent='❌ Pivot Hatası: '+err.message;errDiv.style.display='block'}
+    if(resArea)resArea.style.display='none';
+  }finally{
+    _hideBusy();
+  }
+}
+
+async function pivotFallbackAlaSQL(rowDim,colDim,valueFields,whereClause,orderBy,orderDir){
+  // Build GROUP BY SQL for AlaSQL
+  let selectParts=['"'+rowDim+'"','COUNT(*) AS _n'];
+  const groupCols=colDim?[rowDim,colDim]:[rowDim];
+  if(colDim)selectParts.splice(1,0,'"'+colDim+'"');
+  valueFields.forEach(vf=>{
+    vf.aggs.forEach(agg=>{
+      if(agg==='count')return;
+      const fn=agg==='mean'?'AVG':agg.toUpperCase();
+      selectParts.push(fn+'("'+vf.col+'") AS "'+vf.col+'_'+agg+'"');
+    });
+  });
+  let sql='SELECT '+selectParts.join(', ')+' FROM veri';
+  if(whereClause)sql+=' WHERE '+whereClause;
+  sql+=' GROUP BY '+groupCols.map(c=>'"'+c+'"').join(', ');
+  if(orderBy){
+    const oc=orderBy==='_row_'?'"'+rowDim+'"':'"'+orderBy+'"';
+    sql+=' ORDER BY '+oc+' '+orderDir;
+  }
+
+  const result=await executeSQLAlaSQL(sql);
+  result.mode='groupby';
+  return result;
+}
+
+function renderPivotResults(columns,rows){
+  const container=document.getElementById('pivotResultTable');
+  if(!container)return;
+
+  // Determine numeric columns for color coding
+  const numericCols=new Set();
+  columns.forEach((c,i)=>{
+    if(i===0)return;
+    const hasNum=rows.some(r=>typeof r[i]==='number');
+    if(hasNum)numericCols.add(i);
+  });
+
+  // Find min/max for each numeric column (for heatmap coloring)
+  const colMin={},colMax={};
+  numericCols.forEach(i=>{
+    const vals=rows.map(r=>r[i]).filter(v=>v!==null&&v!==undefined&&typeof v==='number');
+    if(vals.length>0){colMin[i]=Math.min(...vals);colMax[i]=Math.max(...vals)}
+  });
+
+  let html='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  // Header
+  html+='<thead><tr>';
+  columns.forEach((c,i)=>{
+    const bg=i===0?'#ede9fe':'#f0fdf4';
+    const color=i===0?'#5b21b6':'#065f46';
+    html+='<th style="position:sticky;top:0;background:'+bg+';padding:8px 10px;text-align:'+(numericCols.has(i)?'right':'left')+';font-size:11px;font-weight:600;color:'+color+';border-bottom:2px solid #7c3aed;white-space:nowrap">'+c+'</th>';
+  });
+  html+='</tr></thead><tbody>';
+
+  rows.forEach((row,ri)=>{
+    html+='<tr>';
+    row.forEach((val,ci)=>{
+      let display,bg='transparent',align='left';
+      if(val===null||val===undefined){
+        display='<span style="color:#d1d5db">—</span>';
+      }else if(typeof val==='number'){
+        display=val.toLocaleString('tr-TR',{maximumFractionDigits:4});
+        align='right';
+        // Heatmap for numeric columns
+        if(numericCols.has(ci)&&colMax[ci]!==undefined&&colMax[ci]!==colMin[ci]){
+          const ratio=(val-colMin[ci])/(colMax[ci]-colMin[ci]);
+          const r=Math.round(255-(ratio*80));
+          const g=Math.round(255-(1-ratio)*60);
+          bg='rgba('+Math.max(180,r)+','+Math.min(255,g)+','+Math.round(200+ratio*55)+',0.3)';
+        }
+      }else{
+        display=String(val);
+      }
+      const fw=ci===0?'font-weight:600;':'';
+      html+='<td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;text-align:'+align+';background:'+bg+';'+fw+'white-space:nowrap" title="'+(val!=null?String(val):'')+'">'+display+'</td>';
+    });
+    html+='</tr>';
+  });
+
+  html+='</tbody></table>';
+  container.innerHTML=html;
+}
+
+function exportPivotCSV(){
+  if(!_pivotResultData||!_pivotResultData.rows.length){showError('Dışa aktarılacak sonuç yok.');return}
+  const{columns,rows}=_pivotResultData;
+  let csv=columns.map(c=>'"'+c.replace(/"/g,'""')+'"').join(',')+'\n';
+  rows.forEach(row=>{csv+=row.map(v=>v===null||v===undefined?'':'"'+String(v).replace(/"/g,'""')+'"').join(',')+'\n'});
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='pivot_sonuc_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();URL.revokeObjectURL(a.href);
+}
+
+function exportPivotExcel(){
+  if(!_pivotResultData||!_pivotResultData.rows.length){showError('Dışa aktarılacak sonuç yok.');return}
+  const table=document.querySelector('#pivotResultTable table');
+  if(table&&typeof exportHTMLTableToExcel==='function'){
+    exportHTMLTableToExcel('pivotResultTable','pivot_sonuc');return;
+  }
+  exportPivotCSV();
 }
 </script>
 <!-- Chatbot Bubble -->
