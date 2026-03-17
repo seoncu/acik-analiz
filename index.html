@@ -1152,6 +1152,7 @@
         <button class="tab-btn" data-tab="crosstab" onclick="switchAnalysisTab('crosstab',this)" title="İki kategorik değişkenin çapraz tablosu">📑 Çapraz Tablo</button>
         <button class="tab-btn tab-btn-special" data-tab="mapview" onclick="switchAnalysisTab('mapview',this)" title="Kategorik değişkeni haritada görselleştirme">🗺️ Harita</button>
         <button class="tab-btn tab-btn-special tab-btn-adv" data-tab="advstats" onclick="switchAnalysisTab('advstats',this)" title="JASP benzeri ileri istatistik testleri">🔬 İleri İstatistik</button>
+        <button class="tab-btn tab-btn-special" data-tab="sql" onclick="switchAnalysisTab('sql',this)" title="SQL sorgusu ile veri analizi">🗃️ SQL Sorgusu</button>
       </div>
 
       <!-- GLOBAL FILTER BAR — always visible -->
@@ -1727,6 +1728,121 @@
             <div style="position:relative;max-width:700px;margin:0 auto"><canvas id="advStatsCanvas" style="max-height:400px"></canvas></div>
           </div>
           <div id="advStatsInterpretation" style="display:none;margin-top:12px;padding:14px;background:linear-gradient(135deg,#faf5ff,#eff6ff);border-radius:10px;border-left:4px solid #7c3aed;font-size:12.5px;line-height:1.7"></div>
+        </div>
+      </div>
+
+      <div id="tabSQL" class="hidden">
+        <div style="background:linear-gradient(135deg,#ecfdf5,#f0f9ff);border-radius:12px;padding:16px 20px;margin-bottom:16px;border-left:4px solid #059669">
+          <h3 style="margin:0 0 4px 0;font-size:16px;color:#065f46">🗃️ SQL Sorgusu</h3>
+          <p style="margin:0;font-size:12px;color:#047857">Yüklenen veri seti üzerinde SQL sorguları çalıştırın. Tablo adı: <code style="background:#d1fae5;padding:2px 6px;border-radius:4px;font-weight:bold">veri</code></p>
+        </div>
+
+        <!-- Two-column layout: Left=Editor, Right=Pratik Önerici -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <!-- LEFT: SQL Editor -->
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px">
+            <h4 style="margin:0 0 10px;font-size:13px;color:#065f46">✏️ SQL Editörü</h4>
+            <textarea id="sqlEditor" spellcheck="false" style="width:100%;height:180px;font-family:'Fira Code','Consolas','Courier New',monospace;font-size:13px;padding:12px;border:2px solid #d1d5db;border-radius:8px;background:#f8fafc;resize:vertical;tab-size:2;line-height:1.5" placeholder="SELECT * FROM veri WHERE ..."></textarea>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <button onclick="executeSQLQuery()" style="background:#059669;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px" title="SQL sorgusunu çalıştır">▶ Çalıştır</button>
+              <button onclick="llmFixSQL()" style="background:#7c3aed;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px" title="LLM ile SQL hatasını düzelt">🧠 LLM SQL Düzelt</button>
+              <button onclick="askClaudeSQL()" style="background:#2563eb;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px" title="SQL sorgusunu Claude'a sor">💬 Claude'a Sor</button>
+              <button onclick="clearSQLEditor()" style="background:#e2e8f0;color:#475569;border:none;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer" title="Editörü temizle">🗑️ Temizle</button>
+            </div>
+            <div id="sqlError" style="display:none;margin-top:10px;padding:10px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;font-size:12px;color:#991b1b;font-family:monospace;white-space:pre-wrap"></div>
+            <div id="sqlLLMResult" style="display:none;margin-top:10px;padding:10px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px;font-size:12px;color:#4c1d95;line-height:1.5"></div>
+          </div>
+
+          <!-- RIGHT: Pratik SQL Sorgu Önerici -->
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px">
+            <h4 style="margin:0 0 10px;font-size:13px;color:#065f46">🧩 Pratik SQL Sorgu Önerici</h4>
+            <p style="margin:0 0 10px;font-size:11px;color:#6b7280">SQL bilmeyenler için: Aşağıdan seçimler yaparak sorgu oluşturun.</p>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <!-- SELECT -->
+              <div>
+                <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">📌 Gösterilecek Sütunlar (SELECT)</label>
+                <div id="sqlBuilderSelectCols" style="display:flex;flex-wrap:wrap;gap:4px;max-height:80px;overflow-y:auto;padding:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px"></div>
+                <label style="font-size:10px;color:#9ca3af;margin-top:2px;display:block"><input type="checkbox" id="sqlBuilderSelectAll" checked onchange="sqlBuilderToggleAll(this)"> Tümünü Seç</label>
+              </div>
+
+              <!-- Aggregation -->
+              <div>
+                <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">📊 Toplama Fonksiyonu (Opsiyonel)</label>
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                  <select id="sqlBuilderAggFunc" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px" onchange="sqlBuilderUpdatePreview()">
+                    <option value="">Yok</option>
+                    <option value="COUNT">COUNT (Sayı)</option>
+                    <option value="SUM">SUM (Toplam)</option>
+                    <option value="AVG">AVG (Ortalama)</option>
+                    <option value="MIN">MIN (Minimum)</option>
+                    <option value="MAX">MAX (Maksimum)</option>
+                    <option value="STDEV">STDEV (Standart Sapma)</option>
+                  </select>
+                  <select id="sqlBuilderAggCol" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px" onchange="sqlBuilderUpdatePreview()">
+                    <option value="*">* (Tümü)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- WHERE conditions -->
+              <div>
+                <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">🔍 Filtre (WHERE)</label>
+                <div id="sqlBuilderConditions"></div>
+                <button onclick="sqlBuilderAddCondition()" style="margin-top:4px;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer">+ Koşul Ekle</button>
+              </div>
+
+              <!-- GROUP BY -->
+              <div>
+                <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">📦 Gruplama (GROUP BY)</label>
+                <select id="sqlBuilderGroupBy" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;width:100%" onchange="sqlBuilderUpdatePreview()">
+                  <option value="">Yok</option>
+                </select>
+              </div>
+
+              <!-- ORDER BY -->
+              <div>
+                <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">🔃 Sıralama (ORDER BY)</label>
+                <div style="display:flex;gap:6px;align-items:center">
+                  <select id="sqlBuilderOrderBy" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;flex:1" onchange="sqlBuilderUpdatePreview()">
+                    <option value="">Yok</option>
+                  </select>
+                  <select id="sqlBuilderOrderDir" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px" onchange="sqlBuilderUpdatePreview()">
+                    <option value="ASC">Artan ↑</option>
+                    <option value="DESC">Azalan ↓</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- LIMIT -->
+              <div>
+                <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">🔢 Satır Limiti (LIMIT)</label>
+                <input type="number" id="sqlBuilderLimit" value="100" min="1" max="100000" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;width:100px" onchange="sqlBuilderUpdatePreview()">
+              </div>
+
+              <!-- Preview & Apply -->
+              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 10px;margin-top:4px">
+                <label style="font-size:10px;font-weight:600;color:#065f46;display:block;margin-bottom:4px">Oluşturulan Sorgu:</label>
+                <code id="sqlBuilderPreview" style="font-size:11px;color:#047857;word-break:break-all;display:block;min-height:20px">SELECT * FROM veri LIMIT 100</code>
+              </div>
+              <button onclick="sqlBuilderApply()" style="background:#059669;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;width:100%">📋 Editöre Aktar ve Çalıştır</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results area -->
+        <div id="sqlResultArea" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <h4 style="margin:0;font-size:14px;color:#065f46">📋 Sonuçlar</h4>
+              <span id="sqlResultInfo" style="font-size:11px;color:#6b7280"></span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onclick="exportSQLResultCSV()" style="background:#f59e0b;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer">📥 CSV İndir</button>
+              <button onclick="exportSQLResultExcel()" style="background:#217346;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer">📊 Excel İndir</button>
+            </div>
+          </div>
+          <div id="sqlResultTable" style="overflow-x:auto;max-height:500px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px"></div>
         </div>
       </div>
 
@@ -4294,10 +4410,10 @@ function onColTypeConfirmChange(checked){
 
 // === Analysis Tab switching ===
 function switchAnalysisTab(tab,btn){
-  ['tabDashboard','tabQuickview','tabTopBottom','tabSummary','tabStats','tabCorrelation','tabCrosstab','tabMapView','tabAdvStats'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden')});
+  ['tabDashboard','tabQuickview','tabTopBottom','tabSummary','tabStats','tabCorrelation','tabCrosstab','tabMapView','tabAdvStats','tabSQL'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden')});
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  const map={dashboard:'tabDashboard',quickview:'tabQuickview',topbottom:'tabTopBottom',summary:'tabSummary',stats:'tabStats',correlation:'tabCorrelation',crosstab:'tabCrosstab',mapview:'tabMapView',advstats:'tabAdvStats'};
+  const map={dashboard:'tabDashboard',quickview:'tabQuickview',topbottom:'tabTopBottom',summary:'tabSummary',stats:'tabStats',correlation:'tabCorrelation',crosstab:'tabCrosstab',mapview:'tabMapView',advstats:'tabAdvStats',sql:'tabSQL'};
   document.getElementById(map[tab]).classList.remove('hidden');
   // PERFORMANCE: debounce heavy tab content rendering to prevent rapid-switch lag
   if(_tabSwitchTimer){clearTimeout(_tabSwitchTimer);_tabSwitchTimer=null}
@@ -4336,6 +4452,7 @@ function switchAnalysisTab(tab,btn){
         const _asBanner=document.getElementById('advStatsSamplingBanner');
         if(_asBanner)_asBanner.style.display=(window._BACKEND_ACTIVE&&window._processedByBackend)?'block':'none';
       }
+      if(tab==='sql'){try{initSQLTab()}catch(e){console.warn('sql init err',e)}}
     };
     if(isHeavy){
       _busyRun('Sekme hesaplanıyor...',renderTab).then(()=>{
@@ -6976,6 +7093,13 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
   }else{
     // === STANDARD MODE: X + multi-Y ===
     const result=computeMultiAgg(xCol,yCols,agg);
+    // Güvenlik: Çok fazla kategori Chart.js'i boğar — dashboard limit'i uygula
+    const _dashLim=document.getElementById('dashLimit')?parseInt(document.getElementById('dashLimit').value)||15:15;
+    if(result.labels&&result.labels.length>_dashLim&&type!=='pivotTable'){
+      result.labels=result.labels.slice(0,_dashLim);
+      if(result.fullLabels)result.fullLabels=result.fullLabels.slice(0,_dashLim);
+      result.datasets.forEach(ds=>{if(ds.data)ds.data=ds.data.slice(0,_dashLim)});
+    }
     const multiY=result.datasets.length>1;
     const isStacked=(type==='stackedBar');
 
@@ -16594,6 +16718,430 @@ function _generateRuleBasedInterpretation(r){
 
   html+='</div>';
   return html;
+}
+
+// =============================================
+// SQL SORGUSU TAB — Functions
+// =============================================
+let _sqlResultData = null; // {columns:[], rows:[]}
+let _alasqlLoaded = false;
+let _sqlBuilderCondCount = 0;
+
+function initSQLTab(){
+  if(!outHeaders||outHeaders.length===0)return;
+  // Populate select columns checkboxes
+  const selDiv=document.getElementById('sqlBuilderSelectCols');
+  if(selDiv&&selDiv.children.length===0){
+    outHeaders.forEach(h=>{
+      const lbl=document.createElement('label');
+      lbl.style.cssText='font-size:10px;display:flex;align-items:center;gap:2px;background:#ecfdf5;padding:2px 6px;border-radius:4px;cursor:pointer;white-space:nowrap';
+      lbl.innerHTML='<input type="checkbox" checked class="sqlSelCol" value="'+h.replace(/"/g,'&quot;')+'" onchange="sqlBuilderUpdatePreview()"> '+h;
+      selDiv.appendChild(lbl);
+    });
+  }
+  // Populate aggregation column dropdown
+  const aggCol=document.getElementById('sqlBuilderAggCol');
+  if(aggCol&&aggCol.options.length<=1){
+    outHeaders.forEach(h=>{
+      const opt=document.createElement('option');
+      opt.value=h;opt.textContent=h;
+      aggCol.appendChild(opt);
+    });
+  }
+  // Populate GROUP BY, ORDER BY dropdowns
+  ['sqlBuilderGroupBy','sqlBuilderOrderBy'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(sel&&sel.options.length<=1){
+      outHeaders.forEach(h=>{
+        const opt=document.createElement('option');
+        opt.value=h;opt.textContent=h;
+        sel.appendChild(opt);
+      });
+    }
+  });
+  sqlBuilderUpdatePreview();
+}
+
+function sqlBuilderToggleAll(chk){
+  document.querySelectorAll('.sqlSelCol').forEach(c=>{c.checked=chk.checked});
+  sqlBuilderUpdatePreview();
+}
+
+function sqlBuilderAddCondition(){
+  _sqlBuilderCondCount++;
+  const div=document.getElementById('sqlBuilderConditions');
+  const row=document.createElement('div');
+  row.id='sqlCond_'+_sqlBuilderCondCount;
+  row.style.cssText='display:flex;gap:4px;align-items:center;margin-bottom:4px;flex-wrap:wrap';
+
+  // Logic operator (AND/OR) - only for 2nd+ conditions
+  const existingConds=div.querySelectorAll('[id^="sqlCond_"]');
+  let logicHTML='';
+  if(existingConds.length>0){
+    logicHTML='<select class="sqlCondLogic" style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;width:60px" onchange="sqlBuilderUpdatePreview()"><option value="AND">VE</option><option value="OR">VEYA</option></select>';
+  }
+
+  // Column selector
+  let colOpts='<option value="">Sütun seç...</option>';
+  outHeaders.forEach(h=>{colOpts+='<option value="'+h.replace(/"/g,'&quot;')+'">'+h+'</option>'});
+
+  row.innerHTML=logicHTML+
+    '<select class="sqlCondCol" style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;flex:1;min-width:100px" onchange="sqlBuilderUpdatePreview()">'+colOpts+'</select>'+
+    '<select class="sqlCondOp" style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;width:80px" onchange="sqlBuilderUpdatePreview()">'+
+      '<option value="=">=</option><option value="!=">!=</option><option value=">">></option><option value="<"><</option>'+
+      '<option value=">=">>=</option><option value="<="><=</option><option value="LIKE">LIKE</option>'+
+      '<option value="NOT LIKE">NOT LIKE</option><option value="IN">IN</option><option value="IS NULL">IS NULL</option><option value="IS NOT NULL">IS NOT NULL</option>'+
+    '</select>'+
+    '<input class="sqlCondVal" type="text" placeholder="Değer" style="padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;flex:1;min-width:80px" onchange="sqlBuilderUpdatePreview()">'+
+    '<button onclick="sqlBuilderRemoveCondition(\'sqlCond_'+_sqlBuilderCondCount+'\')" style="background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:2px 6px;border-radius:4px;font-size:11px;cursor:pointer">✕</button>';
+  div.appendChild(row);
+  sqlBuilderUpdatePreview();
+}
+
+function sqlBuilderRemoveCondition(id){
+  const el=document.getElementById(id);
+  if(el)el.remove();
+  // Fix first condition (remove logic operator if it's now the first)
+  const div=document.getElementById('sqlBuilderConditions');
+  const first=div.querySelector('[id^="sqlCond_"]');
+  if(first){
+    const logic=first.querySelector('.sqlCondLogic');
+    if(logic)logic.remove();
+  }
+  sqlBuilderUpdatePreview();
+}
+
+function sqlBuilderUpdatePreview(){
+  // SELECT clause
+  const aggFunc=document.getElementById('sqlBuilderAggFunc')?.value||'';
+  const aggCol=document.getElementById('sqlBuilderAggCol')?.value||'*';
+  const groupBy=document.getElementById('sqlBuilderGroupBy')?.value||'';
+  const orderBy=document.getElementById('sqlBuilderOrderBy')?.value||'';
+  const orderDir=document.getElementById('sqlBuilderOrderDir')?.value||'ASC';
+  const limit=document.getElementById('sqlBuilderLimit')?.value||'100';
+
+  let selectParts=[];
+  if(aggFunc){
+    if(groupBy) selectParts.push('"'+groupBy+'"');
+    selectParts.push(aggFunc+'('+(aggCol==='*'?'*':'"'+aggCol+'"')+') AS '+aggFunc.toLowerCase()+'_sonuc');
+  } else {
+    const checked=[...document.querySelectorAll('.sqlSelCol:checked')].map(c=>c.value);
+    if(checked.length===0||checked.length===outHeaders.length){
+      selectParts.push('*');
+    } else {
+      selectParts=checked.map(c=>'"'+c+'"');
+    }
+  }
+
+  let sql='SELECT '+selectParts.join(', ')+' FROM veri';
+
+  // WHERE clause
+  const conditions=document.querySelectorAll('#sqlBuilderConditions [id^="sqlCond_"]');
+  if(conditions.length>0){
+    let whereParts=[];
+    conditions.forEach((row,i)=>{
+      const logic=row.querySelector('.sqlCondLogic')?.value||'';
+      const col=row.querySelector('.sqlCondCol')?.value||'';
+      const op=row.querySelector('.sqlCondOp')?.value||'=';
+      const val=row.querySelector('.sqlCondVal')?.value||'';
+      if(!col)return;
+      let cond='';
+      if(op==='IS NULL') cond='"'+col+'" IS NULL';
+      else if(op==='IS NOT NULL') cond='"'+col+'" IS NOT NULL';
+      else if(op==='IN') cond='"'+col+'" IN ('+val+')';
+      else if(op==='LIKE'||op==='NOT LIKE') cond='"'+col+'" '+op+" '%"+val+"%'";
+      else {
+        const numVal=parseFloat(val);
+        if(!isNaN(numVal)&&val.trim()===String(numVal)) cond='"'+col+'" '+op+' '+numVal;
+        else cond='"'+col+'" '+op+" '"+val.replace(/'/g,"''")+"'";
+      }
+      if(i>0&&logic) whereParts.push(logic);
+      whereParts.push(cond);
+    });
+    if(whereParts.length>0) sql+=' WHERE '+whereParts.join(' ');
+  }
+
+  // GROUP BY
+  if(groupBy) sql+=' GROUP BY "'+groupBy+'"';
+
+  // ORDER BY
+  if(orderBy) sql+=' ORDER BY "'+orderBy+'" '+orderDir;
+
+  // LIMIT
+  if(limit) sql+=' LIMIT '+limit;
+
+  const preview=document.getElementById('sqlBuilderPreview');
+  if(preview) preview.textContent=sql;
+}
+
+function sqlBuilderApply(){
+  const preview=document.getElementById('sqlBuilderPreview');
+  const editor=document.getElementById('sqlEditor');
+  if(preview&&editor){
+    editor.value=preview.textContent;
+    executeSQLQuery();
+  }
+}
+
+async function executeSQLQuery(){
+  const editor=document.getElementById('sqlEditor');
+  const sql=(editor?.value||'').trim();
+  if(!sql){showError('SQL sorgusu boş!');return}
+
+  const errDiv=document.getElementById('sqlError');
+  const resArea=document.getElementById('sqlResultArea');
+  const llmDiv=document.getElementById('sqlLLMResult');
+  if(errDiv)errDiv.style.display='none';
+  if(llmDiv)llmDiv.style.display='none';
+
+  _showBusy('SQL sorgusu çalıştırılıyor...');
+
+  try{
+    let result;
+    // Try backend first
+    if(window._BACKEND_ACTIVE){
+      try{
+        const resp=await fetch('http://localhost:8765/api/sql',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({sql:sql})
+        });
+        const data=await resp.json();
+        if(data.error){throw new Error(data.error)}
+        result={columns:data.columns||[],rows:data.rows||[],totalDataRows:data.totalDataRows||0,totalDataCols:data.totalDataCols||0};
+      }catch(backendErr){
+        console.warn('[SQL] Backend error, trying AlaSQL:',backendErr.message);
+        result=await executeSQLAlaSQL(sql);
+      }
+    } else {
+      result=await executeSQLAlaSQL(sql);
+    }
+
+    _sqlResultData=result;
+    renderSQLResults(result.columns,result.rows);
+    if(resArea)resArea.style.display='block';
+    const info=document.getElementById('sqlResultInfo');
+    if(info){
+      let infoText=result.rows.length+' satır × '+result.columns.length+' sütun döndü';
+      if(result.totalDataRows)infoText+=' (toplam veri: '+result.totalDataRows+' satır × '+result.totalDataCols+' sütun)';
+      infoText+=' — '+new Date().toLocaleTimeString('tr-TR');
+      info.textContent=infoText;
+    }
+  }catch(err){
+    if(errDiv){
+      errDiv.textContent='❌ SQL Hatası: '+err.message;
+      errDiv.style.display='block';
+    }
+    if(resArea)resArea.style.display='none';
+  }finally{
+    _hideBusy();
+  }
+}
+
+async function executeSQLAlaSQL(sql){
+  // Load AlaSQL dynamically if needed
+  if(!_alasqlLoaded){
+    await new Promise((resolve,reject)=>{
+      if(window.alasql){_alasqlLoaded=true;resolve();return}
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/alasql/4.5.1/alasql.min.js';
+      s.onload=()=>{_alasqlLoaded=true;resolve()};
+      s.onerror=()=>reject(new Error('AlaSQL yüklenemedi. İnternet bağlantınızı kontrol edin.'));
+      document.head.appendChild(s);
+    });
+  }
+
+  // Prepare data table
+  if(!window._alasqlTableReady){
+    // Build rows array from rawLines
+    const tableData=[];
+    const headerCount=outHeaders.length;
+    for(let i=0;i<rawLines.length;i++){
+      const row={};
+      for(let j=0;j<headerCount;j++){
+        let val=rawLines[i][j];
+        if(val===undefined||val===null||val==='')row[outHeaders[j]]=null;
+        else{
+          const num=parseFloat(val);
+          row[outHeaders[j]]=(!isNaN(num)&&String(num)===val.trim())?num:val;
+        }
+      }
+      tableData.push(row);
+    }
+    // Drop existing table if any
+    try{alasql('DROP TABLE IF EXISTS veri')}catch(e){}
+    alasql('CREATE TABLE veri');
+    alasql.tables.veri.data=tableData;
+    window._alasqlTableReady=true;
+  }
+
+  const rows=alasql(sql);
+  if(!Array.isArray(rows))return{columns:['sonuc'],rows:[[rows]]};
+  if(rows.length===0)return{columns:['(boş)'],rows:[]};
+  const columns=Object.keys(rows[0]);
+  const dataRows=rows.map(r=>columns.map(c=>r[c]));
+  return{columns,rows:dataRows};
+}
+
+function renderSQLResults(columns,rows){
+  const container=document.getElementById('sqlResultTable');
+  if(!container)return;
+
+  let html='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  html+='<thead><tr>';
+  columns.forEach(c=>{
+    html+='<th style="position:sticky;top:0;background:#f0fdf4;padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#065f46;border-bottom:2px solid #059669;white-space:nowrap">'+c+'</th>';
+  });
+  html+='</tr></thead><tbody>';
+
+  rows.forEach((row,i)=>{
+    const bg=i%2===0?'#fff':'#f8fafc';
+    html+='<tr style="background:'+bg+'">';
+    row.forEach(val=>{
+      const display=val===null||val===undefined?'<span style="color:#d1d5db">—</span>':(typeof val==='number'?val.toLocaleString('tr-TR'):String(val));
+      html+='<td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(val!=null?String(val).replace(/"/g,'&quot;'):'')+'">'+display+'</td>';
+    });
+    html+='</tr>';
+  });
+
+  html+='</tbody></table>';
+  container.innerHTML=html;
+}
+
+function exportSQLResultCSV(){
+  if(!_sqlResultData||!_sqlResultData.rows.length){showError('Dışa aktarılacak sonuç yok.');return}
+  const {columns,rows}=_sqlResultData;
+  let csv=columns.map(c=>'"'+c.replace(/"/g,'""')+'"').join(',')+'\n';
+  rows.forEach(row=>{
+    csv+=row.map(val=>{
+      if(val===null||val===undefined)return '';
+      return '"'+String(val).replace(/"/g,'""')+'"';
+    }).join(',')+'\n';
+  });
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='sql_sonuc_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();URL.revokeObjectURL(url);
+}
+
+function exportSQLResultExcel(){
+  if(!_sqlResultData||!_sqlResultData.rows.length){showError('Dışa aktarılacak sonuç yok.');return}
+  // Use simple XLSX generation via HTML table export
+  const table=document.querySelector('#sqlResultTable table');
+  if(!table){showError('Tablo bulunamadı.');return}
+  // Use existing exportHTMLTableToExcel if available
+  if(typeof exportHTMLTableToExcel==='function'){
+    exportHTMLTableToExcel('sqlResultTable','sql_sonuc');
+    return;
+  }
+  // Fallback: CSV download
+  exportSQLResultCSV();
+}
+
+function clearSQLEditor(){
+  const editor=document.getElementById('sqlEditor');
+  if(editor)editor.value='';
+  const errDiv=document.getElementById('sqlError');
+  if(errDiv)errDiv.style.display='none';
+  const llmDiv=document.getElementById('sqlLLMResult');
+  if(llmDiv)llmDiv.style.display='none';
+  const resArea=document.getElementById('sqlResultArea');
+  if(resArea)resArea.style.display='none';
+}
+
+async function llmFixSQL(){
+  const editor=document.getElementById('sqlEditor');
+  const sql=(editor?.value||'').trim();
+  if(!sql){showError('Düzeltilecek SQL sorgusu yok.');return}
+
+  const llmDiv=document.getElementById('sqlLLMResult');
+  const errDiv=document.getElementById('sqlError');
+
+  // First try rule-based fixes
+  let fixed=sql;
+  let fixes=[];
+
+  // Common fixes
+  // 1. Missing quotes around string values in WHERE
+  // 2. Table name correction
+  if(/FROM\s+(?!veri\b)\w+/i.test(fixed)){
+    fixed=fixed.replace(/FROM\s+\w+/i,'FROM veri');
+    fixes.push('Tablo adı "veri" olarak düzeltildi');
+  }
+  // 3. Turkish characters in column names - wrap with quotes
+  outHeaders.forEach(h=>{
+    const re=new RegExp('(?<!["\'])\\b'+h.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b(?!["\'])','g');
+    if(re.test(fixed)&&/[çğıöşüÇĞİÖŞÜ]/.test(h)){
+      fixed=fixed.replace(re,'"'+h+'"');
+      fixes.push('"'+h+'" sütunu tırnak içine alındı');
+    }
+  });
+  // 4. SELECT * typo
+  if(/SELEC[^T]/i.test(fixed)){fixed=fixed.replace(/SELEC\b/i,'SELECT');fixes.push('SELECT yazım hatası düzeltildi')}
+  if(/FORM\s/i.test(fixed)){fixed=fixed.replace(/FORM\s/i,'FROM ');fixes.push('FROM yazım hatası düzeltildi')}
+  if(/WERE\s/i.test(fixed)){fixed=fixed.replace(/WERE\s/i,'WHERE ');fixes.push('WHERE yazım hatası düzeltildi')}
+  if(/GRUOP\s/i.test(fixed)){fixed=fixed.replace(/GRUOP\s/i,'GROUP ');fixes.push('GROUP yazım hatası düzeltildi')}
+  if(/ORDE\sB/i.test(fixed)){fixed=fixed.replace(/ORDE\sB/i,'ORDER B');fixes.push('ORDER yazım hatası düzeltildi')}
+
+  // Try LLM if available
+  if(typeof callLLM==='function'&&window._BACKEND_ACTIVE){
+    try{
+      _showBusy('LLM SQL düzeltmesi yapılıyor...');
+      const prompt='Aşağıdaki SQL sorgusunda hata varsa düzelt. Tablo adı "veri". Sütunlar: '+outHeaders.join(', ')+'\n\nSQL:\n'+sql+'\n\nSadece düzeltilmiş SQL sorgusunu yaz, açıklama ekleme. Eğer hata yoksa aynı sorguyu döndür.';
+      const llmResult=await callLLM(prompt);
+      if(llmResult&&llmResult.trim()){
+        // Extract SQL from LLM response
+        let extracted=llmResult.trim();
+        const sqlMatch=extracted.match(/```sql?\s*([\s\S]*?)```/);
+        if(sqlMatch)extracted=sqlMatch[1].trim();
+        // Remove any non-SQL text
+        if(extracted.toUpperCase().startsWith('SELECT')||extracted.toUpperCase().startsWith('WITH')){
+          editor.value=extracted;
+          if(llmDiv){
+            llmDiv.innerHTML='✅ <b>LLM Düzeltmesi Uygulandı</b><br><small>Orijinal: <code>'+sql.substring(0,100)+'...</code></small>';
+            llmDiv.style.display='block';
+          }
+          _hideBusy();
+          return;
+        }
+      }
+    }catch(e){
+      console.warn('[SQL LLM] Error:',e);
+    }finally{
+      _hideBusy();
+    }
+  }
+
+  // Apply rule-based fixes
+  if(fixes.length>0){
+    editor.value=fixed;
+    if(llmDiv){
+      llmDiv.innerHTML='🔧 <b>Kural Tabanlı Düzeltmeler:</b><br>'+fixes.map(f=>'• '+f).join('<br>');
+      llmDiv.style.display='block';
+    }
+  }else{
+    if(llmDiv){
+      llmDiv.innerHTML='ℹ️ Belirgin bir yazım hatası bulunamadı. Sorguyu çalıştırarak hata mesajını kontrol edin.';
+      llmDiv.style.display='block';
+    }
+  }
+  if(errDiv)errDiv.style.display='none';
+}
+
+function askClaudeSQL(){
+  const editor=document.getElementById('sqlEditor');
+  const sql=(editor?.value||'').trim();
+  const colInfo=outHeaders.join(', ');
+  const text='SQL sorgumu düzelt veya yaz.\n\nTablo adı: veri\nSütunlar: '+colInfo+'\n\nSorgum:\n'+sql;
+
+  // Copy to clipboard
+  navigator.clipboard.writeText(text).then(()=>{
+    showInfo('SQL sorgusu panoya kopyalandı! Claude açılıyor...');
+  }).catch(()=>{});
+
+  // Open Claude
+  window.open('https://claude.ai/new?q='+encodeURIComponent(text),'_blank');
 }
 </script>
 <!-- Chatbot Bubble -->
