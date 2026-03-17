@@ -626,6 +626,22 @@
           </div>
         </div>
 
+        <!-- Başlatıcı Dosyaları İndir -->
+        <div style="margin-top:10px;padding:14px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid #86efac;border-radius:10px">
+          <p style="font-size:13px;font-weight:700;color:#166534;margin:0 0 10px">📥 Başlatıcı Dosyalarını İndir</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a id="dlMacCommand" href="#" onclick="event.preventDefault();_downloadLauncherFile('command')" style="flex:1;min-width:180px;display:flex;align-items:center;gap:8px;padding:10px 16px;background:#fff;border:1.5px solid #93c5fd;border-radius:10px;text-decoration:none;color:#1e40af;font-weight:700;font-size:12px;cursor:pointer;transition:all .15s" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#fff'">
+              <span style="font-size:22px">🍎</span>
+              <div><div>AcikAnaliz-Baslat.command</div><div style="font-size:10px;color:#64748b;font-weight:400">macOS için</div></div>
+            </a>
+            <a id="dlWinBat" href="#" onclick="event.preventDefault();_downloadLauncherFile('bat')" style="flex:1;min-width:180px;display:flex;align-items:center;gap:8px;padding:10px 16px;background:#fff;border:1.5px solid #93c5fd;border-radius:10px;text-decoration:none;color:#1e40af;font-weight:700;font-size:12px;cursor:pointer;transition:all .15s" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#fff'">
+              <span style="font-size:22px">🪟</span>
+              <div><div>AcikAnaliz-Baslat.bat</div><div style="font-size:10px;color:#64748b;font-weight:400">Windows için</div></div>
+            </a>
+          </div>
+          <p style="font-size:10.5px;color:#64748b;margin:8px 0 0">Bu dosyaları VeriAnaliz klasörünüze kaydedin. Python Motorunu tek tıkla başlatırlar.</p>
+        </div>
+
         <!-- Ne olacak? -->
         <div style="margin-top:10px;padding:10px 14px;background:#fff;border:1px solid #d1d5db;border-radius:10px">
           <p style="font-size:12px;font-weight:700;color:#334155;margin:0">Başlattıktan Sonra Ne Olacak?</p>
@@ -1824,6 +1840,133 @@ function _step0Continue(){
   }
   showStep('Upload');
 } // 'browser' or 'python'
+// === Başlatıcı dosya indirme (Mac .command / Windows .bat) ===
+function _downloadLauncherFile(type){
+  let content,filename,mime;
+  if(type==='command'){
+    filename='AcikAnaliz-Baslat.command';
+    mime='application/x-sh';
+    content=[
+      '#!/bin/bash',
+      '# ============================================',
+      '# Açık Analiz — macOS Başlatıcı',
+      '# Çift tıklayarak çalıştırın',
+      '# ============================================',
+      '',
+      'DIR="$(cd "$(dirname "$0")" && pwd)"',
+      'cd "$DIR"',
+      '',
+      'echo ""',
+      'echo "╔═══════════════════════════════════════════════╗"',
+      'echo "║  📊 Açık Analiz — Başlatılıyor...              ║"',
+      'echo "╚═══════════════════════════════════════════════╝"',
+      'echo ""',
+      '',
+      '# Python 3 kontrolü',
+      'if command -v python3 &> /dev/null; then',
+      '    PYTHON=python3',
+      'elif command -v python &> /dev/null; then',
+      '    PYTHON=python',
+      'else',
+      '    echo "❌ Python bulunamadı!"',
+      '    echo ""',
+      '    echo "Python 3 yüklemeniz gerekiyor:"',
+      '    echo "  brew install python3"',
+      '    echo "  veya: https://www.python.org/downloads/"',
+      '    echo ""',
+      '    read -p "Devam etmek için Enter\'a basın..."',
+      '    exit 1',
+      'fi',
+      '',
+      'echo "🐍 Python: $($PYTHON --version)"',
+      '',
+      '# Bağımlılıkları kontrol et ve gerekirse kur',
+      'echo "📦 Bağımlılıklar kontrol ediliyor..."',
+      '$PYTHON -c "import polars, fastapi, uvicorn, scipy, numpy" 2>/dev/null',
+      'if [ $? -ne 0 ]; then',
+      '    echo "📥 İlk kullanım: Bağımlılıklar yükleniyor (bir kez)..."',
+      '    echo ""',
+      '    $PYTHON -m pip install --break-system-packages -q -r "$DIR/server/requirements.txt" 2>/dev/null || \\',
+      '    $PYTHON -m pip install -q -r "$DIR/server/requirements.txt"',
+      '',
+      '    if [ $? -ne 0 ]; then',
+      '        echo "❌ Bağımlılıklar yüklenemedi."',
+      '        echo "Manuel yükleme: pip3 install polars numpy scipy fastapi uvicorn python-multipart"',
+      '        read -p "Devam etmek için Enter\'a basın..."',
+      '        exit 1',
+      '    fi',
+      '    echo "✅ Bağımlılıklar yüklendi!"',
+      'fi',
+      '',
+      'echo ""',
+      'echo "🚀 Python Motor başlatılıyor (port 8765)..."',
+      'echo "   Motor durdurmak için: Ctrl+C"',
+      'echo ""',
+      '$PYTHON "$DIR/server/engine.py"',
+      ''
+    ].join('\n');
+  }else{
+    filename='AcikAnaliz-Baslat.bat';
+    mime='application/x-msdos-program';
+    content=[
+      '@echo off',
+      'chcp 65001 >nul 2>&1',
+      'title Acik Analiz - Python Motor',
+      'echo.',
+      'echo ========================================',
+      'echo   Acik Analiz - Baslatiliyor...',
+      'echo ========================================',
+      'echo.',
+      '',
+      'cd /d "%~dp0"',
+      '',
+      ':: Python 3 kontrolu',
+      'where python >nul 2>&1',
+      'if %errorlevel% neq 0 (',
+      '    echo [HATA] Python bulunamadi!',
+      '    echo Python 3 yukleyin: https://www.python.org/downloads/',
+      '    pause',
+      '    exit /b 1',
+      ')',
+      '',
+      'for /f "tokens=*" %%i in (\'python --version 2^>^&1\') do echo Python: %%i',
+      '',
+      ':: Bagimliliklari kontrol et',
+      'echo Bagimliliklar kontrol ediliyor...',
+      'python -c "import polars, fastapi, uvicorn, scipy, numpy" 2>nul',
+      'if %errorlevel% neq 0 (',
+      '    echo Ilk kullanim: Bagimliliklar yukleniyor...',
+      '    python -m pip install -q -r "%~dp0server\\requirements.txt"',
+      '    if %errorlevel% neq 0 (',
+      '        echo [HATA] Bagimliliklar yuklenemedi.',
+      '        echo Manuel yukleme: pip install polars numpy scipy fastapi uvicorn python-multipart',
+      '        pause',
+      '        exit /b 1',
+      '    )',
+      '    echo Bagimliliklar yuklendi!',
+      ')',
+      '',
+      'echo.',
+      'echo Python Motor baslatiliyor (port 8765)...',
+      'echo Motor durdurmak icin: Ctrl+C',
+      'echo.',
+      'python "%~dp0server\\engine.py"',
+      'pause',
+      ''
+    ].join('\r\n');
+  }
+  const blob=new Blob([content],{type:mime});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  // Visual feedback
+  const btn=document.getElementById(type==='command'?'dlMacCommand':'dlWinBat');
+  if(btn){const orig=btn.style.background;btn.style.background='#bbf7d0';btn.style.borderColor='#4ade80';setTimeout(()=>{btn.style.background=orig;btn.style.borderColor='#93c5fd'},1500)}
+}
+
 function _selectEngineMode(mode){
   window._selectedEngineMode=mode;
   const bCard=document.getElementById('modeBrowserCard');
@@ -2970,10 +3113,13 @@ async function startProcessing(){
         colStats={};
         for(const h of outHeaders){
           const ps=pyResult.col_stats[h]||{};
+          // sumSq'yu backend std ve mean'den türet: sumSq = n*(std² + mean²)
+          const _nc2=ps.numCount||0,_mn2=ps.mean||0,_sd2=ps.std||0;
+          const _sumSq2=_nc2>0?_nc2*(_sd2*_sd2+_mn2*_mn2):0;
           colStats[h]={
             count:ps.count||0,empty:ps.empty||0,
-            numCount:ps.numCount||0,sum:ps.sum||0,sumSq:0,
-            min:ps.min||0,max:ps.max||0,
+            numCount:_nc2,sum:ps.sum||0,sumSq:_sumSq2,
+            min:(ps.min!=null?ps.min:0),max:(ps.max!=null?ps.max:0),
             freq:ps.freq||{},_freqSize:Object.keys(ps.freq||{}).length,
             isNumeric:!!ps.isNumeric,allVals:[],_allValsTotal:0,
             uniqueCount:ps.uniqueCount||0,_uniqSet:new Set(),_useHLL:false
@@ -2984,6 +3130,9 @@ async function startProcessing(){
             colStats[h].median=ps.median||0;
             colStats[h].p25=ps.p25||0;
             colStats[h].p75=ps.p75||0;
+            colStats[h]._median=ps.median||0;
+            colStats[h]._p25=ps.p25||0;
+            colStats[h]._p75=ps.p75||0;
           }
         }
 
@@ -7142,13 +7291,19 @@ function _computeFilteredColStats(){
           const stats={};
           for(const h of outHeaders){
             const bs=result.col_stats[h]||{};
+            // sumSq'yu backend std ve mean'den türet: sumSq = n*(std² + mean²)
+            const _nc=bs.numCount||0,_mn=bs.mean||0,_sd=bs.std||0;
+            const _sumSq=_nc>0?_nc*(_sd*_sd+_mn*_mn):0;
             stats[h]={
               count:bs.count||0,empty:bs.empty||0,
-              numCount:bs.numCount||0,sum:bs.sum||0,sumSq:0,
-              min:bs.min||0,max:bs.max||0,
+              numCount:_nc,sum:bs.sum||0,sumSq:_sumSq,
+              min:(bs.min!=null?bs.min:0),max:(bs.max!=null?bs.max:0),
               freq:bs.freq||{},isNumeric:!!bs.isNumeric,
               uniqueCount:bs.uniqueCount||0,
-              _median:bs.median||undefined,_p25:bs.p25||undefined,_p75:bs.p75||undefined
+              mean:_mn,std:_sd,
+              _median:(bs.median!=null?bs.median:undefined),
+              _p25:(bs.p25!=null?bs.p25:undefined),
+              _p75:(bs.p75!=null?bs.p75:undefined)
             };
           }
           _filteredStatsCache=stats;
@@ -7222,6 +7377,8 @@ function _computeFilteredColStats(){
 function _updateStatsUI(){
   try{renderSummaryStats()}catch(e){}
   try{updateKPICardsFiltered()}catch(e){}
+  // Görünür sekmeleri de güncelle (Hızlı Bakış dahil)
+  try{_refreshActiveTab()}catch(e){}
 }
 
 // === Refresh All Charts & KPIs on Filter Change ===
@@ -8429,9 +8586,8 @@ function renderQuickView(){
       html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;color:#94a3b8">'+s.empty.toLocaleString('tr-TR')+'</td>';
       html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center">'+uniq.toLocaleString('tr-TR')+(uniqCapped?'+':'')+'</td>';
       if(isNum){
-        const avg=s.numCount>0?s.sum/s.numCount:0;
-        const variance=s.numCount>1?(s.sumSq/s.numCount-avg*avg):0;
-        const std=Math.sqrt(Math.max(0,variance));
+        const avg=s.mean!=null&&s.mean!==undefined?s.mean:(s.numCount>0?s.sum/s.numCount:0);
+        const std=s.std!=null&&s.std!==undefined?s.std:(()=>{const variance=s.numCount>1?(s.sumSq/s.numCount-(s.sum/s.numCount)**2):0;return Math.sqrt(Math.max(0,variance))})();
         const median=s._median;
         html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;font-weight:600">'+s.sum.toLocaleString('tr-TR',{maximumFractionDigits:2})+'</td>';
         html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;font-weight:600;color:#2563eb">'+avg.toFixed(2)+'</td>';
