@@ -5778,6 +5778,56 @@ function renderGlobalFilterBar(){
       const info=document.createElement('div');info.style.cssText='font-size:9px;color:#94a3b8;margin-top:2px';
       info.textContent='Aralik: '+s.min.toLocaleString('tr-TR')+' — '+s.max.toLocaleString('tr-TR');
       card.appendChild(info);
+
+      // --- Sayısal sütunlarda sözel/metin filtre desteği (ör: "GİRMEDİ") ---
+      const _numTextCount=s.count-s.numCount;
+      // Mevcut text filtrelerini göster
+      if(f.textFilters&&f.textFilters.length){
+        const tfList=document.createElement('div');tfList.style.cssText='margin-top:4px';
+        f.textFilters.forEach((tf,tfi)=>{
+          const tfRow=document.createElement('div');tfRow.style.cssText='display:flex;align-items:center;gap:3px;margin-bottom:2px;background:#fef3c7;border-radius:4px;padding:2px 6px;font-size:10px';
+          tfRow.innerHTML='<span style="color:#92400e;font-weight:600">'+escHtml(_tfOpLabel(tf.op))+'</span> <span>'+escHtml(tf.value)+'</span>';
+          const rmBtn=document.createElement('span');rmBtn.textContent='✕';rmBtn.style.cssText='cursor:pointer;color:#dc2626;margin-left:auto;font-weight:700';
+          rmBtn.addEventListener('click',function(){removeTextFilter(h,tfi)});
+          tfRow.appendChild(rmBtn);
+          tfList.appendChild(tfRow);
+        });
+        card.appendChild(tfList);
+      }
+
+      // Metin/sözel filtre giriş alanı
+      const numTxtLabel=document.createElement('div');numTxtLabel.style.cssText='font-size:9px;color:#92400e;margin-top:6px;font-weight:600';
+      numTxtLabel.textContent='Sözel Filtre'+(_numTextCount>0?' ('+_numTextCount+' metin değer)':'');
+      card.appendChild(numTxtLabel);
+      const numTxtRow=document.createElement('div');numTxtRow.style.cssText='display:flex;gap:3px;align-items:center;margin-top:2px';
+      const numTxtOp=document.createElement('select');numTxtOp.style.cssText='padding:3px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:10px;width:90px';
+      numTxtOp.id='gfNumOp_'+idx;
+      [['eq','Eşit'],['neq','Eşit değil'],['contains','İçeriyor'],['notcontains','İçermiyor']].forEach(([v,l])=>{
+        const o=document.createElement('option');o.value=v;o.textContent=l;numTxtOp.appendChild(o);
+      });
+      const numTxtInp=document.createElement('input');numTxtInp.type='text';numTxtInp.placeholder='ör: GİRMEDİ';numTxtInp.id='gfNumVal_'+idx;
+      numTxtInp.style.cssText='flex:1;padding:3px 6px;border:1px solid #cbd5e1;border-radius:4px;font-size:10px;min-width:60px';
+      numTxtInp.addEventListener('keydown',function(e){if(e.key==='Enter'){addTextFilterFromNumUI(h,idx)}});
+      const numTxtBtn=document.createElement('button');numTxtBtn.textContent='+';
+      numTxtBtn.style.cssText='padding:2px 8px;border:1px solid #d97706;border-radius:4px;background:#fef3c7;color:#92400e;font-weight:700;cursor:pointer;font-size:12px';
+      numTxtBtn.addEventListener('click',function(){addTextFilterFromNumUI(h,idx)});
+      numTxtRow.appendChild(numTxtOp);numTxtRow.appendChild(numTxtInp);numTxtRow.appendChild(numTxtBtn);
+      card.appendChild(numTxtRow);
+
+      // Metin değer chip'leri — sayısal olmayan değerleri hızlı seçim
+      const textVals=Object.entries(s.freq).filter(([v])=>{const n=parseFloat(v.replace(',','.'));return isNaN(n)}).sort((a,b)=>b[1]-a[1]).slice(0,6);
+      if(textVals.length){
+        const chipRow=document.createElement('div');chipRow.style.cssText='display:flex;flex-wrap:wrap;gap:2px;margin-top:3px';
+        textVals.forEach(([val,cnt])=>{
+          const ch=document.createElement('span');
+          ch.style.cssText='font-size:9px;padding:1px 6px;border-radius:3px;background:#fffbeb;border:1px solid #fde68a;cursor:pointer;color:#92400e;white-space:nowrap';
+          ch.textContent=(val.length>20?val.substring(0,18)+'..':val)+' ('+cnt+')';
+          ch.title='Tıkla: "'+val+'" için eşit filtre ekle';
+          ch.addEventListener('click',function(){addTextFilter(h,'eq',val)});
+          chipRow.appendChild(ch);
+        });
+        card.appendChild(chipRow);
+      }
     }else{
       // Categorical: Looker-style operator + value filter
       // Show existing text filters
@@ -5847,6 +5897,14 @@ function _tfOpLabel(op){
 function addTextFilterFromUI(col,idx){
   const opSel=document.getElementById('gfOp_'+idx);
   const valInp=document.getElementById('gfVal_'+idx);
+  if(!opSel||!valInp||!valInp.value.trim())return;
+  addTextFilter(col,opSel.value,valInp.value.trim());
+  valInp.value='';
+}
+
+function addTextFilterFromNumUI(col,idx){
+  const opSel=document.getElementById('gfNumOp_'+idx);
+  const valInp=document.getElementById('gfNumVal_'+idx);
   if(!opSel||!valInp||!valInp.value.trim())return;
   addTextFilter(col,opSel.value,valInp.value.trim());
   valInp.value='';
