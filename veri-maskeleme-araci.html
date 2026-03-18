@@ -1831,6 +1831,17 @@
                 <select id="sqlBuilderGroupBy" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;width:100%" onchange="sqlBuilderUpdatePreview()">
                   <option value="">Yok</option>
                 </select>
+                <div style="display:flex;flex-direction:column;gap:2px;margin-top:4px">
+                  <label style="font-size:10px;display:flex;align-items:center;gap:4px;cursor:pointer;color:#374151">
+                    <input type="checkbox" id="sqlBuilderShowOverallN" checked onchange="sqlBuilderUpdatePreview()" style="accent-color:#059669">
+                    <span>Genel n toplamı</span>
+                  </label>
+                  <label style="font-size:10px;display:flex;align-items:center;gap:4px;cursor:pointer;color:#374151">
+                    <input type="checkbox" id="sqlBuilderShowOverall" checked onchange="sqlBuilderUpdatePreview()" style="accent-color:#059669">
+                    <span>Genel metrik sütunu ekle</span>
+                    <span style="font-size:9px;color:#6b7280">(grup olmadan toplam/ort.)</span>
+                  </label>
+                </div>
               </div>
 
               <!-- ORDER BY -->
@@ -1962,6 +1973,20 @@
                       <option value="DESC">Azalan ↓</option>
                     </select>
                   </div>
+                </div>
+
+                <!-- Genel metrik & n toplamı checkboxları -->
+                <div style="margin-top:4px;display:flex;flex-direction:column;gap:3px">
+                  <label style="font-size:11px;display:flex;align-items:center;gap:5px;cursor:pointer;color:#374151">
+                    <input type="checkbox" id="pivotShowOverallN" checked onchange="pivotUpdatePreview()" style="accent-color:#059669">
+                    <span style="font-weight:600">Genel n toplamı</span>
+                    <span style="font-size:9px;color:#6b7280">(satır bazında toplam gözlem sayısı)</span>
+                  </label>
+                  <label style="font-size:11px;display:flex;align-items:center;gap:5px;cursor:pointer;color:#374151">
+                    <input type="checkbox" id="pivotShowOverall" checked onchange="pivotUpdatePreview()" style="accent-color:#7c3aed">
+                    <span style="font-weight:600">Satır bazında genel metrik</span>
+                    <span style="font-size:9px;color:#6b7280">(tüm grupların n-ağırlıklı ort./top. vb.)</span>
+                  </label>
                 </div>
               </div>
 
@@ -11153,6 +11178,8 @@ function onSmartIndepChange(){
   keys.forEach(([v,c])=>{optHtml.push('<option value="'+escHtml(v)+'">'+escHtml(v)+' (n='+c+')</option>')});
   sel.innerHTML=optHtml.join('');
   if(sel.classList.contains('searchable-select'))_initSearchableSelects(sel.parentNode);
+  // Tüm Gruplar modundaysa checkbox'ları da güncelle
+  if(!document.getElementById('smartAllGroupDiv').classList.contains('hidden'))_populateSmartGroupCheckboxes();
 }
 
 function onSmartSubGroupChange(){
@@ -11164,6 +11191,32 @@ function onSmartModeChange(){
   const mode=document.querySelector('input[name="smartMode"]:checked').value;
   document.getElementById('smartSingleGroupDiv').classList.toggle('hidden',mode==='all');
   document.getElementById('smartAllGroupDiv').classList.toggle('hidden',mode==='single');
+  if(mode==='all')_populateSmartGroupCheckboxes();
+}
+
+function _populateSmartGroupCheckboxes(){
+  const container=document.getElementById('smartGroupCheckboxes');
+  if(!container)return;
+  const indepVar=document.getElementById('smartIndepVar')?.value||'';
+  if(!indepVar||!colStats[indepVar]||!colStats[indepVar].freq){container.innerHTML='<span style="font-size:10px;color:#94a3b8">Önce bağımsız değişken seçin</span>';return}
+  const groups=Object.entries(colStats[indepVar].freq).sort((a,b)=>b[1]-a[1]);
+  container.innerHTML='';
+  groups.forEach(([val,cnt])=>{
+    const lbl=document.createElement('label');
+    lbl.style.cssText='font-size:10px;display:flex;align-items:center;gap:3px;cursor:pointer;padding:2px 6px;background:#fefce8;border:1px solid #fde68a;border-radius:4px;white-space:nowrap';
+    lbl.innerHTML='<input type="checkbox" class="smartGrpCb" value="'+val.replace(/"/g,'&quot;')+'" checked style="accent-color:#d97706"> '+(val.length>30?val.substring(0,28)+'..':val)+' <span style="color:#94a3b8">('+cnt+')</span>';
+    container.appendChild(lbl);
+  });
+}
+
+function smartGroupSelectAll(checked){
+  document.querySelectorAll('.smartGrpCb').forEach(cb=>{cb.checked=checked});
+}
+
+function _getSelectedSmartGroups(){
+  const cbs=document.querySelectorAll('.smartGrpCb:checked');
+  if(cbs.length===0)return null; // Hiçbiri seçilmemişse null döndür
+  return Array.from(cbs).map(cb=>cb.value);
 }
 
 function onSmartOutputFormatChange(){
@@ -11213,15 +11266,30 @@ async function generateFullSmartReport(){
       if(!groupVal){showError('Grup değeri seçin.');return}
       progText.textContent=groupVal+' için rapor hazırlanıyor...';
       console.log('[SMART-REPORT] TEK GRUP modu: indepVar='+indepVar+', groupVal='+groupVal+', depVars='+depVars.join(','));
-      const sections=[await buildGroupSection(indepVar,groupVal,depVars,model,endpoint,p=>{progBar.style.width=(p*100)+'%'},reportOpts)];
-      console.log('[SMART-REPORT] Sections count='+sections.length+', groupVal='+sections[0].groupVal+', n='+sections[0].n+', charts='+sections[0].charts.length);
-      if(sections[0].summaryTable)console.log('[SMART-REPORT] SummaryTable subgroups='+sections[0].summaryTable.map(s=>s.subGroup).join(','));
-      if(sections[0].subGroupCharts)console.log('[SMART-REPORT] SubGroupCharts='+sections[0].subGroupCharts.length);
-      const pdf=buildSmartReportPDF(new jsPDF({orientation:'portrait',unit:'mm',format:'a4'}),indepVar,sections,1,1,reportOpts);
-      pdf.save('rapor_'+groupVal.replace(/[^a-zA-Z0-9]/g,'_')+'.pdf');
-      progBar.style.width='100%';progText.textContent='Rapor indirildi!';
+      try{
+        const sections=[await buildGroupSection(indepVar,groupVal,depVars,model,endpoint,p=>{progBar.style.width=(p*100)+'%'},reportOpts)];
+        console.log('[SMART-REPORT] Sections: n='+sections[0].n+', charts='+sections[0].charts.length);
+        if(sections[0].n===0){
+          progText.textContent='⚠ '+groupVal+' grubunda veri bulunamadı. Filtreleri kontrol edin.';
+          progBar.style.background='#f59e0b';
+          return;
+        }
+        const pdf=buildSmartReportPDF(new jsPDF({orientation:'portrait',unit:'mm',format:'a4'}),indepVar,sections,1,1,reportOpts);
+        const safeName=groupVal.replace(/[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_ -]/g,'_').substring(0,60);
+        pdf.save('rapor_'+safeName+'.pdf');
+        progBar.style.width='100%';progText.textContent='✅ Rapor indirildi: '+groupVal;
+        showSuccess(groupVal+' PDF raporu indirildi');
+      }catch(singleErr){
+        console.error('[SMART-REPORT] Tek grup hatası:',singleErr);
+        progText.textContent='Hata: '+singleErr.message;progBar.style.background='#ef4444';
+        showError('Tek grup PDF hatası: '+singleErr.message);
+        return;
+      }
     }else{
-      const allGroups=Object.keys(colStats[indepVar].freq).sort((a,b)=>a.localeCompare(b,'tr'));
+      // Seçili grupları al (checkbox'lardan), yoksa tümü
+      const _selectedGroups=_getSelectedSmartGroups();
+      const allGroups=_selectedGroups||Object.keys(colStats[indepVar].freq).sort((a,b)=>a.localeCompare(b,'tr'));
+      if(!allGroups.length){showError('En az bir grup seçin.');return}
       const outputFmt=document.querySelector('input[name="smartOutputFormat"]:checked');
       const isZip=outputFmt&&outputFmt.value==='zip';
 
@@ -11268,7 +11336,11 @@ async function generateFullSmartReport(){
         progBar.style.width='100%';progText.textContent=allGroups.length+' grup için '+chunks.length+' PDF indirildi!';
       }
     }
-  }catch(e){progText.textContent='Hata: '+e.message;progBar.style.background='#ef4444'}
+  }catch(e){
+    console.error('[SMART-REPORT] HATA:',e);
+    progText.textContent='Hata: '+e.message;progBar.style.background='#ef4444';
+    showError('Grup Raporu Hatası: '+e.message);
+  }
 }
 
 function splitArr(arr,size){const r=[];for(let i=0;i<arr.length;i+=size)r.push(arr.slice(i,i+size));return r}
@@ -11283,12 +11355,17 @@ function _calcVarStats(vals){
 }
 
 function _autoInterpret(depVar,groupVal,stats){
+  if(!stats||!stats.n)return groupVal+' grubu için '+depVar+' değişkeninde yeterli veri bulunamadığından analiz gerçekleştirilememiştir.';
   const cv=stats.mean!==0?(stats.std/Math.abs(stats.mean)*100):0;
   const skew=stats.std>0?(3*(stats.mean-stats.median)/stats.std):0;
-  let t=depVar+' değişkeni '+groupVal+' grubu için incelenmiştir (n='+stats.n+'). Ortalama '+stats.mean.toFixed(2)+', medyan '+stats.median.toFixed(2)+' ve standart sapma '+stats.std.toFixed(2)+' olarak hesaplanmıştır. ';
-  t+='Değerler '+stats.min+' ile '+stats.max+' arasında dağılmaktadır. ';
-  t+='Değişkenlik katsayısı %'+cv.toFixed(1)+' olup '+(cv<15?'homojen':cv<30?'orta düzeyde':'heterojen')+' bir dağılıma işaret etmektedir. ';
-  t+='Çarpıklık katsayısı '+skew.toFixed(2)+' olarak hesaplanmış olup dağılım '+(Math.abs(skew)<0.5?'yaklaşık simetrik':skew>0?'sağa çarpık':'sola çarpık')+' görünmektedir.';
+  const iqr=(stats.q3-stats.q1).toFixed(2);
+  // Akademik rapor dili (APA7 benzeri)
+  let t=groupVal+' grubunda '+depVar+' değişkenine ilişkin tanımlayıcı istatistikler incelenmiştir (n = '+stats.n+'). ';
+  t+='Aritmetik ortalama M = '+stats.mean.toFixed(2)+', ortanca değer Mdn = '+stats.median.toFixed(2)+' ve standart sapma SS = '+stats.std.toFixed(2)+' olarak hesaplanmıştır. ';
+  t+='Gözlem değerleri '+stats.min.toFixed(2)+' (minimum) ile '+stats.max.toFixed(2)+' (maksimum) arasında dağılım göstermiş olup çeyrekler arası açıklık IQR = '+iqr+' (Q1 = '+stats.q1.toFixed(2)+', Q3 = '+stats.q3.toFixed(2)+') olarak belirlenmiştir. ';
+  t+='Değişkenlik katsayısı CV = %'+cv.toFixed(1)+' düzeyinde olup bu değer '+(cv<15?'homojen (düşük değişkenlik)':cv<30?'orta düzeyde değişken':'heterojen (yüksek değişkenlik)')+' bir dağılıma işaret etmektedir. ';
+  t+='Pearson çarpıklık katsayısı Sk = '+skew.toFixed(2)+' olarak hesaplanmış olup dağılımın '+(Math.abs(skew)<0.5?'yaklaşık normal (simetrik)':skew>0?'pozitif çarpık (sağa yayılan)':'negatif çarpık (sola yayılan)')+' bir yapı sergilediği söylenebilir.';
+  if(Math.abs(skew)>1)t+=' Çarpıklık değerinin |1|\'i aşması, non-parametrik testlerin tercih edilmesini önerebilir.';
   return t;
 }
 
@@ -11335,6 +11412,12 @@ async function buildGroupSection(indepVar,groupVal,depVars,model,endpoint,onProg
   const _rptFcIdx=_rptFcCol?outHeaders.indexOf(_rptFcCol):-1;
   let _rptDistinctN=0;
   if(_rptFcIdx>=0){const _dset=new Set();groupRows.forEach(r=>{const v=(r[_rptFcIdx]||'').trim();if(v)_dset.add(v)});_rptDistinctN=_dset.size}
+
+  // n=0 koruması: grup boşsa minimal section döndür
+  if(groupRows.length===0){
+    depVars.forEach(dv=>{charts.push({depVar:dv,imgData:null,interpretation:groupVal+' grubunda '+dv+' değişkeni için veri bulunamadı.',stats:null})});
+    return{groupVal,n:0,distinctN:0,freqCriterionCol:_rptFcCol,charts};
+  }
 
   // === ALT GRUPLAMA VARSA: Ders/Dönem bazlı analiz ===
   if(subGroupVar&&sgIdx>=0){
@@ -11822,28 +11905,45 @@ async function generatePDF(){
 // === Save As & Add Data ===
 function saveAs(){
   const baseName=currentFile.name.replace(/\.[^.]+$/,'');
-  const newName=prompt('Dosya adını girin:',baseName+'_kopya');
+  const hasFilters=_hasAnyActiveFilter();
+  const newName=prompt('Dosya adını girin:',baseName+(hasFilters?'_filtreli':'_kopya'));
   if(!newName)return;
-  const fmtSel=prompt('Format seçin:\n1) CSV\n2) Excel (.xlsx)\n3) TSV','1');
+  const fmtSel=prompt('Format seçin:\n1) CSV\n2) Excel (.xlsx)\n3) TSV'+(hasFilters?'\n\n⚠ Aktif filtreler uygulanacak.':''),'1');
   if(!fmtSel)return;
+
   if(fmtSel==='2'||fmtSel.toLowerCase()==='xlsx'){
-    // Save as Excel
     if(typeof XLSX==='undefined'){showError('Excel kütüphanesi yüklenemedi.');return}
     try{
-      const csvText=outputChunks.join('');const lines=csvText.split('\n').filter(l=>l.trim());
-      const outDelim=document.getElementById('outputFormat').value==='tsv'?'\t':',';
-      const allRows=lines.map(l=>parseCSVLine(l,outDelim));
+      let allRows;
+      if(hasFilters){
+        const{header,rows}=_getFilteredRows();
+        allRows=[header,...rows];
+      }else{
+        const csvText=outputChunks.join('');const lines=csvText.split('\n').filter(l=>l.trim());
+        const outDelim=document.getElementById('outputFormat').value==='tsv'?'\t':',';
+        allRows=lines.map(l=>parseCSVLine(l,outDelim));
+      }
       const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(allRows);
       XLSX.utils.book_append_sheet(wb,ws,'Veri');
       const data=XLSX.write(wb,{bookType:'xlsx',type:'array'});
       const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
       a.download=newName+'.xlsx';a.click();
+      showSuccess((allRows.length-1)+' satır kaydedildi'+(hasFilters?' (filtreli)':''));
     }catch(e){showError('Excel hatası: '+e.message)}
   }else{
     const ext=fmtSel==='3'||fmtSel.toLowerCase()==='tsv'?'tsv':'csv';
-    const blob=new Blob(outputChunks,{type:'text/csv;charset=utf-8'});
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-    a.download=newName+'.'+ext;a.click();
+    const delim=ext==='tsv'?'\t':',';
+    if(hasFilters){
+      const{csv,rowCount}=_filteredRowsToCSV(delim);
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+      a.download=newName+'.'+ext;a.click();
+      showSuccess(rowCount+' satır kaydedildi (filtreli)');
+    }else{
+      const blob=new Blob(outputChunks,{type:'text/csv;charset=utf-8'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+      a.download=newName+'.'+ext;a.click();
+    }
   }
 }
 
@@ -11941,42 +12041,116 @@ function addDataJoin(){
 }
 
 // === Downloads ===
+
+// --- Filtrelenmiş veri export yardımcısı ---
+function _hasAnyActiveFilter(){
+  return outHeaders.some(h=>hasActiveFilter(h));
+}
+
+function _getFilteredRows(){
+  // Tüm satırları parse edip aktif filtrelere göre filtrele
+  // Döndürür: {header: [...], rows: [[...], ...]}
+  const outDelim=document.getElementById('outputFormat').value==='tsv'?'\t':',';
+  const header=outHeaders.slice();
+  const filteredRows=[];
+  let isFirst=true;let leftover='';
+  for(let ci=0;ci<outputChunks.length;ci++){
+    const text=leftover+outputChunks[ci];
+    const split=csvSplitLines(text);
+    const lines=split.lines;leftover=split.leftover;
+    for(const ln of lines){
+      if(!ln.trim())continue;
+      if(isFirst){isFirst=false;continue}
+      const row=parseCSVLine(ln,outDelim);
+      // Her sütun için filtre kontrol et
+      let pass=true;
+      for(let j=0;j<outHeaders.length;j++){
+        if(!passesFilter(outHeaders[j],row[j]||'')){pass=false;break}
+      }
+      if(pass)filteredRows.push(row);
+    }
+  }
+  if(leftover&&leftover.trim()){
+    const row=parseCSVLine(leftover,outDelim);
+    let pass=true;
+    for(let j=0;j<outHeaders.length;j++){
+      if(!passesFilter(outHeaders[j],row[j]||'')){pass=false;break}
+    }
+    if(pass)filteredRows.push(row);
+  }
+  return{header,rows:filteredRows};
+}
+
+function _filteredRowsToCSV(delim){
+  const{header,rows}=_getFilteredRows();
+  const d=delim||',';
+  const esc=v=>{const s=String(v==null?'':v);return(s.includes(d)||s.includes('"')||s.includes('\n'))?'"'+s.replace(/"/g,'""')+'"':s};
+  let csv=header.map(esc).join(d)+'\n';
+  rows.forEach(r=>{csv+=r.map(esc).join(d)+'\n'});
+  return{csv,rowCount:rows.length};
+}
+
 function downloadCSV(){
   try{_addLog('CSV indiriliyor...','ok')}catch(e){}
-  // Python Motor fast-path: indirmeyi backend'den yap
-  if(window._processedByBackend&&typeof window._backendDownloadProcessed==='function'){
-    window._backendDownloadProcessed('csv');
-    return;
-  }
+  const hasFilters=_hasAnyActiveFilter();
   const fmt=document.getElementById('outputFormat').value,ext=fmt==='tsv'?'tsv':'csv';
-  // Use pre-built Blob for large datasets (already converted in startProcessing)
-  const blob=(window._outputBlobReady&&window._outputBlob)?window._outputBlob:new Blob(outputChunks,{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download=currentFile.name.replace(/\.[^.]+$/,'')+'_masked.'+ext;a.click();
+  const delim=fmt==='tsv'?'\t':',';
+
+  if(hasFilters){
+    // Filtreli export
+    _showBusy('Filtreli CSV hazırlanıyor...');
+    setTimeout(()=>{
+      try{
+        const{csv,rowCount}=_filteredRowsToCSV(delim);
+        const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+        const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+        a.download=currentFile.name.replace(/\.[^.]+$/,'')+'_filtreli.'+ext;a.click();
+        showSuccess('Filtreli CSV indirildi ('+rowCount.toLocaleString('tr-TR')+' satır)');
+      }catch(e){showError('CSV hatası: '+e.message)}
+      finally{_hideBusy()}
+    },30);
+  }else{
+    // Filtresiz: orijinal hızlı yol
+    if(window._processedByBackend&&typeof window._backendDownloadProcessed==='function'){
+      window._backendDownloadProcessed('csv');return;
+    }
+    const blob=(window._outputBlobReady&&window._outputBlob)?window._outputBlob:new Blob(outputChunks,{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download=currentFile.name.replace(/\.[^.]+$/,'')+'_masked.'+ext;a.click();
+  }
 }
 
 function downloadXLSX(){
-  // Python Motor fast-path
-  if(window._processedByBackend&&typeof window._backendDownloadProcessed==='function'){
-    window._backendDownloadProcessed('xlsx');
-    return;
-  }
-  if(typeof XLSX==='undefined'){showError('Excel kütüphanesi yüklenemedi. Internet bağlantınızı kontrol edin veya CSV olarak indirin.');return}
-  const noteEl=document.getElementById('xlsxNote');noteEl.textContent='Excel hazırlanıyor...';
+  if(typeof XLSX==='undefined'){showError('Excel kütüphanesi yüklenemedi.');return}
+  const hasFilters=_hasAnyActiveFilter();
+  const noteEl=document.getElementById('xlsxNote');
+  noteEl.textContent='Excel hazırlanıyor'+(hasFilters?' (filtreli)...':'...');
+
   setTimeout(()=>{
     try{
-      const csvText=outputChunks.join('');const lines=csvText.split('\n').filter(l=>l.trim());
-      const outDelim=document.getElementById('outputFormat').value==='tsv'?'\t':',';
-      const allRows=lines.map(l=>parseCSVLine(l,outDelim));
+      let allRows;
+      let suffix='_masked';
+      if(hasFilters){
+        const{header,rows}=_getFilteredRows();
+        allRows=[header,...rows];
+        suffix='_filtreli';
+      }else{
+        if(window._processedByBackend&&typeof window._backendDownloadProcessed==='function'){
+          window._backendDownloadProcessed('xlsx');noteEl.textContent='';return;
+        }
+        const csvText=outputChunks.join('');const lines=csvText.split('\n').filter(l=>l.trim());
+        const outDelim=document.getElementById('outputFormat').value==='tsv'?'\t':',';
+        allRows=lines.map(l=>parseCSVLine(l,outDelim));
+      }
       const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(allRows);
       const hdr=allRows[0]||[];
       ws['!cols']=hdr.map((h,ci)=>{let mx=h.length;for(let r=1;r<Math.min(allRows.length,100);r++){const v=(allRows[r]&&allRows[r][ci])||'';if(v.length>mx)mx=v.length}return{wch:Math.min(mx+2,50)}});
       if(hdr.length)ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:allRows.length-1,c:hdr.length-1}})};
-      XLSX.utils.book_append_sheet(wb,ws,'Maskelenmiş Veri');
+      XLSX.utils.book_append_sheet(wb,ws,hasFilters?'Filtreli Veri':'Maskelenmiş Veri');
       const data=XLSX.write(wb,{bookType:'xlsx',type:'array'});
       const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
-      a.download=currentFile.name.replace(/\.[^.]+$/,'')+'_masked.xlsx';a.click();
-      noteEl.textContent='Excel indirildi! ('+allRows.length.toLocaleString('tr-TR')+' satır)';
+      a.download=currentFile.name.replace(/\.[^.]+$/,'')+suffix+'.xlsx';a.click();
+      noteEl.textContent='Excel indirildi! ('+(allRows.length-1).toLocaleString('tr-TR')+' satır'+(hasFilters?' — filtreli':'')+')';
     }catch(e){noteEl.textContent='Excel hatası: '+e.message;noteEl.style.color='#dc2626'}
   },50);
 }
@@ -12848,7 +13022,23 @@ function doGlobalSearch(q,panel){
     }
   });
 
-  // 3. Search in statistics keywords
+  // 3. Search in tab/feature keywords
+  const _tabSearchMap=[
+    {kw:'sql',title:'SQL Sorgusu',desc:'SQL Editörü, Pratik Sorgu Önerici, Pivot Tablo',action:'sql'},
+    {kw:'pivot',title:'Pivot Tablo',desc:'Çapraz tablo, grup metrikleri, hesaplanmış alan',action:'sql'},
+    {kw:'hesaplan',title:'Hesaplanmış Alan',desc:'Alan arası işlem, özel formül, ağırlıklı toplam',action:'sql'},
+    {kw:'ağırlık',title:'Ağırlıklı Toplam',desc:'Sütun × katsayı toplamı (ör: NOT1×0.3 + NOT2×0.7)',action:'sql'},
+    {kw:'filtre',title:'Filtreler',desc:'Sayısal aralık, sözel filtre (ör: GİRMEDİ), aykırı değer filtresi',action:'dashboard'},
+    {kw:'genel metrik',title:'Genel Metrik',desc:'Pivot tabloda satır bazında genel n toplamı ve metrikler',action:'sql'},
+  ];
+  _tabSearchMap.forEach(tm=>{
+    if(results.length>=MAX)return;
+    if(tm.kw.includes(ql)||ql.includes(tm.kw)){
+      results.push({type:'stat',icon:'🔧',title:tm.title,desc:tm.desc,action:tm.action});
+    }
+  });
+
+  // 4. Search in statistics keywords
   const statKeywords=['ortalama','medyan','minimum','maksimum','standart sapma','toplam','benzersiz','eksik','korelasyon','dağılım','aykırı'];
   statKeywords.forEach(kw=>{
     if(results.length>=MAX)return;
@@ -13453,7 +13643,23 @@ function processQuestion(q){
         return '• <b>'+escHtml(h)+'</b>: '+p.join(', ');
       }).join('<br>')+'<br><br>Filtreleri dashboard sol panelindeki Filtre bölümünden yönetebilirsiniz.';
     }
-    return 'Şu an aktif filtre yok. Dashboard sol panelindeki <b>Filtre</b> bölümünden sütun bazlı filtre ekleyebilirsiniz.';
+    return 'Şu an aktif filtre yok. Dashboard sol panelindeki <b>Filtre</b> bölümünden sütun bazlı filtre ekleyebilirsiniz.<br><br>'+
+      '💡 <b>Sayısal sütunlarda:</b> Min/Max aralığının yanı sıra sözel filtre de ekleyebilirsiniz (ör: "GİRMEDİ" eşit değildir).<br>'+
+      '💡 <b>Kategorik sütunlarda:</b> Eşit, eşit değil, içeriyor, içermiyor, başlıyor, bitiyor operatörleri.';
+  }
+
+  // === SQL & HESAPLANMIŞ ALAN ===
+  if(ql.match(/sql|sorgu|query|pivot tablo|hesaplanmis|agirlikli|formul|weight/)){
+    return '🗃️ <b>SQL & Hesaplanmış Alan</b><br>'+
+      '<b>SQL Editörü:</b> Doğrudan SQL yazıp çalıştırabilirsiniz. Tablo adı: <code>veri</code><br>'+
+      '<b>Pratik SQL Önerici:</b> SQL bilmeden görsel arayüzle sorgu oluşturabilirsiniz.<br>'+
+      '<b>Pivot Tablo:</b> Satır boyutu + sütun boyutu + metriklerle çapraz tablo.<br><br>'+
+      '🧮 <b>Hesaplanmış Alan:</b><br>'+
+      '• <b>Alan Arası İşlem:</b> İki sütun arasında +, −, ×, ÷ işlemi<br>'+
+      '• <b>Özel SQL Formülü:</b> Doğrudan SQL ifadesi yazın (ör: ROUND("NOT1"/"NOT2"*100, 2))<br>'+
+      '• <b>⚖️ Ağırlıklı Toplam:</b> Sütun × katsayı toplamı (ör: ARASINAV×0.3 + FINAL×0.7)<br>'+
+      '• <b>🧠 LLM Yardımı:</b> Doğal dilde açıklayın, formül otomatik üretilsin<br><br>'+
+      '📊 <b>Genel Metrikler:</b> Pivot sonuçlarında "Genel n toplamı" ve "Satır bazında genel metrik" checkbox\'ları ile tüm grupların toplamını/ortalamasını görebilirsiniz.';
   }
 
   // === GRAFIK ===
@@ -18350,6 +18556,17 @@ function pivotUpdatePreview(){
       sql+='\nORDER BY "'+rowDim+'" '+orderDir;
     }
   }
+
+  // Genel n toplamı ve metrik bilgisi
+  const _prevShowN=document.getElementById('pivotShowOverallN')?.checked;
+  const _prevShowOv=document.getElementById('pivotShowOverall')?.checked;
+  if(colDims.length>0&&(_prevShowN||_prevShowOv)){
+    let _notes=[];
+    if(_prevShowN) _notes.push('GENEL_n (toplam gözlem)');
+    if(_prevShowOv) _notes.push('GENEL_metrikler (ağırlıklı ort/top/min/max)');
+    sql+='\n\n-- + '+_notes.join(' + ')+' sütunları eklenecek';
+  }
+
   preview.textContent=sql;
 }
 
@@ -18387,6 +18604,8 @@ async function pivotExecute(){
   const whereClause=document.getElementById('pivotWhereClause')?.value||'';
   const orderBy=document.getElementById('pivotOrderBy')?.value||'';
   const orderDir=document.getElementById('pivotOrderDir')?.value||'ASC';
+  const showOverallN=document.getElementById('pivotShowOverallN')?.checked&&colDims.length>0;
+  const showOverall=document.getElementById('pivotShowOverall')?.checked&&colDims.length>0;
 
   if(!rowDim){showError('Satır boyutu seçilmedi!');return}
   if(valueFields.length===0&&calcFields.length===0){showError('En az bir değer alanı veya hesaplanmış alan ekleyin!');return}
@@ -18409,7 +18628,7 @@ async function pivotExecute(){
         const resp=await fetch(_pivotBase+'/api/sql-pivot',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({rowDim,colDim,extraGroupCols,valueFields,calcFields,where:whereClause,orderBy:orderBy||'_row_',orderDir})
+          body:JSON.stringify({rowDim,colDim,extraGroupCols,valueFields,calcFields,where:whereClause,orderBy:orderBy||'_row_',orderDir,showOverallN:!!showOverallN,showOverall:!!showOverall})
         });
         const data=await resp.json();
         if(data.error)throw new Error(data.error);
@@ -18476,6 +18695,47 @@ async function pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderB
 
   const result=await executeSQLAlaSQL(sql);
   result.mode='groupby';
+
+  // Genel n toplamı ve/veya genel metrik
+  const _pvtShowOverallN=document.getElementById('pivotShowOverallN')?.checked;
+  const _pvtShowOverall=document.getElementById('pivotShowOverall')?.checked;
+  if((_pvtShowOverallN||_pvtShowOverall)&&colDimArr.length>0&&result.rows&&result.rows.length>0){
+    try{
+      let ovParts=['"'+rowDim+'"','COUNT(*) AS "GENEL_n"'];
+      if(_pvtShowOverall){
+        valueFields.forEach(vf=>{
+          vf.aggs.forEach(agg=>{
+            if(agg==='count')return;
+            const fn=agg==='mean'?'AVG':agg.toUpperCase();
+            ovParts.push(fn+'("'+vf.col+'") AS "GENEL_'+vf.col+'_'+agg+'"');
+          });
+        });
+      }
+      let ovSql='SELECT '+ovParts.join(', ')+' FROM veri';
+      if(whereClause)ovSql+=' WHERE '+whereClause;
+      ovSql+=' GROUP BY "'+rowDim+'"';
+      const ovResult=await executeSQLAlaSQL(ovSql);
+      // Merge: rowDim üzerinden join
+      if(ovResult.rows&&ovResult.rows.length>0){
+        const rowIdx=result.columns.indexOf(rowDim);
+        const ovRowIdx=ovResult.columns.indexOf(rowDim);
+        const ovMap={};
+        ovResult.rows.forEach(r=>{ovMap[r[ovRowIdx]]=r});
+        // Yeni sütun adlarını ekle
+        const newCols=ovResult.columns.filter(c=>c!==rowDim);
+        result.columns.push(...newCols);
+        result.rows.forEach(r=>{
+          const key=r[rowIdx];
+          const ovRow=ovMap[key];
+          newCols.forEach((c,ci)=>{
+            const ovCI=ovResult.columns.indexOf(c);
+            r.push(ovRow?ovRow[ovCI]:null);
+          });
+        });
+      }
+    }catch(e){console.warn('[PIVOT] Overall metric fallback error:',e)}
+  }
+
   return result;
 }
 
@@ -18815,7 +19075,7 @@ function exportPivotExcel(){
 
     <div class="glossary-section">
       <h4>📊 Analiz Sekmeleri</h4>
-      <div class="glossary-item"><b>Dashboard:</b> Seçilen X/Y ekseni ve grafik tipine göre görsellerle veri keşfetme. Bar, Line, Pie, Scatter, Heatmap desteği.</div>
+      <div class="glossary-item"><b>Dashboard:</b> Seçilen X/Y ekseni ve grafik tipine göre görsellerle veri keşfetme. Bar, Line, Pie, Scatter, Heatmap desteği. Hesaplanmış alanlar (oran, yüzde, fark, özel formül), değer gruplama, renk boyutu, alt gruplama (pivot) ve 7 hesaplama tipi (Sayı, Toplam, Ortalama, Min, Maks, Std Sapma, Medyan). Global filtreler (sayısal aralık + sözel filtre) ile etkileşimli veri keşfi.</div>
       <div class="glossary-item"><b>Hızlı Bakış:</b> Tüm değişkenlerin özet tablosu — tür, dolu/boş, benzersiz, ortalama, medyan, std sapma, min/max, en sık değer.</div>
       <div class="glossary-item"><b>Özet İstatistik:</b> Kategorik bir değişkene göre sayısal değişkenlerin gruplanmış istatistikleri (ortalama, medyan, std sapma).</div>
       <div class="glossary-item"><b>Kritik Listeler:</b> Bağımlı değişkene göre en yüksek/en düşük N kaydı tablolar halinde gösterir. İki mod içerir:</div>
@@ -18825,6 +19085,10 @@ function exportPivotExcel(){
       <div class="glossary-item"><b>Korelasyon Matrisi:</b> Sayısal sütunlar arası Pearson korelasyon katsayıları ısı haritası.</div>
       <div class="glossary-item"><b>Çapraz Tablo:</b> İki kategorik değişken arasındaki frekans veya agrega tablo (pivot).</div>
       <div class="glossary-item"><b>🗺️ Harita Grafiği:</b> Kategorik değişkendeki konum isimlerini (şehir, ülke, bölge) Leaflet.js haritasında görselleştirir. Sayısal metrikle boyut/renk skalası oluşturur. Tam ekran modu, Adres Teyidi ve Otomatik Düzelt (hibrit konum düzeltme: kural tabanlı + LLM), 81 Türkiye ili + dünya ülkeleri geocode desteği sunar. Global filtreler otomatik uygulanır.</div>
+      <div class="glossary-item"><b>🗃️ SQL Sorgusu:</b> Yüklenen veri üzerinde SQL sorguları çalıştırma. Üç ana bölüm içerir:</div>
+      <div class="glossary-item" style="padding-left:16px"><b>• SQL Editörü:</b> Doğrudan SQL yazma, çalıştırma, LLM ile hata düzeltme ve Claude'a sorma.</div>
+      <div class="glossary-item" style="padding-left:16px"><b>• Pratik SQL Sorgu Önerici:</b> SQL bilmeyenler için görsel sorgu oluşturucu. Sütun seçimi, toplama fonksiyonu, WHERE koşulları, gruplama, sıralama. Hesaplanmış alan (alan arası işlem, özel SQL formülü, ağırlıklı toplam), genel n toplamı ve genel metrik sütunu desteği.</div>
+      <div class="glossary-item" style="padding-left:16px"><b>• Pivot Tablo Oluşturucu:</b> Satır/sütun boyutları, değer alanları ve metriklere göre çapraz tablo veya grup metrikleri. Hesaplanmış alan, ağırlıklı toplam, LLM formül yardımı, hızlı metrik şablonları (Özet İstatistik, Sayım, Ortalama, Dağılım). Satır bazında genel n toplamı ve genel metrik sütunları.</div>
       <div class="glossary-item"><b>🔬 İleri İstatistik:</b> JASP benzeri akademik testler paneli. 5 kategoride 16 test sunar. Her testten sonra akıllı yönlendirme paneli ve AI yorumlama desteği bulunur.</div>
       <div class="glossary-item" style="padding-left:8px;margin-top:6px;border-left:3px solid #3b82f6"><b style="color:#1e40af">Karşılaştırma — Parametrik:</b></div>
       <div class="glossary-item" style="padding-left:16px"><b>• t-Testi:</b> İki grubun ortalamalarını karşılaştırır. Cohen's d etki büyüklüğü raporlanır.</div>
@@ -18868,6 +19132,9 @@ function exportPivotExcel(){
       <div class="glossary-item"><b>💾 Farklı Kaydet:</b> Mevcut veriyi farklı isim ve formatta (CSV/XLSX/TSV) kaydeder. İşlem Tamamlandı veya Dashboard üst barında bulunur.</div>
       <div class="glossary-item"><b>➕ Veri Ekle:</b> Analiz edilmiş veriye yeni satır (Merge) veya sütun (Join) ekler. Mevcut veri korunur.</div>
       <div class="glossary-item"><b>↩ Grafik Geri Al:</b> Dashboard'da silinen son grafiği geri yükler.</div>
+      <div class="glossary-item"><b>🧮 Hesaplanmış Alan:</b> SQL ve Pivot bölümlerinde iki sütun arası işlem (+, −, ×, ÷), hazır şablonlar (oran, yüzde, değişim), özel SQL formülü veya ağırlıklı toplam (sütun × katsayı) ile yeni metrikler oluşturur.</div>
+      <div class="glossary-item"><b>⚖️ Ağırlıklı Toplam:</b> Birden fazla sütunu katsayılarla çarpıp toplayarak ağırlıklı puan hesaplar. Ör: ARASINAV×0.3 + DONEMSONUSINAVI×0.7.</div>
+      <div class="glossary-item"><b>🧠 LLM Yardımı:</b> Doğal dilde açıklama yazarak SQL formülü oluşturur. "Ara sınav %30, dönem sonu %70 ağırlıklı not" gibi.</div>
       <div class="glossary-item"><b>📄 PDF Rapor (İleri İstatistik):</b> Test sonuçlarını akademik formatta PDF olarak indirir.</div>
       <div class="glossary-item"><b>📊 Grafik (İleri İstatistik):</b> Her test sonucunda otomatik grafik oluşturulur: bar, scatter, histogram vb.</div>
       <div class="glossary-item"><b>📄 Dashboard PDF</b> (kırmızı buton): Dashboard'a eklediğiniz grafikleri ve istatistik tablosunu PDF olarak indirir. APA7 mod seçilebilir.</div>
@@ -18907,6 +19174,10 @@ function exportPivotExcel(){
       <div class="glossary-item"><b>Kodlama (UTF-8):</b> Dosya karakter kodlaması. Türkçe için UTF-8 önerilir.</div>
       <div class="glossary-item"><b>Filtre Paneli (Analiz):</b> Her sütun için metin/aralık filtresi. Tüm sekmelere uygulanır.</div>
       <div class="glossary-item"><b>⚠️ Aykırı Değer Filtresi:</b> Filtre paneli içinde yer alır. IQR (Çeyrekler Arası Açıklık) veya Z-Skoru yöntemiyle aykırı değerleri otomatik hariç tutar. Çarpan değeri ayarlanabilir (IQR varsayılan: 1.5). Seçilen sayısal sütunlardaki uç değerleri analiz dışı bırakır.</div>
+      <div class="glossary-item"><b>🔍 Sözel Filtre (Sayısal Sütunlarda):</b> Sayısal sütunlarda min/max aralığının yanı sıra metin değerlere de filtre uygulanabilir. Ör: "GİRMEDİ" eşit / eşit değil / içeriyor / içermiyor. Sayısal olmayan değerler otomatik chip olarak gösterilir, tıklanarak hızlıca filtrelenebilir.</div>
+      <div class="glossary-item"><b>📊 Genel N Toplamı:</b> Pivot tabloda sütun boyutu eklendiğinde, her satır için toplam gözlem sayısını (GENEL_n) ayrı bir sütunda gösterir. Default aktif.</div>
+      <div class="glossary-item"><b>📊 Satır Bazında Genel Metrik:</b> Pivot tabloda sütun boyutları arasında genel ortalama/toplam/min/max değerlerini ayrı sütunlarda gösterir. N-ağırlıklı (ham veriden hesaplanır). Default aktif.</div>
+      <div class="glossary-item"><b>⏱ SQL Önerisi Bannerı:</b> Uzun süren hesaplamalarda (>3sn) "SQL Sorgusunu deneyin" bannerı gösterilir. SQL sekmesi ve İleri İstatistik hariç tüm sekmelerde aktif.</div>
       <div class="glossary-item"><b>LLM Sorgu:</b> Doğal dilde soru sorun (örn: "En başarılı öğrenciler kimler?"). Lokal LLM ile çalışır.</div>
       <div class="glossary-item"><b>%100 Lokal:</b> Tüm veri işlemleri tarayıcıda yapılır, sunucuya veri gönderilmez.</div>
     </div>
@@ -18954,6 +19225,13 @@ function exportPivotExcel(){
         <select id="smartGroupValue" class="dash-select searchable-select" style="width:100%"></select>
       </div>
       <div id="smartAllGroupDiv" class="hidden" style="margin-top:8px;padding:8px;background:#fefce8;border-radius:6px;border:1px solid #fde68a">
+        <!-- Grup Seçici -->
+        <label style="font-size:11px;font-weight:600;color:#92400e;display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          Dahil Edilecek Gruplar:
+          <button onclick="smartGroupSelectAll(true)" style="background:none;border:1px solid #d97706;color:#d97706;padding:1px 6px;border-radius:3px;font-size:9px;cursor:pointer">Tümü</button>
+          <button onclick="smartGroupSelectAll(false)" style="background:none;border:1px solid #d97706;color:#d97706;padding:1px 6px;border-radius:3px;font-size:9px;cursor:pointer">Hiçbiri</button>
+        </label>
+        <div id="smartGroupCheckboxes" style="max-height:120px;overflow-y:auto;padding:4px;background:#fff;border:1px solid #fde68a;border-radius:4px;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:3px"></div>
         <label style="font-size:11px;font-weight:600;color:#92400e;display:block;margin-bottom:6px">Çıktı Formatı:</label>
         <div style="display:flex;gap:6px;margin-bottom:8px">
           <label style="display:flex;align-items:center;gap:4px;font-size:11px;flex:1;padding:6px;background:#fff;border-radius:4px;border:1px solid #fde68a;cursor:pointer">
