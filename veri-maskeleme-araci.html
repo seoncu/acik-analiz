@@ -17599,11 +17599,12 @@ function _getPivotCalcFieldSQL(){
       const tmpl=div.querySelector('.pvtCalcTmpl')?.value||'';
       if(!c1||!c2)return;
       let expr='';
-      if(tmpl==='pct') expr='(CAST("'+c1+'" AS REAL)/NULLIF(CAST("'+c2+'" AS REAL),0))*100';
-      else if(tmpl==='pctChange') expr='((CAST("'+c1+'" AS REAL)-CAST("'+c2+'" AS REAL))/NULLIF(CAST("'+c2+'" AS REAL),0))*100';
-      else if(tmpl==='round2') expr='ROUND(CAST("'+c1+'" AS REAL)/NULLIF(CAST("'+c2+'" AS REAL),0), 2)';
-      else if(tmpl==='abs') expr='ABS(CAST("'+c1+'" AS REAL)-CAST("'+c2+'" AS REAL))';
-      else expr='CAST("'+c1+'" AS REAL)'+op+'NULLIF(CAST("'+c2+'" AS REAL),0)';
+      // Backend sütunları otomatik Float64'e çeviriyor, CAST gereksiz
+      if(tmpl==='pct') expr='("'+c1+'"/NULLIF("'+c2+'",0))*100';
+      else if(tmpl==='pctChange') expr='(("'+c1+'"-"'+c2+'")/NULLIF("'+c2+'",0))*100';
+      else if(tmpl==='round2') expr='ROUND("'+c1+'"/NULLIF("'+c2+'",0), 2)';
+      else if(tmpl==='abs') expr='ABS("'+c1+'"-"'+c2+'")';
+      else expr='"'+c1+'"'+op+'"'+c2+'"';
       fields.push({expr, alias: alias||c1+'_'+c2, aggs});
     }
   });
@@ -17642,10 +17643,11 @@ function _weightedGetExpr(prefix){
     const col=row.querySelector('.'+prefix+'WCol')?.value||'';
     const wt=parseFloat(row.querySelector('.'+prefix+'WWt')?.value)||0;
     if(col&&wt!==0){
-      parts.push('CAST("'+col+'" AS DOUBLE)*'+wt);
+      // Sütun adlarını tırnaklı gönder — CAST backend'de otomatik yapılır
+      parts.push('"'+col+'"*'+wt);
     }
   });
-  return parts.length?parts.join(' + '):'';
+  return parts.length?'('+parts.join(' + ')+')':'';
 }
 
 // SQL Builder Weighted
