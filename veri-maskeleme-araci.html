@@ -1789,11 +1789,31 @@
 
               <!-- Hesaplanmış Alan (Calculated Field) for SQL Builder -->
               <div>
-                <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">🧮 Hesaplanmış Alan (SELECT'e Ekle — opsiyonel)</label>
+                <label style="font-size:11px;font-weight:600;color:#374151;display:flex;align-items:center;gap:6px;margin-bottom:4px">🧮 Hesaplanmış Alan (SELECT'e Ekle — opsiyonel)
+                  <button onclick="sqlCalcLLMHelp()" style="background:#7c3aed;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:9px;cursor:pointer" title="LLM ile formül oluştur">🧠 LLM Yardımı</button>
+                </label>
+                <div id="sqlCalcLLMBox" style="display:none;margin-bottom:6px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:8px">
+                  <input id="sqlCalcLLMInput" type="text" placeholder="Ne hesaplamak istiyorsunuz? ör: İki notun yüzde ağırlıklı ortalaması" style="width:100%;padding:6px 10px;border:1px solid #c4b5fd;border-radius:6px;font-size:11px;margin-bottom:4px">
+                  <div style="display:flex;gap:4px">
+                    <button onclick="sqlCalcLLMGenerate()" style="background:#7c3aed;color:#fff;border:none;padding:4px 12px;border-radius:6px;font-size:10px;cursor:pointer;font-weight:600">Formül Oluştur</button>
+                    <span id="sqlCalcLLMStatus" style="font-size:10px;color:#6b7280;align-self:center"></span>
+                  </div>
+                </div>
+                <!-- Ağırlıklı Toplam Oluşturucu -->
+                <div id="sqlWeightedBuilder" style="display:none;margin-bottom:6px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:8px">
+                  <div style="font-size:10px;font-weight:600;color:#065f46;margin-bottom:4px">⚖️ Ağırlıklı Toplam — Sütun × Katsayı</div>
+                  <div id="sqlWeightedRows" style="display:flex;flex-direction:column;gap:3px"></div>
+                  <div style="display:flex;gap:4px;margin-top:4px;align-items:center">
+                    <button onclick="sqlWeightedAddRow()" style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer">+ Satır Ekle</button>
+                    <button onclick="sqlWeightedApply()" style="background:#059669;color:#fff;border:none;padding:3px 10px;border-radius:6px;font-size:10px;cursor:pointer;font-weight:600">Formüle Dönüştür</button>
+                    <span style="font-size:9px;color:#6b7280">Ör: NOT1×0.3 + NOT2×0.7</span>
+                  </div>
+                </div>
                 <div id="sqlCalcFields" style="display:flex;flex-direction:column;gap:4px"></div>
                 <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">
                   <button onclick="sqlCalcAddField()" style="background:#ede9fe;border:1px solid #c4b5fd;color:#5b21b6;padding:3px 10px;border-radius:6px;font-size:10px;cursor:pointer">+ Alan Arası İşlem</button>
                   <button onclick="sqlCalcAddCustom()" style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:3px 10px;border-radius:6px;font-size:10px;cursor:pointer">✏️ Özel SQL Formülü</button>
+                  <button onclick="sqlWeightedToggle()" style="background:#ecfdf5;border:1px solid #6ee7b7;color:#065f46;padding:3px 10px;border-radius:6px;font-size:10px;cursor:pointer">⚖️ Ağırlıklı Toplam</button>
                 </div>
               </div>
 
@@ -1894,11 +1914,31 @@
 
                 <!-- Hesaplanmış Alan for Pivot -->
                 <div>
-                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">🧮 Hesaplanmış Alan (opsiyonel)</label>
+                  <label style="font-size:11px;font-weight:600;color:#374151;display:flex;align-items:center;gap:6px;margin-bottom:4px">🧮 Hesaplanmış Alan (opsiyonel)
+                    <button onclick="pivotCalcLLMHelp()" style="background:#7c3aed;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:9px;cursor:pointer" title="LLM ile formül oluştur">🧠 LLM Yardımı</button>
+                  </label>
+                  <div id="pivotCalcLLMBox" style="display:none;margin-bottom:6px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:8px">
+                    <input id="pivotCalcLLMInput" type="text" placeholder="Ne hesaplamak istiyorsunuz? ör: Ara sınav %30, dönem sonu %70 ağırlıklı başarı notu" style="width:100%;padding:6px 10px;border:1px solid #c4b5fd;border-radius:6px;font-size:11px;margin-bottom:4px">
+                    <div style="display:flex;gap:4px">
+                      <button onclick="pivotCalcLLMGenerate()" style="background:#7c3aed;color:#fff;border:none;padding:4px 12px;border-radius:6px;font-size:10px;cursor:pointer;font-weight:600">Formül Oluştur</button>
+                      <span id="pivotCalcLLMStatus" style="font-size:10px;color:#6b7280;align-self:center"></span>
+                    </div>
+                  </div>
+                  <!-- Ağırlıklı Toplam Oluşturucu -->
+                  <div id="pivotWeightedBuilder" style="display:none;margin-bottom:6px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:8px">
+                    <div style="font-size:10px;font-weight:600;color:#065f46;margin-bottom:4px">⚖️ Ağırlıklı Toplam — Sütun × Katsayı</div>
+                    <div id="pivotWeightedRows" style="display:flex;flex-direction:column;gap:3px"></div>
+                    <div style="display:flex;gap:4px;margin-top:4px;align-items:center">
+                      <button onclick="pivotWeightedAddRow()" style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer">+ Satır Ekle</button>
+                      <button onclick="pivotWeightedApply()" style="background:#059669;color:#fff;border:none;padding:3px 10px;border-radius:6px;font-size:10px;cursor:pointer;font-weight:600">Formüle Dönüştür</button>
+                      <span style="font-size:9px;color:#6b7280">Ör: NOT1×0.3 + NOT2×0.7</span>
+                    </div>
+                  </div>
                   <div id="pivotCalcFields" style="display:flex;flex-direction:column;gap:4px"></div>
                   <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">
                     <button onclick="pivotCalcAddField()" style="background:#ede9fe;border:1px solid #c4b5fd;color:#5b21b6;padding:3px 10px;border-radius:6px;font-size:10px;cursor:pointer">+ Alan Arası İşlem</button>
                     <button onclick="pivotCalcAddCustom()" style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:3px 10px;border-radius:6px;font-size:10px;cursor:pointer">✏️ Özel SQL Formülü</button>
+                    <button onclick="pivotWeightedToggle()" style="background:#ecfdf5;border:1px solid #6ee7b7;color:#065f46;padding:3px 10px;border-radius:6px;font-size:10px;cursor:pointer">⚖️ Ağırlıklı Toplam</button>
                   </div>
                 </div>
 
@@ -17570,6 +17610,177 @@ function _getPivotCalcFieldSQL(){
   return fields;
 }
 
+// ========== AĞIRLIKLI TOPLAM OLUŞTURUCU (Weighted Sum Builder) ==========
+let _weightedRowCount={sql:0,pivot:0};
+
+function _weightedColOptions(){
+  let o='<option value="">Sütun...</option>';
+  const numCols=outHeaders.filter(h=>colStats[h]&&(colStats[h].numCount>0||colStats[h].isNumeric));
+  numCols.forEach(h=>{o+='<option value="'+h.replace(/"/g,'&quot;')+'">'+h+'</option>'});
+  return o;
+}
+
+function _weightedAddRow(prefix){
+  _weightedRowCount[prefix]++;
+  const container=document.getElementById(prefix+'WeightedRows');
+  if(!container)return;
+  const row=document.createElement('div');
+  row.className=prefix+'WRow';
+  row.style.cssText='display:flex;gap:4px;align-items:center';
+  row.innerHTML=
+    '<select class="'+prefix+'WCol" style="padding:3px 6px;border:1px solid #6ee7b7;border-radius:4px;font-size:11px;flex:1" onchange="'+prefix+'WeightedPreview()">'+_weightedColOptions()+'</select>'+
+    '<span style="font-size:11px;color:#065f46;font-weight:700">×</span>'+
+    '<input type="number" class="'+prefix+'WWt" value="1" step="0.01" style="width:60px;padding:3px 6px;border:1px solid #6ee7b7;border-radius:4px;font-size:11px;text-align:center" onchange="'+prefix+'WeightedPreview()">'+
+    '<button onclick="this.parentElement.remove();'+prefix+'WeightedPreview()" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:12px;padding:0 4px">✕</button>';
+  container.appendChild(row);
+}
+
+function _weightedGetExpr(prefix){
+  const rows=document.querySelectorAll('.'+prefix+'WRow');
+  const parts=[];
+  rows.forEach(row=>{
+    const col=row.querySelector('.'+prefix+'WCol')?.value||'';
+    const wt=parseFloat(row.querySelector('.'+prefix+'WWt')?.value)||0;
+    if(col&&wt!==0){
+      parts.push('CAST("'+col+'" AS DOUBLE)*'+wt);
+    }
+  });
+  return parts.length?parts.join(' + '):'';
+}
+
+// SQL Builder Weighted
+function sqlWeightedToggle(){
+  const el=document.getElementById('sqlWeightedBuilder');
+  if(!el)return;
+  el.style.display=el.style.display==='none'?'block':'none';
+  if(el.style.display!=='none'&&!document.querySelector('.sqlWRow'))sqlWeightedAddRow();
+}
+function sqlWeightedAddRow(){_weightedAddRow('sql')}
+function sqlWeightedPreview(){}
+function sqlWeightedApply(){
+  const expr=_weightedGetExpr('sql');
+  if(!expr){showError('En az bir sütun ve katsayı girin');return}
+  sqlCalcAddCustom();
+  const lastField=document.querySelector('#sqlCalcFields [id^="sqlCalc_"]:last-child');
+  if(lastField){
+    const exprInp=lastField.querySelector('.sqlCalcExpr');
+    if(exprInp)exprInp.value=expr;
+    const aliasInp=lastField.querySelector('.sqlCalcAlias');
+    if(aliasInp)aliasInp.value='agirlikli_toplam';
+  }
+  sqlBuilderUpdatePreview();
+  document.getElementById('sqlWeightedBuilder').style.display='none';
+}
+
+// Pivot Weighted
+function pivotWeightedToggle(){
+  const el=document.getElementById('pivotWeightedBuilder');
+  if(!el)return;
+  el.style.display=el.style.display==='none'?'block':'none';
+  if(el.style.display!=='none'&&!document.querySelector('.pivotWRow'))pivotWeightedAddRow();
+}
+function pivotWeightedAddRow(){_weightedAddRow('pivot')}
+function pivotWeightedPreview(){}
+function pivotWeightedApply(){
+  const expr=_weightedGetExpr('pivot');
+  if(!expr){showError('En az bir sütun ve katsayı girin');return}
+  pivotCalcAddCustom();
+  const lastField=document.querySelector('#pivotCalcFields [id^="pvtCalc_"]:last-child');
+  if(lastField){
+    const exprInp=lastField.querySelector('.pvtCalcExpr');
+    if(exprInp)exprInp.value=expr;
+    const aliasInp=lastField.querySelector('.pvtCalcAlias');
+    if(aliasInp)aliasInp.value='agirlikli_toplam';
+  }
+  pivotUpdatePreview();
+  document.getElementById('pivotWeightedBuilder').style.display='none';
+}
+
+// ========== LLM FORMÜL YARDIMI ==========
+function pivotCalcLLMHelp(){
+  const box=document.getElementById('pivotCalcLLMBox');
+  if(box)box.style.display=box.style.display==='none'?'block':'none';
+}
+function sqlCalcLLMHelp(){
+  const box=document.getElementById('sqlCalcLLMBox');
+  if(box)box.style.display=box.style.display==='none'?'block':'none';
+}
+
+async function _calcLLMGenerate(inputId,statusId,target){
+  const inp=document.getElementById(inputId);
+  const status=document.getElementById(statusId);
+  if(!inp||!inp.value.trim()){showError('Lütfen ne hesaplamak istediğinizi yazın.');return}
+  status.textContent='Formül oluşturuluyor...';
+
+  const numCols=outHeaders.filter(h=>colStats[h]&&(colStats[h].numCount>0||colStats[h].isNumeric));
+  const prompt='Kullanıcı şu hesaplamayı yapmak istiyor: "'+inp.value.trim()+'"\n\n'+
+    'Mevcut sayısal sütunlar: '+numCols.join(', ')+'\n'+
+    'Tüm sütunlar: '+outHeaders.join(', ')+'\n\n'+
+    'Lütfen bu hesaplama için bir SQL ifadesi oluştur.\n'+
+    'Sütun adlarını çift tırnak içinde yaz: "SUTUN_ADI"\n'+
+    'Metin içerebilen sütunları CAST("SUTUN" AS DOUBLE) ile sayıya çevir.\n'+
+    'Sıfıra bölme koruması için NULLIF kullan.\n'+
+    'SADECE SQL ifadesini döndür, başka açıklama yazma.\n'+
+    'Ayrıca bir de kısa alias (isim) öner, iki satır döndür:\n'+
+    'EXPR: <sql ifadesi>\nALIAS: <kısa_isim>';
+
+  try{
+    // Try LLM endpoint
+    const _base=window._API_BASE||'http://127.0.0.1:8765';
+    const resp=await fetch(_base+'/api/llm-query',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({prompt,context:'sql_formula_generation'})
+    });
+    if(!resp.ok)throw new Error('LLM endpoint yanıt vermedi');
+    const data=await resp.json();
+    const text=data.response||data.result||'';
+    // Parse EXPR and ALIAS
+    let expr='',alias='';
+    const exprMatch=text.match(/EXPR:\s*(.+)/i);
+    const aliasMatch=text.match(/ALIAS:\s*(.+)/i);
+    if(exprMatch)expr=exprMatch[1].trim();
+    if(aliasMatch)alias=aliasMatch[1].trim().replace(/[^a-zA-Z0-9_ğüşıöçĞÜŞİÖÇ]/g,'');
+
+    if(!expr){
+      // Try to use the whole response as expression
+      expr=text.replace(/```sql/gi,'').replace(/```/g,'').trim().split('\n')[0].trim();
+    }
+
+    if(expr){
+      if(target==='sql'){
+        sqlCalcAddCustom();
+        const lastField=document.querySelector('#sqlCalcFields [id^="sqlCalc_"]:last-child');
+        if(lastField){
+          const ei=lastField.querySelector('.sqlCalcExpr');if(ei)ei.value=expr;
+          const ai=lastField.querySelector('.sqlCalcAlias');if(ai&&alias)ai.value=alias;
+        }
+        sqlBuilderUpdatePreview();
+      }else{
+        pivotCalcAddCustom();
+        const lastField=document.querySelector('#pivotCalcFields [id^="pvtCalc_"]:last-child');
+        if(lastField){
+          const ei=lastField.querySelector('.pvtCalcExpr');if(ei)ei.value=expr;
+          const ai=lastField.querySelector('.pvtCalcAlias');if(ai&&alias)ai.value=alias;
+        }
+        pivotUpdatePreview();
+      }
+      status.textContent='✅ Formül oluşturuldu! Kontrol edip düzenleyebilirsiniz.';
+      status.style.color='#059669';
+    }else{
+      status.textContent='⚠️ LLM yanıtı ayrıştırılamadı. Elle formül girin.';
+      status.style.color='#d97706';
+    }
+  }catch(e){
+    console.warn('[LLM Calc]',e);
+    // Fallback: try to generate a simple formula from column list
+    status.textContent='⚠️ LLM erişilemedi. Ağırlıklı Toplam veya Özel Formül kullanın.';
+    status.style.color='#d97706';
+  }
+}
+
+function sqlCalcLLMGenerate(){_calcLLMGenerate('sqlCalcLLMInput','sqlCalcLLMStatus','sql')}
+function pivotCalcLLMGenerate(){_calcLLMGenerate('pivotCalcLLMInput','pivotCalcLLMStatus','pivot')}
+
 function sqlBuilderUpdatePreview(){
   // SELECT clause
   const aggFunc=document.getElementById('sqlBuilderAggFunc')?.value||'';
@@ -18151,12 +18362,13 @@ async function pivotExecute(){
   const colDim=colDims.length===1?colDims[0]:''; // single = true pivot
   const extraGroupCols=colDims.length>=2?colDims:[]; // multi = extra GROUP BY cols
   const valueFields=pivotGetValueFields();
+  const calcFields=_getPivotCalcFieldSQL(); // Hesaplanmış alanlar
   const whereClause=document.getElementById('pivotWhereClause')?.value||'';
   const orderBy=document.getElementById('pivotOrderBy')?.value||'';
   const orderDir=document.getElementById('pivotOrderDir')?.value||'ASC';
 
   if(!rowDim){showError('Satır boyutu seçilmedi!');return}
-  if(valueFields.length===0){showError('En az bir değer alanı ve metrik seçin!');return}
+  if(valueFields.length===0&&calcFields.length===0){showError('En az bir değer alanı veya hesaplanmış alan ekleyin!');return}
 
   _showBusy('Pivot tablo hesaplanıyor...');
   const resArea=document.getElementById('pivotResultArea');
@@ -18176,17 +18388,17 @@ async function pivotExecute(){
         const resp=await fetch(_pivotBase+'/api/sql-pivot',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({rowDim,colDim,extraGroupCols,valueFields,where:whereClause,orderBy:orderBy||'_row_',orderDir})
+          body:JSON.stringify({rowDim,colDim,extraGroupCols,valueFields,calcFields,where:whereClause,orderBy:orderBy||'_row_',orderDir})
         });
         const data=await resp.json();
         if(data.error)throw new Error(data.error);
         result={columns:data.columns,rows:data.rows,mode:data.mode};
       }catch(backendErr){
         console.warn('[PIVOT] Backend error, trying SQL fallback:',backendErr.message);
-        result=await pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderBy,orderDir);
+        result=await pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderBy,orderDir,calcFields);
       }
     }else{
-      result=await pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderBy,orderDir);
+      result=await pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderBy,orderDir,calcFields);
     }
 
     _pivotResultData=result;
@@ -18202,7 +18414,7 @@ async function pivotExecute(){
   }
 }
 
-async function pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderBy,orderDir){
+async function pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderBy,orderDir,calcFields){
   // colDims can be string (legacy) or array
   const colDimArr=Array.isArray(colDims)?colDims:(colDims?[colDims]:[]);
   // Build GROUP BY SQL for AlaSQL
@@ -18216,6 +18428,15 @@ async function pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderB
       selectParts.push(fn+'("'+vf.col+'") AS "'+vf.col+'_'+agg+'"');
     });
   });
+  // Hesaplanmış alanlar
+  if(calcFields&&calcFields.length){
+    calcFields.forEach(cf=>{
+      cf.aggs.forEach(agg=>{
+        const fn=agg==='mean'?'AVG':agg.toUpperCase();
+        selectParts.push(fn+'('+cf.expr+') AS "'+cf.alias+'_'+agg+'"');
+      });
+    });
+  }
   let sql='SELECT '+selectParts.join(', ')+' FROM veri';
   if(whereClause)sql+=' WHERE '+whereClause;
   sql+=' GROUP BY '+groupCols.map(c=>'"'+c+'"').join(', ');
