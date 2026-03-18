@@ -18396,10 +18396,18 @@ async function pivotExecute(){
         if(data.error)throw new Error(data.error);
         result={columns:data.columns,rows:data.rows,mode:data.mode};
       }catch(backendErr){
-        console.warn('[PIVOT] Backend error, trying SQL fallback:',backendErr.message);
+        console.warn('[PIVOT] Backend error:',backendErr.message);
+        // calcFields varsa AlaSQL desteklemez, hatayı doğrudan göster
+        if(calcFields&&calcFields.length>0){
+          throw new Error('Backend hesaplama hatası: '+backendErr.message+' (Hesaplanmış alanlar Python backend gerektirir)');
+        }
         result=await pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderBy,orderDir,calcFields);
       }
     }else{
+      // Backend yoksa calcFields için uyar
+      if(calcFields&&calcFields.length>0&&valueFields.length===0){
+        throw new Error('Hesaplanmış alanlar Python backend gerektirir. Lütfen sunucuyu başlatın.');
+      }
       result=await pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderBy,orderDir,calcFields);
     }
 
@@ -18409,6 +18417,9 @@ async function pivotExecute(){
     const info=document.getElementById('pivotResultInfo');
     if(info)info.textContent=result.rows.length+' satır × '+result.columns.length+' sütun — '+(result.mode==='pivot'?'Çapraz Tablo':'Grup Metrikleri')+' — '+new Date().toLocaleTimeString('tr-TR');
   }catch(err){
+    // Hata mesajını sayfanın üstünde göster (showError fonksiyonu ile)
+    showError('Pivot Hatası: '+err.message);
+    // Ayrıca SQL error div'inde de göster
     if(errDiv){errDiv.textContent='❌ Pivot Hatası: '+err.message;errDiv.style.display='block'}
     if(resArea)resArea.style.display='none';
   }finally{
