@@ -2117,6 +2117,16 @@ function parseTRNumber(v){
   // sadece nokta varsa olduğu gibi bırak (ondalık nokta varsayımı)
   return parseFloat(s);
 }
+// === İstatistik tutarlılığı: örneklem (n-1) std + interpolasyonlu medyan ===
+// Tüm sekmeler aynı tanımı kullanmalı. Örneklem std (n-1) akademik/APA standardı ve
+// backend (pandas/polars ddof=1) ile tutarlıdır.
+function _sampleVarFromMoments(sumSq,sum,n){if(!n||n<2)return 0;return Math.max(0,(sumSq-sum*sum/n)/(n-1))}
+function _sampleStdFromMoments(sumSq,sum,n){return Math.sqrt(_sampleVarFromMoments(sumSq,sum,n))}
+function _sampleVarMean(sumSq,mean,n){if(!n||n<2)return 0;return Math.max(0,(sumSq-n*mean*mean)/(n-1))}
+function _sampleStdMean(sumSq,mean,n){return Math.sqrt(_sampleVarMean(sumSq,mean,n))}
+// Frekans tablosundan medyan — çift n'de iki orta değerin ortalaması (dizi tabanlı _median ile birebir)
+function _freqValueAtRank(numEntries,k){let cum=0;for(let i=0;i<numEntries.length;i++){cum+=numEntries[i].c;if(cum>=k)return numEntries[i].v}return numEntries.length?numEntries[numEntries.length-1].v:0}
+function _freqMedian(numEntries,N){if(!N||N<=0)return 0;if(N%2)return _freqValueAtRank(numEntries,(N+1)/2);return (_freqValueAtRank(numEntries,N/2)+_freqValueAtRank(numEntries,N/2+1))/2}
 // === TABLEAU-QUALITY CHART DEFAULTS ===
 (function _initChartDefaults(){
   function _apply(){
@@ -3830,8 +3840,8 @@ async function startProcessing(){
           numE.sort((a,b)=>a.v-b.v);
           const tN=numE.reduce((a,e)=>a+e.c,0);
           let cum=0;
-          // Exact median from full frequency distribution
-          for(const e of numE){cum+=e.c;if(cum>=tN*0.5){st._median=e.v;break}}
+          // Exact median from full frequency distribution (çift n'de interpolasyonlu)
+          st._median=_freqMedian(numE,tN);
           // Exact Q1 (25th percentile)
           cum=0;for(const e of numE){cum+=e.c;if(cum>=tN*0.25){st._p25=e.v;break}}
           // Exact Q3 (75th percentile)
@@ -4695,7 +4705,8 @@ function toggleColType(idx){
         numE2.sort((a,b)=>a.v-b.v);
         const tN2=numE2.reduce((a,e)=>a+e.c,0);
         let cum2=0;s._median=undefined;s._p25=undefined;s._p75=undefined;
-        for(const e of numE2){cum2+=e.c;if(s._p25===undefined&&cum2>=tN2*0.25)s._p25=e.v;if(s._median===undefined&&cum2>=tN2*0.5)s._median=e.v;if(s._p75===undefined&&cum2>=tN2*0.75){s._p75=e.v;break}}
+        for(const e of numE2){cum2+=e.c;if(s._p25===undefined&&cum2>=tN2*0.25)s._p25=e.v;if(s._p75===undefined&&cum2>=tN2*0.75){s._p75=e.v;break}}
+        s._median=_freqMedian(numE2,tN2);
       }
     }else{
       s._forceType=null;
@@ -6600,7 +6611,7 @@ function computeMultiAgg(xCol,yCols,aggType){
     if(agg==='std'){
       if(yData.n<2)return 0;
       const mn=yData.sum/yData.n;
-      return Math.sqrt(Math.max(0,yData.sumSq/yData.n-mn*mn));
+      return _sampleStdMean(yData.sumSq,mn,yData.n);
     }
     if(agg==='median'){
       if(!yData.n)return 0;
@@ -6635,7 +6646,7 @@ function computeMultiAgg(xCol,yCols,aggType){
     if(agg==='std'){
       if(yData.n<2)return 0;
       const mean=yData.sum/yData.n;
-      return +Math.sqrt(Math.max(0,yData.sumSq/yData.n-mean*mean)).toFixed(2);
+      return +_sampleStdMean(yData.sumSq,mean,yData.n).toFixed(2);
     }
     if(agg==='median'){
       if(!yData.n)return 0;
@@ -6737,7 +6748,7 @@ function computeColorGroupAgg(xCol,colorCol,yCol,aggType){
     if(agg==='std'){
       if(g.vals.length<2)return 0;
       const mn=g.sum/g.vals.length;
-      return +Math.sqrt(Math.max(0,g.sumSq/g.vals.length-mn*mn)).toFixed(2);
+      return +_sampleStdMean(g.sumSq,mn,g.vals.length).toFixed(2);
     }
     if(agg==='median'){
       if(!g.vals.length)return 0;
@@ -8084,7 +8095,7 @@ function _computeFilteredColStats(){
         numE.sort((a,b)=>a.v-b.v);
         const tN=numE.reduce((a,e)=>a+e.c,0);
         let cum=0;
-        for(const e of numE){cum+=e.c;if(cum>=tN*0.5){s._median=e.v;break}}
+        s._median=_freqMedian(numE,tN);
         cum=0;for(const e of numE){cum+=e.c;if(cum>=tN*0.25){s._p25=e.v;break}}
         cum=0;for(const e of numE){cum+=e.c;if(cum>=tN*0.75){s._p75=e.v;break}}
       }
@@ -8329,7 +8340,7 @@ function _ruleStats(vals){
   const n=vals.length,sum=vals.reduce((a,b)=>a+b,0),mean=sum/n;
   const sorted=[...vals].sort((a,b)=>a-b);
   const median=n%2?sorted[Math.floor(n/2)]:((sorted[n/2-1]+sorted[n/2])/2);
-  const variance=vals.reduce((a,v)=>a+(v-mean)**2,0)/n;
+  const variance=n>1?vals.reduce((a,v)=>a+(v-mean)**2,0)/(n-1):0;
   const std=Math.sqrt(variance);
   const min=sorted[0],max=sorted[n-1];
   const q1=sorted[Math.floor(n*0.25)],q3=sorted[Math.floor(n*0.75)];
@@ -8547,7 +8558,7 @@ function _ruleInterpretDetailStats(){
   t+='Gözlem sayısı: '+s.count+', Boş: '+s.empty+'\n';
   if(s.isNumeric&&s.numCount>0){
     const mean=s.sum/s.numCount;
-    const std=Math.sqrt(Math.max(0,s.sumSq/s.numCount-mean*mean));
+    const std=_sampleStdMean(s.sumSq,mean,s.numCount);
     const cv=mean!==0?(std/Math.abs(mean)*100):0;
     t+='Sayısal gözlem: '+s.numCount+'\n';
     t+='Ortalama: '+_fmtNum(mean)+', SS: '+_fmtNum(std)+'\n';
@@ -8603,7 +8614,7 @@ function generateRuleBasedDashboardReport(){
     numVars.slice(0,15).forEach(h=>{
       const s=colStats[h];if(!s||!s.numCount)return;
       const mean=s.sum/s.numCount;
-      const std=Math.sqrt(Math.max(0,s.sumSq/s.numCount-mean*mean));
+      const std=_sampleStdMean(s.sumSq,mean,s.numCount);
       const cv=mean!==0?(std/Math.abs(mean)*100):0;
       report+=h+': Ort.='+_fmtNum(mean)+', SS='+_fmtNum(std)+', Min='+_fmtNum(s.min)+', Maks='+_fmtNum(s.max)+', CV=%'+_fmtNum(cv,1)+'\n';
     });
@@ -9343,7 +9354,7 @@ function renderQuickView(){
       html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center">'+uniq.toLocaleString('tr-TR')+(uniqCapped?'+':'')+'</td>';
       if(isNum){
         const avg=s.mean!=null&&s.mean!==undefined?s.mean:(s.numCount>0?s.sum/s.numCount:0);
-        const std=s.std!=null&&s.std!==undefined?s.std:(()=>{const variance=s.numCount>1?(s.sumSq/s.numCount-(s.sum/s.numCount)**2):0;return Math.sqrt(Math.max(0,variance))})();
+        const std=s.std!=null&&s.std!==undefined?s.std:(()=>{const variance=_sampleVarFromMoments(s.sumSq,s.sum,s.numCount);return Math.sqrt(variance)})();
         const median=s._median;
         html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;font-weight:600">'+s.sum.toLocaleString('tr-TR',{maximumFractionDigits:2})+'</td>';
         html+='<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;font-weight:600;color:#2563eb">'+avg.toFixed(2)+'</td>';
@@ -9607,9 +9618,9 @@ function _renderSummaryStatsJS(catCols,numCols){
           let median=avg;
           if(numE.length>0){
             const tN=numE.reduce((a,e)=>a+e.c,0);
-            let cum=0;for(const e of numE){cum+=e.c;if(cum>=tN*0.5){median=e.v;break}}
+            median=_freqMedian(numE,tN);
           }
-          const variance=d.count>1?(d.sumSq/d.count-avg*avg):0;
+          const variance=_sampleVarMean(d.sumSq,avg,d.count);
           const std=Math.sqrt(Math.max(0,variance));
           const mn=d.min,mx=d.max;
 
@@ -9743,7 +9754,7 @@ function renderDetailedStats(){
 
   if(isNum){
     const mean=s.sum/s.numCount;
-    const variance=s.sumSq/s.numCount-mean*mean;
+    const variance=_sampleVarMean(s.sumSq,mean,s.numCount);
     const stdDev=Math.sqrt(Math.max(0,variance));
     const cv=mean!==0?(stdDev/Math.abs(mean)*100).toFixed(1)+'%':'N/A';
 
@@ -9757,7 +9768,7 @@ function renderDetailedStats(){
       for(const e of numEntries){cum+=e.c;if(cum>=target)return e.v}
       return numEntries.length?numEntries[numEntries.length-1].v:0;
     }
-    const q1=percentile(0.25),median=percentile(0.5),q3=percentile(0.75);
+    const q1=percentile(0.25),median=_freqMedian(numEntries,totalN),q3=percentile(0.75);
     const iqr=q3-q1;
     const range=s.max-s.min;
     // Skewness approximation: 3*(mean-median)/stdDev (Pearson's second)
@@ -10528,7 +10539,7 @@ function buildGroupPrompt(groupCol,groupVal,groupRows,selectedFields){
       prompt+='  Dolu: '+(count-empty)+', Boş: '+empty+', Benzersiz: '+Object.keys(freq).length+'\n';
       if(isNum&&numCount>0){
         const mean=sum/numCount;
-        const variance=numCount>1?(sumSq/numCount-mean*mean):0;
+        const variance=_sampleVarMean(sumSq,mean,numCount);
         const stdDev=Math.sqrt(Math.max(0,variance));
         vals.sort((a,b)=>a-b);
         const median=vals.length%2?vals[Math.floor(vals.length/2)]:((vals[vals.length/2-1]+vals[vals.length/2])/2);
@@ -10598,7 +10609,7 @@ function buildLLMPrompt(){
     prompt+='  Dolu: '+(s.count-(s.empty||0))+', Boş: '+(s.empty||0)+', Benzersiz: '+(s.uniqueCount||Object.keys(s.freq).length)+'\n';
     if(isNum){
       const mean=s.sum/s.numCount;
-      const variance=s.sumSq/s.numCount-mean*mean;
+      const variance=_sampleVarMean(s.sumSq,mean,s.numCount);
       const stdDev=Math.sqrt(Math.max(0,variance));
       prompt+='  Min: '+s.min+', Max: '+s.max+', Ortalama: '+mean.toFixed(2)+', Std Sapma: '+stdDev.toFixed(2)+'\n';
     }else{
@@ -11081,7 +11092,7 @@ async function generateAPA7PDF(){
       const s=colStats[h],isNum=s.isNumeric&&s.numCount>0;
       const filled=s.count-s.empty;
       let stdV='-',medV='-';
-      if(isNum){const mean=s.sum/s.numCount;const v=s.sumSq/s.numCount-mean*mean;stdV=Math.sqrt(Math.max(0,v)).toFixed(2);
+      if(isNum){const mean=s.sum/s.numCount;const v=_sampleVarMean(s.sumSq,mean,s.numCount);stdV=Math.sqrt(Math.max(0,v)).toFixed(2);
         const numE=[];Object.entries(s.freq).forEach(([val,c])=>{const n=parseTRNumber(val);if(!isNaN(n))numE.push({v:n,c})});
         numE.sort((a,b)=>a.v-b.v);const tN=numE.reduce((a,e)=>a+e.c,0);let cum=0;
         for(const e of numE){cum+=e.c;if(cum>=tN*0.5){medV=e.v.toFixed(2);break}}}
@@ -11909,7 +11920,7 @@ async function generatePDF(){
       let stdDev='-',median='-';
       if(isNum){
         const mean=s.sum/s.numCount;
-        const v=s.sumSq/s.numCount-mean*mean;
+        const v=_sampleVarMean(s.sumSq,mean,s.numCount);
         stdDev=Math.sqrt(Math.max(0,v)).toFixed(2);
         const numE=[];Object.entries(s.freq).forEach(([val,c])=>{const n=parseTRNumber(val);if(!isNaN(n))numE.push({v:n,c})});
         numE.sort((a,b)=>a.v-b.v);const tN=numE.reduce((a,e)=>a+e.c,0);let cum=0;
