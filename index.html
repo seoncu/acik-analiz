@@ -2053,6 +2053,19 @@ let chartInstances=[];
 function _arrMin(arr){let m=Infinity;for(let i=0;i<arr.length;i++){const v=arr[i];if(v<m)m=v}return m}
 function _arrMax(arr){let m=-Infinity;for(let i=0;i<arr.length;i++){const v=arr[i];if(v>m)m=v}return m}
 function _pushAll(target,src){if(!src)return target;for(let i=0;i<src.length;i++)target.push(src[i]);return target}
+// Türkçe sayı ayrıştırma: "1.234,56" (nokta binlik + virgül ondalık) gibi değerleri doğru çevirir.
+// parseFloat(x.replace(',','.')) sadece "3,14"de doğru; binlik ayıraçlı sayıyı bozar.
+function parseTRNumber(v){
+  if(typeof v==='number')return v;
+  if(v==null)return NaN;
+  let s=String(v).trim();
+  if(!s)return NaN;
+  const hasComma=s.indexOf(',')>=0,hasDot=s.indexOf('.')>=0;
+  if(hasComma&&hasDot)s=s.replace(/\./g,'').replace(',','.'); // nokta binlik, virgül ondalık
+  else if(hasComma)s=s.replace(',','.');                       // sadece virgül → ondalık
+  // sadece nokta varsa olduğu gibi bırak (ondalık nokta varsayımı)
+  return parseFloat(s);
+}
 // === TABLEAU-QUALITY CHART DEFAULTS ===
 (function _initChartDefaults(){
   function _apply(){
@@ -3868,7 +3881,7 @@ function processAndCollect(fields,outDelim,batch,MAX_FREQ,sourceFileIdx){
     const st=colStats[outHeaders[oi]];
     st.count++;
     if(!val||!val.trim()){st.empty++}else{
-      const num=parseFloat(val.replace(',','.'));
+      const num=parseTRNumber(val);
       if(!isNaN(num)&&isFinite(num)){st.numCount++;st.sum+=num;st.sumSq+=num*num;if(num<st.min)st.min=num;if(num>st.max)st.max=num}
       else st.isNumeric=false;
       if(val in st.freq){st.freq[val]++}else if(st._freqSize<MAX_FREQ){st.freq[val]=1;st._freqSize++;if(st._freqSize===_FREQ_SOFT_CAP&&typeof _FREQ_SOFT_CAP!=='undefined')console.warn('⚠️ Sütun "'+outHeaders[oi]+'" freq haritası '+_FREQ_SOFT_CAP.toLocaleString()+' benzersiz değere ulaştı — yüksek bellek kullanımı olabilir')}
@@ -4619,14 +4632,14 @@ function toggleColType(idx){
     s._forceType='num';
     let numCount=0,sum=0,sumSq=0,mn=Infinity,mx=-Infinity;
     Object.entries(s.freq).forEach(([v,c])=>{
-      const n=parseFloat(v.replace(',','.'));
+      const n=parseTRNumber(v);
       if(!isNaN(n)&&isFinite(n)){numCount+=c;sum+=n*c;sumSq+=n*n*c;if(n<mn)mn=n;if(n>mx)mx=n}
     });
     if(numCount>0){
       s.isNumeric=true;s.numCount=numCount;s.sum=sum;s.sumSq=sumSq;s.min=mn;s.max=mx;
       // Recompute median/Q1/Q3 from freq (exact)
       const numE2=[];
-      Object.entries(s.freq).forEach(([v,c])=>{const n=parseFloat(v.replace(',','.'));if(!isNaN(n)&&isFinite(n))numE2.push({v:n,c})});
+      Object.entries(s.freq).forEach(([v,c])=>{const n=parseTRNumber(v);if(!isNaN(n)&&isFinite(n))numE2.push({v:n,c})});
       if(numE2.length>0){
         numE2.sort((a,b)=>a.v-b.v);
         const tN2=numE2.reduce((a,e)=>a+e.c,0);
@@ -4818,7 +4831,7 @@ function getFilteredFreq(colName){
   for(const [val,count] of Object.entries(s.freq)){
     if(exSet.has(val))continue;
     if(incSet&&!incSet.has(val))continue;
-    if(isNum){const num=parseFloat(val.replace(',','.'));if(!isNaN(num)){if(f.minVal!==null&&num<f.minVal)continue;if(f.maxVal!==null&&num>f.maxVal)continue}}
+    if(isNum){const num=parseTRNumber(val);if(!isNaN(num)){if(f.minVal!==null&&num<f.minVal)continue;if(f.maxVal!==null&&num>f.maxVal)continue}}
     result[val]=count;
   }
   return result;
@@ -4851,7 +4864,7 @@ function passesFilter(colName,val){
   }
   const s=colStats[colName];
   if(s&&s.isNumeric&&s.numCount>0){
-    const num=parseFloat(val.replace(',','.'));
+    const num=parseTRNumber(val);
     if(!isNaN(num)){if(f.minVal!==null&&num<f.minVal)return false;if(f.maxVal!==null&&num>f.maxVal)return false}
   }
   return true;
@@ -5462,7 +5475,7 @@ function computeGroupedColumn(gc){
     let groupLabel='Diğer';
 
     if(gc.type==='numeric'){
-      const num=parseFloat(rawVal.replace(',','.'));
+      const num=parseTRNumber(rawVal);
       if(!isNaN(num)){
         for(const r of gc.ranges){
           if(num>=r.min&&num<=r.max){groupLabel=r.label;break}
@@ -5533,7 +5546,7 @@ function getGroupedValue(gc,row){
   if(si<0)return 'Diğer';
   const rawVal=row[si]||'';
   if(gc.type==='numeric'){
-    const num=parseFloat(rawVal.replace(',','.'));
+    const num=parseTRNumber(rawVal);
     if(isNaN(num))return '(boş/gecersiz)';
     for(const r of gc.ranges){if(num>=r.min&&num<=r.max)return r.label}
     return 'Diğer';
@@ -5887,7 +5900,7 @@ function renderGlobalFilterBar(){
       card.appendChild(numTxtRow);
 
       // Metin değer chip'leri — sayısal olmayan değerleri hızlı seçim
-      const textVals=Object.entries(s.freq).filter(([v])=>{const n=parseFloat(v.replace(',','.'));return isNaN(n)}).sort((a,b)=>b[1]-a[1]).slice(0,6);
+      const textVals=Object.entries(s.freq).filter(([v])=>{const n=parseTRNumber(v);return isNaN(n)}).sort((a,b)=>b[1]-a[1]).slice(0,6);
       if(textVals.length){
         const chipRow=document.createElement('div');chipRow.style.cssText='display:flex;flex-wrap:wrap;gap:2px;margin-top:3px';
         textVals.forEach(([val,cnt])=>{
@@ -7398,15 +7411,15 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
     const s=colStats[col];
     const filteredFreq=getFilteredFreq(col);
     let fMin=Infinity,fMax=-Infinity;
-    Object.entries(filteredFreq).forEach(([v])=>{const n=parseFloat(v.replace(',','.'));if(!isNaN(n)){if(n<fMin)fMin=n;if(n>fMax)fMax=n}});
-    if(fMin===Infinity){fMin=s.min;fMax=s.max}
+    Object.entries(filteredFreq).forEach(([v])=>{const n=parseTRNumber(v);if(!isNaN(n)){if(n<fMin)fMin=n;if(n>fMax)fMax=n}});
+    if(fMin===Infinity){if(!s){showError('Bu sütun için sayısal istatistik bulunamadı.');box.remove();return}fMin=s.min;fMax=s.max}
     const totalN=Object.values(filteredFreq).reduce((a,b)=>a+b,0);
     const binCount=Math.min(25,Math.max(5,Math.ceil(Math.sqrt(totalN))));
     const range=fMax-fMin||1,binWidth=range/binCount;
     const bins=Array(binCount).fill(0);
     const lbls=[];
     for(let b=0;b<binCount;b++)lbls.push((fMin+b*binWidth).toFixed(1));
-    Object.entries(filteredFreq).forEach(([v,c])=>{const n=parseFloat(v.replace(',','.'));if(!isNaN(n)){let bi=Math.floor((n-fMin)/binWidth);if(bi>=binCount)bi=binCount-1;if(bi<0)bi=0;bins[bi]+=c}});
+    Object.entries(filteredFreq).forEach(([v,c])=>{const n=parseTRNumber(v);if(!isNaN(n)){let bi=Math.floor((n-fMin)/binWidth);if(bi>=binCount)bi=binCount-1;if(bi<0)bi=0;bins[bi]+=c}});
     chartConfig={type:'bar',data:{labels:lbls,datasets:[{label:col,data:bins,backgroundColor:'rgba(78,121,167,0.75)',borderColor:'#4e79a7',borderWidth:1,barPercentage:1,categoryPercentage:1,borderRadius:0}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{title:function(c){const i=c[0].dataIndex;return lbls[i]+(i<binCount-1?' – '+lbls[i+1]:'+')}}}},scales:{y:{title:{display:true,text:'Frekans',font:{size:12,weight:'600'}}},x:{title:{display:true,text:col,font:{size:12,weight:'600'}}}}}};
 
   }else if(type==='boxplot'){
@@ -7520,6 +7533,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
         borderColor:ds.borderColor||CHART_COLORS[di%CHART_COLORS.length],
         borderWidth:1
       }));
+      const multiY=_coloredDs.length>1; // renkli grupta legend göster
       chartConfig={type:'bar',data:{labels:result.labels,datasets:_coloredDs},options:{plugins:{legend:{display:multiY,labels:{font:{size:10}}}},scales:{x:{stacked:isStacked},y:{stacked:isStacked,beginAtZero:true}},interaction:{mode:'index',intersect:false}}};
     }
 
@@ -8000,7 +8014,7 @@ function _computeFilteredColStats(){
       s.count++;
       s.freq[val]=(s.freq[val]||0)+1;
       // Always try numeric parsing (mixed cols like scores+"GİRMEDİ" need numeric stats)
-      const num=parseFloat(val.replace(',','.'));
+      const num=parseTRNumber(val);
       if(!isNaN(num)&&isFinite(num)){
         s.numCount++;s.sum+=num;s.sumSq+=num*num;
         if(num<s.min)s.min=num;if(num>s.max)s.max=num;
@@ -8267,7 +8281,7 @@ function _ruleStats(vals){
   const variance=vals.reduce((a,v)=>a+(v-mean)**2,0)/n;
   const std=Math.sqrt(variance);
   const min=sorted[0],max=sorted[n-1];
-  const q1=sorted[Math.floor(n*0.25)]||min,q3=sorted[Math.floor(n*0.75)]||max;
+  const q1=sorted[Math.floor(n*0.25)],q3=sorted[Math.floor(n*0.75)];
   const iqr=q3-q1;
   const cv=mean!==0?(std/Math.abs(mean)*100):0;
   const skew=std>0?(3*(mean-median)/std):0;
@@ -8391,7 +8405,7 @@ function _ruleInterpretCorrelation(){
     const cells=Array.from(tr.querySelectorAll('td'));
     const rowLabel=tr.querySelector('th')?.textContent?.trim()||cells[0]?.textContent?.trim()||'';
     cells.forEach((td,ci)=>{
-      const val=parseFloat(td.textContent.replace(',','.'));
+      const val=parseTRNumber(td.textContent);
       if(!isNaN(val)&&Math.abs(val)<1&&Math.abs(val)>0.01){
         const colLabel=headers[ci+1]||headers[ci]||'';
         if(rowLabel&&colLabel&&rowLabel!==colLabel){
@@ -8942,6 +8956,8 @@ function renderTopBottomGroupDataJS(area,indepVar,subVar,direction,metric,backen
   if(indepIdx<0){area.innerHTML='<p class="text-sm text-muted">Sütun bulunamadı.</p>';return}
   // Tüm sayısal sütunları bul
   const numCols=outHeaders.filter(h=>colStats[h]&&colStats[h].isNumeric);
+  // Sıralama sütununu erken belirle (entries map'i sortKey'e başvuruyor — TDZ çökmesini önle)
+  const sortKey=sortCol&&numCols.includes(sortCol)?sortCol:numCols[0];
   if(!numCols.length){area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px">Veri setinde sayısal sütun bulunamadı.</p>';return}
   const numIdxMap={};numCols.forEach(h=>{numIdxMap[h]=outHeaders.indexOf(h)});
   // Helpers
@@ -9051,8 +9067,6 @@ function renderTopBottomGroupDataJS(area,indepVar,subVar,direction,metric,backen
       return{key,stats,sortMetric:stats[sortKey].metric,rowCount:g.acc._n,distinctN:_dn,subs:subEntries};
     });
   }
-  // Sıralama sütununu belirle: seçili ise o, değilse ilk sayısal
-  const sortKey=sortCol&&numCols.includes(sortCol)?sortCol:numCols[0];
   const metricLabel={mean:'Ort.',max:'Maks',min:'Min',median:'Med.',sum:'Top.',count:'Sayı (n)'}[metric]||'Ort.';
   const metricLabelFull={mean:'Ortalama',max:'Maksimum',min:'Minimum',median:'Medyan',sum:'Toplam',count:'Sayı (n)'}[metric]||'Ortalama';
   if(!entries.length){area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px">Seçilen kriterlere uygun veri bulunamadı.</p>';return}
@@ -9684,7 +9698,7 @@ function renderDetailedStats(){
 
     // Compute median, Q1, Q3 from freq data
     const numEntries=[];
-    Object.entries(s.freq).forEach(([v,c])=>{const n=parseFloat(v.replace(',','.'));if(!isNaN(n))numEntries.push({v:n,c})});
+    Object.entries(s.freq).forEach(([v,c])=>{const n=parseTRNumber(v);if(!isNaN(n))numEntries.push({v:n,c})});
     numEntries.sort((a,b)=>a.v-b.v);
     const totalN=numEntries.reduce((a,e)=>a+e.c,0);
     function percentile(p){
@@ -10454,7 +10468,7 @@ function buildGroupPrompt(groupCol,groupVal,groupRows,selectedFields){
         if(!v.trim()){empty++;return}
         if(!freq[v])freq[v]=0;freq[v]++;
         if(isNum){
-          const n=parseFloat(v.replace(',','.'));
+          const n=parseTRNumber(v);
           if(!isNaN(n)&&isFinite(n)){numCount++;sum+=n;sumSq+=n*n;if(n<gMin)gMin=n;if(n>gMax)gMax=n;vals.push(n)}
         }
       });
@@ -10485,7 +10499,7 @@ function buildGroupPrompt(groupCol,groupVal,groupRows,selectedFields){
       const s=colStats[h];
       if(!(s&&s.isNumeric&&s.numCount>0))return;
       const vals=[];
-      groupRows.forEach(row=>{const v=row[ci]||'';const n=parseFloat(v.replace(',','.'));if(!isNaN(n)&&isFinite(n))vals.push(n)});
+      groupRows.forEach(row=>{const v=row[ci]||'';const n=parseTRNumber(v);if(!isNaN(n)&&isFinite(n))vals.push(n)});
       if(vals.length<3)return;
       vals.sort((a,b)=>a-b);
       const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
@@ -11017,7 +11031,7 @@ async function generateAPA7PDF(){
       const filled=s.count-s.empty;
       let stdV='-',medV='-';
       if(isNum){const mean=s.sum/s.numCount;const v=s.sumSq/s.numCount-mean*mean;stdV=Math.sqrt(Math.max(0,v)).toFixed(2);
-        const numE=[];Object.entries(s.freq).forEach(([val,c])=>{const n=parseFloat(val.replace(',','.'));if(!isNaN(n))numE.push({v:n,c})});
+        const numE=[];Object.entries(s.freq).forEach(([val,c])=>{const n=parseTRNumber(val);if(!isNaN(n))numE.push({v:n,c})});
         numE.sort((a,b)=>a.v-b.v);const tN=numE.reduce((a,e)=>a+e.c,0);let cum=0;
         for(const e of numE){cum+=e.c;if(cum>=tN*0.5){medV=e.v.toFixed(2);break}}}
       const topE=_getTopFreqEntry(h,s.freq);
@@ -11846,7 +11860,7 @@ async function generatePDF(){
         const mean=s.sum/s.numCount;
         const v=s.sumSq/s.numCount-mean*mean;
         stdDev=Math.sqrt(Math.max(0,v)).toFixed(2);
-        const numE=[];Object.entries(s.freq).forEach(([val,c])=>{const n=parseFloat(val.replace(',','.'));if(!isNaN(n))numE.push({v:n,c})});
+        const numE=[];Object.entries(s.freq).forEach(([val,c])=>{const n=parseTRNumber(val);if(!isNaN(n))numE.push({v:n,c})});
         numE.sort((a,b)=>a.v-b.v);const tN=numE.reduce((a,e)=>a+e.c,0);let cum=0;
         for(const e of numE){cum+=e.c;if(cum>=tN*0.5){median=e.v.toFixed(2);break}}
       }
@@ -12473,7 +12487,7 @@ async function importSession(event){
           if(!(val in s.freq)){s.freq[val]=1;s._freqSize++}else{s.freq[val]++}
           s._uniqSet.add(val);
           if(s.isNumeric){
-            const num=parseFloat(val.replace(',','.'));
+            const num=parseTRNumber(val);
             if(!isNaN(num)&&isFinite(num)){
               s.numCount++;s.sum+=num;s.sumSq+=num*num;
               if(num<s.min)s.min=num;if(num>s.max)s.max=num;
@@ -15616,6 +15630,7 @@ async function advStatsRun(testId){
     }
     const g1=groups[gKeys[0]],g2=groups[gKeys[1]];
     const n1=g1.length,n2=g2.length,m1=_mean(g1),m2=_mean(g2),s1=_std(g1),s2=_std(g2);
+    if(n1<2||n2<2){resTable.innerHTML='<p style="color:#ef4444">t-Testi için her grupta en az 2 gözlem gereklidir. Mevcut: '+n1+' ve '+n2+'.</p>';return}
     const sp=Math.sqrt(((n1-1)*s1*s1+(n2-1)*s2*s2)/(n1+n2-2));
     const t=(m1-m2)/(sp*Math.sqrt(1/n1+1/n2));
     const df=n1+n2-2;
@@ -15702,7 +15717,8 @@ async function advStatsRun(testId){
     rKeys.forEach(r=>cKeys.forEach(c=>{const o=freq[r+'|||'+c]||0;const e=rowTotals[r]*colTotals[c]/N;_totalCells++;if(e<5)_lowExpCount++;if(e>0)chiSq+=(o-e)*(o-e)/e}));
     const _lowExpPct=_totalCells>0?(_lowExpCount/_totalCells*100):0;
     const p=1-_chiSquareCDF(chiSq,df);
-    const cramerV=Math.sqrt(chiSq/(N*Math.min(rKeys.length-1,cKeys.length-1)));
+    const _cvDim=Math.min(rKeys.length-1,cKeys.length-1);
+    const cramerV=_cvDim>0?Math.sqrt(chiSq/(N*_cvDim)):0;
     resultData={test:'chisquare',rowCol,colCol,chiSq,df,p,cramerV,N,lowExpPct:_lowExpPct,lowExpCount:_lowExpCount,totalCells:_totalCells};
     html='<table class="stat-table" style="font-size:12px;width:100%;border-collapse:collapse">';
     html+='<tr style="background:#f8fafc"><th style="padding:6px 10px;text-align:left;border:1px solid #e2e8f0">İstatistik</th><th style="padding:6px 10px;border:1px solid #e2e8f0">Değer</th></tr>';
@@ -16333,7 +16349,8 @@ async function advStatsRun(testId){
     }
 
     const totalVar=eigenvalues.reduce((s,e)=>s+e.value,0);
-    const numFactors=numFactorsStr==='auto'?eigenvalues.filter(e=>e.value>1).length||1:parseInt(numFactorsStr);
+    const _nfParsed=parseInt(numFactorsStr);
+    const numFactors=numFactorsStr==='auto'?(eigenvalues.filter(e=>e.value>1).length||1):(isFinite(_nfParsed)&&_nfParsed>0?_nfParsed:1);
     const actualFactors=Math.min(numFactors,p);
 
     // Factor loadings
@@ -18053,8 +18070,16 @@ function sqlBuilderUpdatePreview(){
       let cond='';
       if(op==='IS NULL') cond='"'+col+'" IS NULL';
       else if(op==='IS NOT NULL') cond='"'+col+'" IS NOT NULL';
-      else if(op==='IN') cond='"'+col+'" IN ('+val+')';
-      else if(op==='LIKE'||op==='NOT LIKE') cond='"'+col+'" '+op+" '%"+val+"%'";
+      else if(op==='IN'){
+        // Virgülle ayrılmış değerleri güvenli kur: sayı ise çıplak, değilse tırnak+kaçış (dış tırnakları normalize et)
+        const items=val.split(',').map(t=>t.trim()).filter(t=>t!=='').map(t=>{
+          t=t.replace(/^['"]|['"]$/g,'');
+          const nv=parseFloat(t);
+          return (!isNaN(nv)&&t===String(nv))?nv:("'"+t.replace(/'/g,"''")+"'");
+        });
+        cond='"'+col+'" IN ('+items.join(',')+')';
+      }
+      else if(op==='LIKE'||op==='NOT LIKE') cond='"'+col+'" '+op+" '%"+val.replace(/'/g,"''")+"%'";
       else {
         const numVal=parseFloat(val);
         if(!isNaN(numVal)&&val.trim()===String(numVal)) cond='"'+col+'" '+op+' '+numVal;
@@ -18196,7 +18221,7 @@ function renderSQLResults(columns,rows){
   let html='<table style="width:100%;border-collapse:collapse;font-size:12px">';
   html+='<thead><tr>';
   columns.forEach(c=>{
-    html+='<th style="position:sticky;top:0;background:#f0fdf4;padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#065f46;border-bottom:2px solid #059669;white-space:nowrap">'+c+'</th>';
+    html+='<th style="position:sticky;top:0;background:#f0fdf4;padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#065f46;border-bottom:2px solid #059669;white-space:nowrap">'+escHtml(c)+'</th>';
   });
   html+='</tr></thead><tbody>';
 
@@ -18204,7 +18229,7 @@ function renderSQLResults(columns,rows){
     const bg=i%2===0?'#fff':'#f8fafc';
     html+='<tr style="background:'+bg+'">';
     row.forEach(val=>{
-      const display=val===null||val===undefined?'<span style="color:#d1d5db">—</span>':(typeof val==='number'?val.toLocaleString('tr-TR'):String(val));
+      const display=val===null||val===undefined?'<span style="color:#d1d5db">—</span>':(typeof val==='number'?val.toLocaleString('tr-TR'):escHtml(String(val)));
       html+='<td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(val!=null?String(val).replace(/"/g,'&quot;'):'')+'">'+display+'</td>';
     });
     html+='</tr>';
@@ -18770,7 +18795,7 @@ function renderPivotResults(columns,rows){
   columns.forEach((c,i)=>{
     const bg=i===0?'#ede9fe':'#f0fdf4';
     const color=i===0?'#5b21b6':'#065f46';
-    html+='<th style="position:sticky;top:0;background:'+bg+';padding:8px 10px;text-align:'+(numericCols.has(i)?'right':'left')+';font-size:11px;font-weight:600;color:'+color+';border-bottom:2px solid #7c3aed;white-space:nowrap">'+c+'</th>';
+    html+='<th style="position:sticky;top:0;background:'+bg+';padding:8px 10px;text-align:'+(numericCols.has(i)?'right':'left')+';font-size:11px;font-weight:600;color:'+color+';border-bottom:2px solid #7c3aed;white-space:nowrap">'+escHtml(c)+'</th>';
   });
   html+='</tr></thead><tbody>';
 
@@ -18791,10 +18816,10 @@ function renderPivotResults(columns,rows){
           bg='rgba('+Math.max(180,r)+','+Math.min(255,g)+','+Math.round(200+ratio*55)+',0.3)';
         }
       }else{
-        display=String(val);
+        display=escHtml(String(val));
       }
       const fw=ci===0?'font-weight:600;':'';
-      html+='<td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;text-align:'+align+';background:'+bg+';'+fw+'white-space:nowrap" title="'+(val!=null?String(val):'')+'">'+display+'</td>';
+      html+='<td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;text-align:'+align+';background:'+bg+';'+fw+'white-space:nowrap" title="'+(val!=null?escHtml(String(val)):'')+'">'+display+'</td>';
     });
     html+='</tr>';
   });
