@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Açık Analiz — verilerinizi tarayıcıdan çıkarmadan maskeleyin, analiz edin ve görselleştirin. Tümüyle yerel, gizliliği koruyan veri analiz platformu.">
+<meta name="theme-color" content="#3b82f6">
+<meta name="color-scheme" content="light">
 <title>Açık Analiz - Lokal Veri Analiz Platformu</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -389,12 +392,60 @@
   .show-me-tile.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
   .show-me-icon{font-size:20px;margin-bottom:4px}
 
+  /* ============================================================
+     UI/UX İYİLEŞTİRMELERİ — erişilebilirlik, görsel cila, tema token'ları
+     (Mevcut kuralları geçersiz kılmadan ekler; sona koyulduğu için
+      eşit özgüllükte son söz bunlarındır.)
+     ============================================================ */
+  :root{
+    --brand:#3b82f6;--brand-dark:#2563eb;--brand-purple:#8b5cf6;
+    --success:#10b981;--danger:#ef4444;--warning:#f59e0b;
+    --ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--bg:#f8fafc;
+    --radius:8px;--radius-lg:12px;
+    --shadow-sm:0 1px 3px rgba(0,0,0,.08);
+    --shadow-md:0 6px 18px rgba(0,0,0,.10);
+    --focus-ring:0 0 0 3px rgba(59,130,246,.45);
+  }
+  /* Görünür klavye odağı — fareyle tıklamada gizli, klavyede belirgin (erişilebilirlik) */
+  a:focus-visible,button:focus-visible,.btn:focus-visible,.chip:focus-visible,
+  .tab-btn:focus-visible,.delimiter-chip:focus-visible,.agg-chip:focus-visible,
+  .col-select-item:focus-visible,.step-nav-item:focus-visible,.show-me-tile:focus-visible,
+  .cab-btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{
+    outline:2px solid var(--brand-dark);outline-offset:2px;box-shadow:var(--focus-ring);
+  }
+  button:focus:not(:focus-visible),.btn:focus:not(:focus-visible),
+  .chip:focus:not(:focus-visible),.tab-btn:focus:not(:focus-visible){outline:none}
+  /* Klavye kullanıcıları için "içeriğe atla" bağlantısı */
+  .skip-link{position:absolute;left:-9999px;top:0;z-index:10010;background:var(--brand-dark);color:#fff;padding:10px 16px;border-radius:0 0 8px 0;font-weight:600;font-size:14px}
+  .skip-link:focus{left:0}
+  /* Buton ve kart etkileşim cilası */
+  .btn{transition:opacity .2s,transform .08s,box-shadow .2s}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary,.btn-success,.btn-danger,.btn-purple,.btn-orange{box-shadow:var(--shadow-sm)}
+  .btn:disabled,.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
+  .card{transition:box-shadow .2s}
+  /* Tıklanabilir öğelerde imleç tutarlılığı */
+  .step-nav-item,.tab-btn,.chip,.delimiter-chip,.agg-chip,.cab-btn,.show-me-tile{cursor:pointer}
+  /* Hareketi azalt tercihine saygı (vestibüler rahatsızlık / pil) */
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+  }
+  /* Küçük ekran uyumu (taşmayı önle, dokunmatik hedefleri büyüt) */
+  @media (max-width:640px){
+    body{padding:12px 8px;font-size:14px}
+    .card{padding:18px 16px}
+    .chart-grid{grid-template-columns:1fr}
+    .chart-box canvas{min-height:280px}
+    .btn{padding:11px 18px}
+    .step-nav{font-size:12px}
+  }
   </style>
 <script defer src="server/api-bridge.js"></script>
 </head>
 <body>
+<a href="#mainContent" class="skip-link">İçeriğe atla</a>
 <!-- Global Busy Overlay — prevents interaction during heavy computations -->
-<div id="globalBusyOverlay"><div class="busy-spinner"></div><div class="busy-text" id="busyText">Hesaplanıyor...</div></div>
+<div id="globalBusyOverlay" role="status" aria-live="polite"><div class="busy-spinner"></div><div class="busy-text" id="busyText">Hesaplanıyor...</div></div>
 <!-- Top Menu Bar -->
 <div class="top-menu-bar" id="topMenuBar">
   <div class="top-menu-left">
@@ -416,7 +467,7 @@
     <button class="tmb-btn tmb-danger" onclick="menuClose()" title="Kapat">✕</button>
   </div>
 </div>
-<div class="container">
+<div class="container" id="mainContent">
   <div class="card">
     <div class="flex flex-between flex-center flex-wrap gap-8">
       <div>
@@ -438,7 +489,7 @@
   </div>
 
   <!-- Step Navigation Bar -->
-  <div id="stepNavBar" class="step-nav">
+  <div id="stepNavBar" class="step-nav" role="navigation" aria-label="Analiz adımları">
     <div class="step-nav-item active" data-nav="Welcome" onclick="navStepClick(this)"><span class="step-num">0</span> Başlangıç</div>
     <span class="step-nav-arrow">›</span>
     <div class="step-nav-item" data-nav="Upload" onclick="navStepClick(this)"><span class="step-num">1</span> Dosya Yükle</div>
@@ -466,9 +517,9 @@
     <button onclick="showStep('Analysis')" style="background:#fff;color:#7c3aed;border:none;padding:4px 14px;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px;margin:0 4px">📈 Analiz Dashboard</button>
   </div>
 
-  <div id="errorBar" class="card error-bar hidden">
+  <div id="errorBar" class="card error-bar hidden" role="alert" aria-live="assertive">
     <span id="errorText"></span>
-    <button onclick="hideError()" title="Hata mesajını kapat" style="float:right;background:none;border:none;cursor:pointer;color:#dc2626;font-weight:700">✕</button>
+    <button onclick="hideError()" title="Hata mesajını kapat" aria-label="Bildirimi kapat" style="float:right;background:none;border:none;cursor:pointer;color:#dc2626;font-weight:700">✕</button>
   </div>
 
   <!-- Session Restore Banner -->
@@ -1146,7 +1197,7 @@
       </div>
 
       <!-- Tabs -->
-      <div class="tab-bar">
+      <div class="tab-bar" role="tablist" aria-label="Analiz sekmeleri">
         <button class="tab-btn active" data-tab="dashboard" onclick="switchAnalysisTab('dashboard',this)" title="Grafik ve görselleştirme panosu">📊 Dashboard</button>
         <button class="tab-btn" data-tab="quickview" onclick="switchAnalysisTab('quickview',this)" title="Verinin hızlı tablo görünümü">👁️ Hızlı Bakış</button>
         <button class="tab-btn" data-tab="topbottom" onclick="switchAnalysisTab('topbottom',this)" title="Bağımlı değişkene göre en yüksek ve en düşük listeler">🏆 Kritik Listeler</button>
@@ -7238,11 +7289,11 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
 
   if(type==='pivotTable')title='Özet Tablo: '+(yLabel?yLabel+' by ':'')+xCol+(subGroups.length?' / '+subGroups.join(' / '):'')+' ('+aggLabels[agg]+')';
 
-  const pivotExportBtn=type==='pivotTable'?'<button class="cab-btn cab-excel" onclick="exportHTMLTableToExcel(\''+id+'_pivot\',\'pivot_tablo\')" title="Pivot tabloyu Excel olarak indir">📊</button>':'';
+  const pivotExportBtn=type==='pivotTable'?'<button class="cab-btn cab-excel" onclick="exportHTMLTableToExcel(\''+id+'_pivot\',\'pivot_tablo\')" title="Pivot tabloyu Excel olarak indir" aria-label="Pivot tabloyu Excel olarak indir">📊</button>':'';
   const _lblActive=document.getElementById('chkDataLabels')?.checked||false;
-  const chartActionBtns=type!=='pivotTable'?'<button class="cab-btn cab-lbl" onclick="toggleChartDataLabels(\''+id+'\')" title="Veri etiketlerini aç/kapat" style="font-size:11px;'+(_lblActive?'background:#dbeafe;border-color:#3b82f6':'')+'">🏷️</button><button class="cab-btn cab-copy" onclick="copyChartToClipboard(\''+id+'\')" title="Grafiği panoya kopyalar">📋</button><button class="cab-btn cab-png" onclick="downloadChartImage(\''+id+'\',\'png\')" title="Grafiği PNG olarak indir">🖼️</button><button class="cab-btn cab-ai" onclick="aiExplainChart(\''+id+'\')" title="Yapay zeka ile grafiği yorumla">🤖</button>':'';
+  const chartActionBtns=type!=='pivotTable'?'<button class="cab-btn cab-lbl" onclick="toggleChartDataLabels(\''+id+'\')" title="Veri etiketlerini aç/kapat" aria-label="Veri etiketlerini aç/kapat" style="font-size:11px;'+(_lblActive?'background:#dbeafe;border-color:#3b82f6':'')+'">🏷️</button><button class="cab-btn cab-copy" onclick="copyChartToClipboard(\''+id+'\')" title="Grafiği panoya kopyalar" aria-label="Grafiği panoya kopyala">📋</button><button class="cab-btn cab-png" onclick="downloadChartImage(\''+id+'\',\'png\')" title="Grafiği PNG olarak indir" aria-label="Grafiği PNG olarak indir">🖼️</button><button class="cab-btn cab-ai" onclick="aiExplainChart(\''+id+'\')" title="Yapay zeka ile grafiği yorumla" aria-label="Yapay zeka ile grafiği yorumla">🤖</button>':'';
   const pivotExpandBtn=type==='pivotTable'?'<button class="cab-btn" onclick="togglePivotExpand(\''+id+'_pivot\',this)" title="Tabloyu genişlet/daralt" style="font-size:12px">↕️ Tümünü Göster</button>':'';
-  box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="flex:1;min-width:0"><span style="font-weight:600;font-size:13px">'+escHtml(title)+'</span>'+(filterSummary?'<div style="font-size:10px;color:#92400e;margin-top:2px">Filtre: '+escHtml(filterSummary)+'</div>':'')+'</div><div class="chart-action-bar">'+pivotExpandBtn+chartActionBtns+pivotExportBtn+'<button class="cab-btn cab-del" onclick="removeChart(\''+id+'\')" title="Bu grafiği kaldır">✕</button></div></div>'+(type==='pivotTable'?'<div id="'+id+'_pivot" style="overflow:auto;max-height:400px"></div>':'<canvas id="'+id+'"></canvas>')+'<div id="'+id+'_aiExplain" style="display:none"></div>';
+  box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="flex:1;min-width:0"><span style="font-weight:600;font-size:13px">'+escHtml(title)+'</span>'+(filterSummary?'<div style="font-size:10px;color:#92400e;margin-top:2px">Filtre: '+escHtml(filterSummary)+'</div>':'')+'</div><div class="chart-action-bar">'+pivotExpandBtn+chartActionBtns+pivotExportBtn+'<button class="cab-btn cab-del" onclick="removeChart(\''+id+'\')" title="Bu grafiği kaldır" aria-label="Bu grafiği kaldır">✕</button></div></div>'+(type==='pivotTable'?'<div id="'+id+'_pivot" style="overflow:auto;max-height:400px"></div>':'<canvas id="'+id+'"></canvas>')+'<div id="'+id+'_aiExplain" style="display:none"></div>';
 
   // Pivot advanced options
   const pivotOpts={
@@ -7516,7 +7567,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
         html+='<div style="background:'+color+'80;border:1px solid '+color+';border-radius:4px;padding:8px;flex:0 0 '+Math.min(99,Math.max(20,sz))+'px;height:'+Math.min(99,Math.max(20,sz))+'px;display:flex;flex-direction:column;justify-content:center;align-items:center;font-size:10px;font-weight:600;text-align:center;word-wrap:break-word;overflow:hidden" title="'+escHtml(label)+': '+val+'">'+escHtml(label.substring(0,3))+'</div>';
       });
       html+='</div>';
-      box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="flex:1;min-width:0"><span style="font-weight:600;font-size:13px">'+escHtml(title)+'</span></div><div class="chart-action-bar"><button class="cab-btn cab-del" onclick="removeChart(\''+id+'\')" title="Bu grafiği kaldır">✕</button></div></div>'+html+'<div id="'+id+'_aiExplain" style="display:none"></div>';
+      box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="flex:1;min-width:0"><span style="font-weight:600;font-size:13px">'+escHtml(title)+'</span></div><div class="chart-action-bar"><button class="cab-btn cab-del" onclick="removeChart(\''+id+'\')" title="Bu grafiği kaldır" aria-label="Bu grafiği kaldır">✕</button></div></div>'+html+'<div id="'+id+'_aiExplain" style="display:none"></div>';
       chartInstances.push({id,instance:null,title,type:'treemap',xCol,yCols,agg,subGroups:subGroups.slice(),filterSnapshot:JSON.stringify(colFilters)});
       return;
     }else if(type==='gauge'){
@@ -7640,7 +7691,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
         html+='<div style="background:'+color+'80;border:1px solid '+color+';border-radius:4px;padding:8px;flex:0 0 '+Math.min(99,Math.max(20,sz))+'px;height:'+Math.min(99,Math.max(20,sz))+'px;display:flex;flex-direction:column;justify-content:center;align-items:center;font-size:10px;font-weight:600;text-align:center;word-wrap:break-word;overflow:hidden" title="'+escHtml(label)+': '+val+'">'+escHtml(label.substring(0,3))+'</div>';
       });
       html+='</div>';
-      box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="flex:1;min-width:0"><span style="font-weight:600;font-size:13px">'+escHtml(title)+'</span></div><div class="chart-action-bar"><button class="cab-btn cab-del" onclick="removeChart(\''+id+'\')" title="Bu grafiği kaldır">✕</button></div></div>'+html+'<div id="'+id+'_aiExplain" style="display:none"></div>';
+      box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="flex:1;min-width:0"><span style="font-weight:600;font-size:13px">'+escHtml(title)+'</span></div><div class="chart-action-bar"><button class="cab-btn cab-del" onclick="removeChart(\''+id+'\')" title="Bu grafiği kaldır" aria-label="Bu grafiği kaldır">✕</button></div></div>'+html+'<div id="'+id+'_aiExplain" style="display:none"></div>';
       chartInstances.push({id,instance:null,title,type:'treemap',xCol,yCols,agg,subGroups:subGroups.slice(),filterSnapshot:JSON.stringify(colFilters)});
       return;
     }else if(type==='gauge'){
