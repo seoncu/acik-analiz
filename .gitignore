@@ -1,0 +1,12 @@
+CLAUDE.md
+.DS_Store
+*.csv
+*.xlsx
+*.zip
+.fuse_hidden*
+Yayinla.command
+GOREVLER.md
+otomatik-yayin.sh
+otomatik-yayin.log
+*.plist
+.claude/

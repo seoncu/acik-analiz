@@ -2047,6 +2047,12 @@
 let currentFile=null,rawText='',rawLines=[],headers=[],delimiter=',',delimiterMode=',',previewRows=[],maskConfig={},outputChunks=[],abortFlag=false;
 let colStats={},totalRows=0,outHeaders=[];
 let chartInstances=[];
+// === Güvenli toplu/min/max yardımcıları (büyük dizilerde spread call-stack taşmasını önler) ===
+// Math.min(...arr) / Math.max(...arr) / target.push(...src) on binlerce elemanda
+// "Maximum call stack size exceeded" hatasına yol açar. Bu yardımcılar döngü kullanır.
+function _arrMin(arr){let m=Infinity;for(let i=0;i<arr.length;i++){const v=arr[i];if(v<m)m=v}return m}
+function _arrMax(arr){let m=-Infinity;for(let i=0;i<arr.length;i++){const v=arr[i];if(v>m)m=v}return m}
+function _pushAll(target,src){if(!src)return target;for(let i=0;i<src.length;i++)target.push(src[i]);return target}
 // === TABLEAU-QUALITY CHART DEFAULTS ===
 (function _initChartDefaults(){
   function _apply(){
@@ -6877,21 +6883,21 @@ function computeMultiSubPivot(xCol,subGroups,yCols,aggType){
           colTotal=tCnt>0?+(tSum/tCnt).toFixed(2):0;
         }else if(aggType==='median'){
           let allV=[];
-          xKeys.forEach(({xv})=>{const g=data[xv]?data[xv][sk]:null;if(g&&g.vals[yIdx])allV.push(...g.vals[yIdx])});
+          xKeys.forEach(({xv})=>{const g=data[xv]?data[xv][sk]:null;if(g&&g.vals[yIdx])_pushAll(allV,g.vals[yIdx])});
           allV.sort((a,b)=>a-b);const m=Math.floor(allV.length/2);
           colTotal=allV.length?(allV.length%2?allV[m]:+((allV[m-1]+allV[m])/2).toFixed(2)):0;
         }else if(aggType==='std'){
           let allV=[];
-          xKeys.forEach(({xv})=>{const g=data[xv]?data[xv][sk]:null;if(g&&g.vals[yIdx])allV.push(...g.vals[yIdx])});
+          xKeys.forEach(({xv})=>{const g=data[xv]?data[xv][sk]:null;if(g&&g.vals[yIdx])_pushAll(allV,g.vals[yIdx])});
           if(allV.length<2)colTotal=0;
           else{const mn=allV.reduce((a,b)=>a+b,0)/allV.length;colTotal=+Math.sqrt(allV.reduce((a,b)=>a+(b-mn)**2,0)/allV.length).toFixed(2)}
         }else if(aggType==='min'){
           let minV=Infinity;
-          xKeys.forEach(({xv})=>{const g=data[xv]?data[xv][sk]:null;if(g&&g.vals[yIdx]){const mv=Math.min(...g.vals[yIdx]);if(mv<minV)minV=mv}});
+          xKeys.forEach(({xv})=>{const g=data[xv]?data[xv][sk]:null;if(g&&g.vals[yIdx]){const mv=_arrMin(g.vals[yIdx]);if(mv<minV)minV=mv}});
           colTotal=isFinite(minV)?minV:0;
         }else if(aggType==='max'){
           let maxV=-Infinity;
-          xKeys.forEach(({xv})=>{const g=data[xv]?data[xv][sk]:null;if(g&&g.vals[yIdx]){const mv=Math.max(...g.vals[yIdx]);if(mv>maxV)maxV=mv}});
+          xKeys.forEach(({xv})=>{const g=data[xv]?data[xv][sk]:null;if(g&&g.vals[yIdx]){const mv=_arrMax(g.vals[yIdx]);if(mv>maxV)maxV=mv}});
           colTotal=isFinite(maxV)?maxV:0;
         }else{
           colTotal=0;
@@ -7248,7 +7254,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
       let html='<div style="overflow:auto;max-height:75vh;border:1px solid #e2e8f0;border-radius:8px;contain:layout style;will-change:scroll-position"><table class="corr-matrix" style="font-size:12px;content-visibility:auto"><thead><tr><th style="position:sticky;top:0;left:0;background:#f1f5f9;z-index:3;white-space:normal;word-break:break-word;min-width:120px;max-width:220px;padding:4px 8px">'+escHtml(xCol)+'</th>';
       result.datasets.forEach(ds=>{html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2;white-space:normal;word-break:break-word;min-width:60px;max-width:160px;padding:4px 8px">'+escHtml(ds.label)+'</th>'});
       html+='<th style="position:sticky;top:0;right:0;background:#dbeafe;z-index:3;font-weight:700">Toplam</th></tr></thead><tbody>';
-      const maxVals=result.datasets.map(ds=>Math.max(...ds.data.filter(v=>!isNaN(v)&&v>0)));
+      const maxVals=result.datasets.map(ds=>_arrMax(ds.data.filter(v=>!isNaN(v)&&v>0)));
       // Determine if marginals should use weighted avg vs simple sum
       const isAvgMode=(agg==='avg'||agg==='mean'||agg==='median'||agg==='std');
       const colLabel=isAvgMode?'Ort.':'Toplam';
@@ -7270,9 +7276,9 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
           const cellCount=cellG?cellG.count:1;
           const cellSum=cellG?cellG.sum:val;
           rowSum+=cellSum;rowCount+=cellCount;
-          if(cellG)rowVals.push(...cellG.vals);
+          if(cellG)_pushAll(rowVals,cellG.vals);
           colSums[di]+=cellSum;colCounts[di]+=cellCount;
-          if(cellG)colVals[di].push(...cellG.vals);
+          if(cellG)_pushAll(colVals[di],cellG.vals);
           const intensity=maxVals[di]>0?val/maxVals[di]:0;
           const bgColor=pivotOpts.heatmap?(intensity>0.75?'#fee2e2':intensity>0.5?'#fef9c3':intensity>0.25?'#dcfce7':'#fff'):'#fff';
           let cellText=(val===0&&pivotOpts.showDash)?'—':(typeof val==='number'?(val%1?val.toFixed(2):val.toLocaleString('tr-TR')):val);
@@ -7284,8 +7290,8 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
         if(agg==='avg'||agg==='mean')rowMarg=rowCount>0?(rowSum/rowCount).toFixed(2):'0';
         else if(agg==='median'){rowVals.sort((a,b)=>a-b);const m=Math.floor(rowVals.length/2);rowMarg=rowVals.length?(rowVals.length%2?rowVals[m]:((rowVals[m-1]+rowVals[m])/2).toFixed(2)):'0'}
         else if(agg==='std'){if(rowVals.length<2)rowMarg='0';else{const mn=rowVals.reduce((a,b)=>a+b,0)/rowVals.length;rowMarg=Math.sqrt(rowVals.reduce((a,b)=>a+(b-mn)**2,0)/rowVals.length).toFixed(2)}}
-        else if(agg==='min')rowMarg=Math.min(...result.datasets.map(ds=>ds.data[i]||Infinity));
-        else if(agg==='max')rowMarg=Math.max(...result.datasets.map(ds=>ds.data[i]||-Infinity));
+        else if(agg==='min')rowMarg=_arrMin(result.datasets.map(ds=>ds.data[i]||Infinity));
+        else if(agg==='max')rowMarg=_arrMax(result.datasets.map(ds=>ds.data[i]||-Infinity));
         else rowMarg=rowSum;
         html+='<td style="font-weight:600;position:sticky;right:0;background:#dbeafe;z-index:1">'+(typeof rowMarg==='number'?rowMarg.toLocaleString('tr-TR'):rowMarg)+'</td></tr>';
       });
@@ -7297,10 +7303,10 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
         if(agg==='avg'||agg==='mean')colMarg=colCounts[di]>0?(colSums[di]/colCounts[di]).toFixed(2):'0';
         else if(agg==='median'){const sv=colVals[di].slice().sort((a,b)=>a-b);const m=Math.floor(sv.length/2);colMarg=sv.length?(sv.length%2?sv[m]:((sv[m-1]+sv[m])/2).toFixed(2)):'0'}
         else if(agg==='std'){const sv=colVals[di];if(sv.length<2)colMarg='0';else{const mn=sv.reduce((a,b)=>a+b,0)/sv.length;colMarg=Math.sqrt(sv.reduce((a,b)=>a+(b-mn)**2,0)/sv.length).toFixed(2)}}
-        else if(agg==='min')colMarg=Math.min(...ds.data.filter(v=>typeof v==='number'&&isFinite(v)));
-        else if(agg==='max')colMarg=Math.max(...ds.data.filter(v=>typeof v==='number'&&isFinite(v)));
+        else if(agg==='min')colMarg=_arrMin(ds.data.filter(v=>typeof v==='number'&&isFinite(v)));
+        else if(agg==='max')colMarg=_arrMax(ds.data.filter(v=>typeof v==='number'&&isFinite(v)));
         else colMarg=colSums[di];
-        allVals.push(...(colVals[di]||[]));
+        _pushAll(allVals,colVals[di]||[]);
         html+='<td style="background:#e2e8f0">'+(typeof colMarg==='number'?colMarg.toLocaleString('tr-TR'):colMarg)+'</td>';
       });
       // Grand total marginal
@@ -7308,8 +7314,8 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
       if(agg==='avg'||agg==='mean')grandMarg=allVals.length?(allVals.reduce((a,b)=>a+b,0)/allVals.length).toFixed(2):'0';
       else if(agg==='median'){allVals.sort((a,b)=>a-b);const m=Math.floor(allVals.length/2);grandMarg=allVals.length?(allVals.length%2?allVals[m]:((allVals[m-1]+allVals[m])/2).toFixed(2)):'0'}
       else if(agg==='std'){if(allVals.length<2)grandMarg='0';else{const mn=allVals.reduce((a,b)=>a+b,0)/allVals.length;grandMarg=Math.sqrt(allVals.reduce((a,b)=>a+(b-mn)**2,0)/allVals.length).toFixed(2)}}
-      else if(agg==='min')grandMarg=allVals.length?Math.min(...allVals):'0';
-      else if(agg==='max')grandMarg=allVals.length?Math.max(...allVals):'0';
+      else if(agg==='min')grandMarg=allVals.length?_arrMin(allVals):'0';
+      else if(agg==='max')grandMarg=allVals.length?_arrMax(allVals):'0';
       else grandMarg=colSums.reduce((a,b)=>a+b,0);
       html+='<td style="position:sticky;right:0;background:#bfdbfe;z-index:4;font-weight:700">'+(typeof grandMarg==='number'?grandMarg.toLocaleString('tr-TR'):grandMarg)+'</td></tr></tbody></table></div>';
       document.getElementById(id+'_pivot').innerHTML=html;
@@ -7320,7 +7326,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
       result.datasets.forEach(ds=>{html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2;white-space:normal;word-break:break-word;min-width:60px;max-width:160px;padding:4px 8px">'+escHtml(ds.label)+'</th>'});
       html+='<th style="position:sticky;top:0;background:#f1f5f9;z-index:2">Sayı (n)</th><th style="position:sticky;top:0;background:#f1f5f9;z-index:2">%</th></tr></thead><tbody>';
       const totalCount=result.groups.reduce((s,e)=>s+e[1].count,0);
-      const maxVals=result.datasets.map(ds=>Math.max(...ds.data.filter(v=>!isNaN(v)&&v>0)));
+      const maxVals=result.datasets.map(ds=>_arrMax(ds.data.filter(v=>!isNaN(v)&&v>0)));
       result.groups.forEach(([label,g],i)=>{
         const pct=(g.count/totalCount*100).toFixed(1);
         html+='<tr style="cursor:pointer" onclick="drillDown(\''+escHtml(xCol)+'\',\''+escHtml(label)+'\')">';
@@ -7347,19 +7353,19 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
           colTotal=tCnt>0?+(tSum/tCnt).toFixed(2):0;
         }else if(agg==='median'){
           let allV=[];
-          result.groups.forEach(([,g])=>{if(g.yData[di])allV.push(...g.yData[di].vals)});
+          result.groups.forEach(([,g])=>{if(g.yData[di])_pushAll(allV,g.yData[di].vals)});
           allV.sort((a,b)=>a-b);const m=Math.floor(allV.length/2);
           colTotal=allV.length?(allV.length%2?allV[m]:+((allV[m-1]+allV[m])/2).toFixed(2)):0;
         }else if(agg==='std'){
           let allV=[];
-          result.groups.forEach(([,g])=>{if(g.yData[di])allV.push(...g.yData[di].vals)});
+          result.groups.forEach(([,g])=>{if(g.yData[di])_pushAll(allV,g.yData[di].vals)});
           if(allV.length<2)colTotal=0;
           else{const mn=allV.reduce((a,b)=>a+b,0)/allV.length;colTotal=+Math.sqrt(allV.reduce((a,b)=>a+(b-mn)**2,0)/allV.length).toFixed(2)}
         }else if(agg==='min'){
-          colTotal=Math.min(...result.groups.map(([,g])=>g.yData[di]?g.yData[di].min:Infinity).filter(v=>v!==Infinity));
+          colTotal=_arrMin(result.groups.map(([,g])=>g.yData[di]?g.yData[di].min:Infinity).filter(v=>v!==Infinity));
           if(!isFinite(colTotal))colTotal=0;
         }else if(agg==='max'){
-          colTotal=Math.max(...result.groups.map(([,g])=>g.yData[di]?g.yData[di].max:-Infinity).filter(v=>v!==-Infinity));
+          colTotal=_arrMax(result.groups.map(([,g])=>g.yData[di]?g.yData[di].max:-Infinity).filter(v=>v!==-Infinity));
           if(!isFinite(colTotal))colTotal=0;
         }else{
           colTotal=ds.data.reduce((s,v)=>s+(typeof v==='number'?v:0),0);
@@ -7479,7 +7485,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
       chartConfig={type:'bar',data:{labels:result.labels,datasets:wfDatasets},options:{plugins:{legend:{display:false}},scales:{x:{stacked:true},y:{stacked:true}},interaction:{mode:'index',intersect:false}}};
     }else if(type==='funnel'){
       const sorted=result.labels.map((l,i)=>({label:l,value:result.datasets[0].data[i]})).sort((a,b)=>b.value-a.value);
-      const maxVal=Math.max(...sorted.map(s=>s.value||0));
+      const maxVal=_arrMax(sorted.map(s=>s.value||0));
       const funnelDatasets=[{
         label:yCol,
         data:sorted.map(s=>s.value),
@@ -7502,7 +7508,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
       return;
     }else if(type==='gauge'){
       const val=result.datasets[0].data[0]||0;
-      const maxVal=Math.max(...result.datasets[0].data);
+      const maxVal=_arrMax(result.datasets[0].data);
       chartConfig={type:'doughnut',data:{labels:['değer','boş'],datasets:[{data:[val,maxVal-val],backgroundColor:[CHART_COLORS[0],CHART_COLORS[0]+'20'],borderColor:[CHART_COLORS[0],'#e2e8f0'],borderWidth:2}]},options:{rotation:270,circumference:180,plugins:{legend:{display:false}}}};
     }else if(type==='dualAxis'){
       showError('Çift Eksen çok ölçülü mod için tasarlanmıştır.');box.remove();return;
@@ -7600,7 +7606,7 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
     }else if(type==='funnel'){
       const aggData=computeMultiAgg(xCol,yCols,'sum');
       const sorted=aggData.labels.map((l,i)=>({label:l,value:aggData.datasets[0].data[i]})).sort((a,b)=>b.value-a.value);
-      const maxVal=Math.max(...sorted.map(s=>s.value||0));
+      const maxVal=_arrMax(sorted.map(s=>s.value||0));
       const funnelDatasets=[{
         label:yCols[0]||'',
         data:sorted.map(s=>s.value),
@@ -7626,8 +7632,8 @@ function _buildChart(id,box,xCol,yCols,type,agg,colorCol,subGroups){
     }else if(type==='gauge'){
       const aggData=computeMultiAgg(xCol,yCols,'sum');
       const val=aggData.datasets[0].data[0]||0;
-      const minVal=Math.min(...aggData.datasets[0].data);
-      const maxVal=Math.max(...aggData.datasets[0].data);
+      const minVal=_arrMin(aggData.datasets[0].data);
+      const maxVal=_arrMax(aggData.datasets[0].data);
       chartConfig={type:'doughnut',data:{labels:['değer','boş'],datasets:[{data:[val,maxVal-val],backgroundColor:[CHART_COLORS[0],CHART_COLORS[0]+'20'],borderColor:[CHART_COLORS[0],'#e2e8f0'],borderWidth:2}]},options:{rotation:270,circumference:180,plugins:{legend:{display:false}}}};
     }else if(type==='dualAxis'){
       if(yCols.length<2){showError('Çift Eksen için 2 ölçü gerekir.');box.remove();return}
@@ -9374,7 +9380,7 @@ function renderSummaryStatsTable(){
             numCols.forEach(numCol=>{
               let allAvgs=[];
               sortedKeys.forEach(k=>{const d=groups[k][numCol];if(d&&d.count>0)allAvgs.push(d.mean)});
-              const mn=Math.min(...allAvgs),mx=Math.max(...allAvgs);
+              const mn=_arrMin(allAvgs),mx=_arrMax(allAvgs);
               globalStats[numCol]={min:mn,max:mx,range:mx-mn};
             });
 
@@ -9511,7 +9517,7 @@ function _renderSummaryStatsJS(catCols,numCols){
       numIndices.forEach(({col:numCol})=>{
         let allAvgs=[];
         sortedKeys.forEach(k=>{const d=groups[k][numCol];if(d&&d.count>0)allAvgs.push(d.sum/d.count)});
-        const mn=Math.min(...allAvgs),mx=Math.max(...allAvgs);
+        const mn=_arrMin(allAvgs),mx=_arrMax(allAvgs);
         globalStats[numCol]={min:mn,max:mx,range:mx-mn};
       });
 
@@ -10516,7 +10522,7 @@ function buildLLMPrompt(){
 
   const _anyFilterLLM=activeFilters.length>0;
   const _fStatsLLM=_anyFilterLLM?_computeFilteredColStats():null;
-  const _llmRowCount=_anyFilterLLM&&_fStatsLLM?Math.max(...outHeaders.map(h=>_fStatsLLM[h]?((_fStatsLLM[h].count||0)+(_fStatsLLM[h].empty||0)):0)):totalRows;
+  const _llmRowCount=_anyFilterLLM&&_fStatsLLM?_arrMax(outHeaders.map(h=>_fStatsLLM[h]?((_fStatsLLM[h].count||0)+(_fStatsLLM[h].empty||0)):0)):totalRows;
   prompt+='## Veri Seti Özeti\nToplam satır: '+totalRows+(_anyFilterLLM?' (filtrelenmiş: '+_llmRowCount+')':'')+'\nSütun sayısı: '+outHeaders.length+'\nSütunlar: '+outHeaders.join(', ')+'\n\n';
 
   prompt+='## Sütun İstatistikleri'+(_anyFilterLLM?' (Filtrelenmiş Veri)':'')+'\n';
@@ -14396,8 +14402,8 @@ function renderMapChart(){
     if(metIdx>=0&&d.values.length>0){
       if(aggType==='sum')metric=d.values.reduce((a,b)=>a+b,0);
       else if(aggType==='mean')metric=d.values.reduce((a,b)=>a+b,0)/d.values.length;
-      else if(aggType==='min')metric=Math.min(...d.values);
-      else if(aggType==='max')metric=Math.max(...d.values);
+      else if(aggType==='min')metric=_arrMin(d.values);
+      else if(aggType==='max')metric=_arrMax(d.values);
       else metric=d.count;
     }
     const coords=_geocode(loc);
@@ -14441,7 +14447,7 @@ function renderMapChart(){
   }
 
   const metrics=validResults.map(r=>r.metric);
-  const minM=Math.min(...metrics),maxM=Math.max(...metrics);
+  const minM=_arrMin(metrics),maxM=_arrMax(metrics);
   const metLabel=metVar?(aggType==='count'?'Sayı (n)':aggType==='sum'?'Toplam':aggType==='mean'?'Ortalama':aggType==='min'?'Min':'Maks'):'Sayı (n)';
 
   validResults.forEach(r=>{
@@ -16104,7 +16110,7 @@ async function advStatsRun(testId){
     const binWidth=(sorted[sorted.length-1]-sorted[0])/binCount||1;
     const bins=Array(binCount).fill(0);
     vals.forEach(v=>{let bi=Math.floor((v-sorted[0])/binWidth);if(bi>=binCount)bi=binCount-1;bins[bi]++});
-    const maxBin=Math.max(...bins);
+    const maxBin=_arrMax(bins);
     html+='<div style="font-size:11px">';
     bins.forEach((b,i)=>{
       const lo=(sorted[0]+i*binWidth).toFixed(1),hi=(sorted[0]+(i+1)*binWidth).toFixed(1);
@@ -17010,7 +17016,7 @@ function _advStatsDrawChart(r){
     });
     const sample=pts.length>500?pts.filter((_,i)=>i%Math.ceil(pts.length/500)===0):pts;
     const allVals=[...sample.map(p=>p.x),...sample.map(p=>p.y)];
-    const mn=Math.min(...allVals),mx=Math.max(...allVals);
+    const mn=_arrMin(allVals),mx=_arrMax(allVals);
     config={type:'scatter',data:{datasets:[{label:'Tahmin vs Gerçek',data:sample,backgroundColor:'rgba(236,72,153,0.4)',borderColor:'#ec4899',pointRadius:3},{type:'line',label:'Mükemmel Uyum',data:[{x:mn,y:mn},{x:mx,y:mx}],borderColor:'#94a3b8',borderDash:[6,3],borderWidth:2,pointRadius:0}]},options:{responsive:true,plugins:{title:{display:true,text:'Regresyon: R\u00b2='+r.R2.toFixed(3)+' (p='+(r.pF<0.001?'<.001':r.pF.toFixed(3))+')',font:{size:14}},legend:{position:'bottom'}},scales:{x:{title:{display:true,text:'Tahmin Edilen '+r.yCol}},y:{title:{display:true,text:'Gerçek '+r.yCol}}}}};
   }else if(r.test==='mannwhitney'){
     // Box-plot style comparison
@@ -18755,7 +18761,7 @@ function renderPivotResults(columns,rows){
   const colMin={},colMax={};
   numericCols.forEach(i=>{
     const vals=rows.map(r=>r[i]).filter(v=>v!==null&&v!==undefined&&typeof v==='number');
-    if(vals.length>0){colMin[i]=Math.min(...vals);colMax[i]=Math.max(...vals)}
+    if(vals.length>0){colMin[i]=_arrMin(vals);colMax[i]=_arrMax(vals)}
   });
 
   let html='<table style="width:100%;border-collapse:collapse;font-size:12px">';
