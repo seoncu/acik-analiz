@@ -15068,6 +15068,31 @@ function _mean(arr){return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0}
 function _variance(arr){const m=_mean(arr);return arr.length>1?arr.reduce((s,v)=>s+(v-m)*(v-m),0)/(arr.length-1):0}
 function _std(arr){return Math.sqrt(_variance(arr))}
 function _median(arr){const s=[...arr].sort((a,b)=>a-b);const m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2}
+// Matris determinantı (LU / kısmi pivotlu Gauss eliminasyonu) — Bartlett küresellik testi için
+function _matrixDeterminant(M){
+  const n=M.length;const A=M.map(r=>r.slice());let det=1;
+  for(let i=0;i<n;i++){
+    let piv=i;for(let r=i+1;r<n;r++)if(Math.abs(A[r][i])>Math.abs(A[piv][i]))piv=r;
+    if(Math.abs(A[piv][i])<1e-12)return 0;
+    if(piv!==i){const t=A[piv];A[piv]=A[i];A[i]=t;det=-det}
+    det*=A[i][i];
+    for(let r=i+1;r<n;r++){const f=A[r][i]/A[i][i];for(let c=i;c<n;c++)A[r][c]-=f*A[i][c]}
+  }
+  return det;
+}
+// Kare matris tersi (Gauss-Jordan) — KMO anti-image korelasyonu için. Tekil matriste null döner.
+function _matrixInverse(M){
+  const n=M.length;
+  const A=M.map((r,i)=>{const row=r.slice();for(let j=0;j<n;j++)row.push(i===j?1:0);return row});
+  for(let i=0;i<n;i++){
+    let piv=i;for(let r=i+1;r<n;r++)if(Math.abs(A[r][i])>Math.abs(A[piv][i]))piv=r;
+    if(Math.abs(A[piv][i])<1e-12)return null;
+    if(piv!==i){const t=A[piv];A[piv]=A[i];A[i]=t}
+    const d=A[i][i];for(let c=0;c<2*n;c++)A[i][c]/=d;
+    for(let r=0;r<n;r++){if(r===i)continue;const f=A[r][i];for(let c=0;c<2*n;c++)A[r][c]-=f*A[i][c]}
+  }
+  return A.map(r=>r.slice(n));
+}
 function _skewness(arr){const m=_mean(arr),sd=_std(arr),n=arr.length;if(sd===0||n<3)return 0;return(n/((n-1)*(n-2)))*arr.reduce((s,v)=>s+Math.pow((v-m)/sd,3),0)}
 function _kurtosis(arr){const m=_mean(arr),sd=_std(arr),n=arr.length;if(sd===0||n<4)return 0;const k4=(n*(n+1))/((n-1)*(n-2)*(n-3))*arr.reduce((s,v)=>s+Math.pow((v-m)/sd,4),0);return k4-(3*(n-1)*(n-1))/((n-2)*(n-3))}
 
@@ -16372,19 +16397,29 @@ async function advStatsRun(testId){
       }
     }
 
-    // KMO Test (Kaiser-Meyer-Olkin)
-    let sumR2=0,sumPR2=0;
-    for(let i=0;i<p;i++)for(let j=0;j<p;j++){if(i!==j){sumR2+=corrMatrix[i][j]*corrMatrix[i][j]}}
-    // Approximate anti-image correlation
-    sumPR2=sumR2*0.15; // simplified approximation
-    const kmo=sumR2/(sumR2+sumPR2);
+    // KMO Test (Kaiser-Meyer-Olkin) — GERÇEK anti-image (kısmi) korelasyon matrisinden.
+    // Kısmi korelasyon p_ij = -R⁻¹_ij / sqrt(R⁻¹_ii·R⁻¹_jj). KMO = Σr² / (Σr² + Σp²).
+    let sumR2=0;
+    for(let i=0;i<p;i++)for(let j=0;j<p;j++){if(i!==j)sumR2+=corrMatrix[i][j]*corrMatrix[i][j]}
+    let kmo=NaN;
+    const _Rinv=_matrixInverse(corrMatrix);
+    if(_Rinv){
+      let sumPR2=0;
+      for(let i=0;i<p;i++)for(let j=0;j<p;j++){
+        if(i!==j){
+          const denom=Math.sqrt(_Rinv[i][i]*_Rinv[j][j]);
+          if(denom>0){const pij=-_Rinv[i][j]/denom;sumPR2+=pij*pij}
+        }
+      }
+      kmo=(sumR2+sumPR2)>0?sumR2/(sumR2+sumPR2):NaN;
+    }
 
-    // Bartlett's Test of Sphericity
-    let detApprox=1;
-    for(let i=0;i<p;i++)detApprox*=(1-corrMatrix.map(r=>r[i]*r[i]).reduce((a,b)=>a+b,0)/p);
-    const bartlettChi=-(n-1-(2*p+5)/6)*Math.log(Math.max(detApprox,1e-10));
+    // Bartlett's Test of Sphericity — GERÇEK korelasyon matrisi determinantı |R| ile.
+    // χ² = -(n - 1 - (2p+5)/6) · ln|R|, df = p(p-1)/2.
+    const _detR=_matrixDeterminant(corrMatrix);
+    const bartlettChi=(_detR>0&&isFinite(_detR))?-(n-1-(2*p+5)/6)*Math.log(_detR):NaN;
     const bartlettDf=p*(p-1)/2;
-    const bartlettP=1-_chiSquareCDF(Math.abs(bartlettChi),bartlettDf);
+    const bartlettP=isFinite(bartlettChi)?(1-_chiSquareCDF(Math.abs(bartlettChi),bartlettDf)):NaN;
 
     // Eigenvalue decomposition (Power iteration method simplified)
     // Compute eigenvalues from correlation matrix using simplified approach
@@ -16459,10 +16494,12 @@ async function advStatsRun(testId){
     html+='<h4 style="color:#d97706;margin-bottom:8px">🔍 Açımlayıcı Faktör Analizi Sonuçları</h4>';
 
     // KMO and Bartlett
-    const kmoLabel=kmo>=0.9?'Mükemmel':kmo>=0.8?'Çok İyi':kmo>=0.7?'İyi':kmo>=0.6?'Orta':kmo>=0.5?'Zayıf':'Kabul Edilemez';
+    const kmoLabel=isNaN(kmo)?'Hesaplanamadı':kmo>=0.9?'Mükemmel':kmo>=0.8?'Çok İyi':kmo>=0.7?'İyi':kmo>=0.6?'Orta':kmo>=0.5?'Zayıf':'Kabul Edilemez';
+    const kmoStr=isNaN(kmo)?'—':kmo.toFixed(3);
+    const bartlettStr=isFinite(bartlettChi)?('χ²='+bartlettChi.toFixed(2)+', df='+bartlettDf+', p='+(bartlettP<0.001?'<0.001':bartlettP.toFixed(4))):'Hesaplanamadı (tekil/eş-doğrusal matris)';
     html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">';
-    html+='<div style="background:#fffbeb;padding:10px;border-radius:8px;border:1px solid #fbbf24"><b>KMO Testi:</b> '+kmo.toFixed(3)+' <span style="color:'+(kmo>=0.6?'#16a34a':'#dc2626')+'">('+ kmoLabel+')</span></div>';
-    html+='<div style="background:#fffbeb;padding:10px;border-radius:8px;border:1px solid #fbbf24"><b>Bartlett Testi:</b> χ²='+bartlettChi.toFixed(2)+', df='+bartlettDf+', p='+(bartlettP<0.001?'<0.001':bartlettP.toFixed(4))+' <span style="color:'+(bartlettP<0.05?'#16a34a':'#dc2626')+'">'+(bartlettP<0.05?'✓ Anlamlı':'✗ Anlamsız')+'</span></div>';
+    html+='<div style="background:#fffbeb;padding:10px;border-radius:8px;border:1px solid #fbbf24"><b>KMO Testi:</b> '+kmoStr+' <span style="color:'+(kmo>=0.6?'#16a34a':'#dc2626')+'">('+ kmoLabel+')</span></div>';
+    html+='<div style="background:#fffbeb;padding:10px;border-radius:8px;border:1px solid #fbbf24"><b>Bartlett Testi:</b> '+bartlettStr+' <span style="color:'+(bartlettP<0.05?'#16a34a':'#dc2626')+'">'+(isFinite(bartlettChi)?(bartlettP<0.05?'✓ Anlamlı':'✗ Anlamsız'):'')+'</span></div>';
     html+='</div>';
 
     // Eigenvalues & Explained Variance
@@ -16492,7 +16529,7 @@ async function advStatsRun(testId){
     html+='</tbody></table>';
 
     html+=_buildTestExplanation('efa',resultData);
-    html+='<div style="margin-top:8px;padding:8px;background:#fffbeb;border-radius:6px;font-size:11px"><b>📌 Yorum:</b> '+actualFactors+' faktör toplam varyansın <b>%'+(eigenvalues.slice(0,actualFactors).reduce((s,e)=>s+e.value,0)/totalVar*100).toFixed(1)+'</b>\'ini açıklamaktadır. KMO='+kmo.toFixed(3)+' ('+ kmoLabel+'). '+(bartlettP<0.05?'Bartlett testi anlamlıdır (p<0.05), veri faktör analizine uygundur.':'Bartlett testi anlamsızdır, veri faktör analizine uygun olmayabilir.')+'</div>';
+    html+='<div style="margin-top:8px;padding:8px;background:#fffbeb;border-radius:6px;font-size:11px"><b>📌 Yorum:</b> '+actualFactors+' faktör toplam varyansın <b>%'+(eigenvalues.slice(0,actualFactors).reduce((s,e)=>s+e.value,0)/totalVar*100).toFixed(1)+'</b>\'ini açıklamaktadır. KMO='+kmoStr+' ('+ kmoLabel+'). '+(!isFinite(bartlettChi)?'Bartlett testi hesaplanamadı (değişkenler eş-doğrusal).':(bartlettP<0.05?'Bartlett testi anlamlıdır (p<0.05), veri faktör analizine uygundur.':'Bartlett testi anlamsızdır, veri faktör analizine uygun olmayabilir.'))+'</div>';
 
     resultData={test:'efa',kmo,bartlettChi,bartlettP,eigenvalues:eigenvalues.slice(0,actualFactors).map(e=>e.value),numFactors:actualFactors,n,p,rotation};
 
@@ -16889,8 +16926,8 @@ function _buildTestExplanation(testId, resultData){
     html+='<p style="margin:0"><strong>Yorum:</strong> Box plot gruplar arası veya bir değişkenin iç dağılımını karşılaştırmak için kullanılır. Aykırı değerler incelenip temizlenebilir.</p>';
   }
   else if(testId==='efa'){
-    html+='<p style="margin:0 0 8px"><strong>KMO (Kaiser-Meyer-Olkin) Testi ('+resultData.kmo.toFixed(3)+'):</strong> Veri suitability ölçüsü. &lt;0.5 <b>Kabul Edilemez</b>, 0.5–0.6 <b>Zayıf</b>, 0.6–0.7 <b>Orta</b>, 0.7–0.8 <b>İyi</b>, 0.8–0.9 <b>Çok İyi</b>, &gt;0.9 <b>Mükemmel</b>. Mevcut: <b>'+(resultData.kmo>=0.9?'Mükemmel':resultData.kmo>=0.8?'Çok İyi':resultData.kmo>=0.7?'İyi':resultData.kmo>=0.6?'Orta':resultData.kmo>=0.5?'Zayıf':'Kabul Edilemez')+'</b>.</p>';
-    html+='<p style="margin:0 0 8px"><strong>Bartlett Testi ('+(resultData.bartlettP<0.001?'p&lt;0.001':('p='+resultData.bartlettP.toFixed(4)))+'):</strong> Korelasyon matrisinin bir kimlik matrisi olup olmadığını test eder. p&lt;0.05 <b>verilerin faktör analizine uygun olduğu</b> anlamına gelir.</p>';
+    html+='<p style="margin:0 0 8px"><strong>KMO (Kaiser-Meyer-Olkin) Testi ('+(isNaN(resultData.kmo)?'—':resultData.kmo.toFixed(3))+'):</strong> Veri suitability ölçüsü. &lt;0.5 <b>Kabul Edilemez</b>, 0.5–0.6 <b>Zayıf</b>, 0.6–0.7 <b>Orta</b>, 0.7–0.8 <b>İyi</b>, 0.8–0.9 <b>Çok İyi</b>, &gt;0.9 <b>Mükemmel</b>. Mevcut: <b>'+(isNaN(resultData.kmo)?'Hesaplanamadı':resultData.kmo>=0.9?'Mükemmel':resultData.kmo>=0.8?'Çok İyi':resultData.kmo>=0.7?'İyi':resultData.kmo>=0.6?'Orta':resultData.kmo>=0.5?'Zayıf':'Kabul Edilemez')+'</b>.</p>';
+    html+='<p style="margin:0 0 8px"><strong>Bartlett Testi ('+(!isFinite(resultData.bartlettP)?'hesaplanamadı':resultData.bartlettP<0.001?'p&lt;0.001':('p='+resultData.bartlettP.toFixed(4)))+'):</strong> Korelasyon matrisinin bir kimlik matrisi olup olmadığını test eder. p&lt;0.05 <b>verilerin faktör analizine uygun olduğu</b> anlamına gelir.</p>';
     html+='<p style="margin:0 0 8px"><strong>Öz Değerler (Eigenvalues):</strong> '+resultData.numFactors+' faktör seçilmiştir. Toplam varyansın <b>%'+((resultData.eigenvalues.reduce((s,e)=>s+e,0)/resultData.p)*100).toFixed(1)+'</b>\'ini açıklamaktadır (toplam '+resultData.p+' değişken).</p>';
     html+='<p style="margin:0"><strong>Yorum:</strong> Açımlayıcı Faktör Analizi (EFA) veriden gizli yapı (faktörler) keşfetmek için kullanılır. '+resultData.numFactors+' faktör '+(resultData.eigenvalues.reduce((s,e)=>s+e,0)/resultData.p*100)+'% açıklama oranı ile oluşturulmuştur.</p>';
   }
