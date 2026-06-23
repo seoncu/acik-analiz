@@ -14435,28 +14435,28 @@ function renderMapChart(){
   if(!locVar){alert('Lütfen konum değişkeni seçin.');return}
   const metVar=document.getElementById('mapMetricVar').value;
   const aggType=document.getElementById('mapAggType').value;
-  const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
   const locIdx=outHeaders.indexOf(locVar);
   const metIdx=metVar?outHeaders.indexOf(metVar):-1;
 
-  // Aggregate by location with filter support
+  // Aktif filtre sütun indekslerini önceden hesapla (her satırda tüm sütunları gezmemek için)
+  const _afIdxs=[];
+  for(let i=0;i<outHeaders.length;i++){if(colFilters[outHeaders[i]]&&hasActiveFilter(outHeaders[i]))_afIdxs.push(i)}
+
+  // TÜM satırlar üzerinden agregasyon (örneklem DEĞİL) — harita sayım/metrikleri tam olsun.
+  // Değerleri biriktirmek yerine artımlı sum/n/min/max tut → büyük veride bellek güvenli.
   const locData={};
-  for(const r of rows){
-    // Apply global filters
-    let skip=false;
-    for(let ci=0;ci<Math.min(outHeaders.length,r.length);ci++){
-      if(colFilters[outHeaders[ci]]&&!passesFilter(outHeaders[ci],r[ci]||'')){skip=true;break}
-    }
-    if(skip)continue;
+  streamOutputRows(r=>{
+    for(let k=0;k<_afIdxs.length;k++){const ci=_afIdxs[k];if(!passesFilter(outHeaders[ci],r[ci]||''))return}
     const loc=(r[locIdx]||'').trim();
-    if(!loc)continue;
-    if(!locData[loc])locData[loc]={values:[],count:0};
-    locData[loc].count++;
+    if(!loc)return;
+    let d=locData[loc];
+    if(!d){d={count:0,sum:0,n:0,min:Infinity,max:-Infinity};locData[loc]=d}
+    d.count++;
     if(metIdx>=0){
-      const v=parseFloat(String(r[metIdx]).replace(/[^\d.,-]/g,'').replace(',','.'));
-      if(!isNaN(v))locData[loc].values.push(v);
+      const v=parseTRNumber(String(r[metIdx]).replace(/[^\d.,-]/g,''));
+      if(!isNaN(v)){d.sum+=v;d.n++;if(v<d.min)d.min=v;if(v>d.max)d.max=v}
     }
-  }
+  });
 
   // Compute metric for each location
   const results=[];
@@ -14464,11 +14464,11 @@ function renderMapChart(){
   for(const loc in locData){
     const d=locData[loc];
     let metric=d.count;
-    if(metIdx>=0&&d.values.length>0){
-      if(aggType==='sum')metric=d.values.reduce((a,b)=>a+b,0);
-      else if(aggType==='mean')metric=d.values.reduce((a,b)=>a+b,0)/d.values.length;
-      else if(aggType==='min')metric=_arrMin(d.values);
-      else if(aggType==='max')metric=_arrMax(d.values);
+    if(metIdx>=0&&d.n>0){
+      if(aggType==='sum')metric=d.sum;
+      else if(aggType==='mean')metric=d.sum/d.n;
+      else if(aggType==='min')metric=d.min;
+      else if(aggType==='max')metric=d.max;
       else metric=d.count;
     }
     const coords=_geocode(loc);
@@ -14637,17 +14637,15 @@ async function correctMapLocations(){
 function verifyMapAddresses(){
   const locCol=document.getElementById('mapLocVar').value;
   if(!locCol){alert('Önce konum değişkeni seçin.');return}
-  const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
   const ci=outHeaders.indexOf(locCol);if(ci<0)return;
+  const _afIdxs=[];
+  for(let i=0;i<outHeaders.length;i++){if(colFilters[outHeaders[i]]&&hasActiveFilter(outHeaders[i]))_afIdxs.push(i)}
+  // TÜM satırlar üzerinden benzersiz konumları topla (örneklemde olmayan konum "yok" sanılmasın)
   const uniqueLocs=new Set();
-  for(const row of rows){
-    let skip=false;
-    for(let fi=0;fi<Math.min(outHeaders.length,row.length);fi++){
-      if(colFilters[outHeaders[fi]]&&!passesFilter(outHeaders[fi],row[fi]||'')){skip=true;break}
-    }
-    if(skip)continue;
+  streamOutputRows(row=>{
+    for(let k=0;k<_afIdxs.length;k++){const fi=_afIdxs[k];if(!passesFilter(outHeaders[fi],row[fi]||''))return}
     const v=(row[ci]||'').trim();if(v)uniqueLocs.add(v);
-  }
+  });
   const locs=[...uniqueLocs];
   const found=[],notFound=[],correctable=[];
   locs.forEach(loc=>{
