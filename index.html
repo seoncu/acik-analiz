@@ -2127,6 +2127,44 @@ function _sampleStdMean(sumSq,mean,n){return Math.sqrt(_sampleVarMean(sumSq,mean
 // Frekans tablosundan medyan — çift n'de iki orta değerin ortalaması (dizi tabanlı _median ile birebir)
 function _freqValueAtRank(numEntries,k){let cum=0;for(let i=0;i<numEntries.length;i++){cum+=numEntries[i].c;if(cum>=k)return numEntries[i].v}return numEntries.length?numEntries[numEntries.length-1].v:0}
 function _freqMedian(numEntries,N){if(!N||N<=0)return 0;if(N%2)return _freqValueAtRank(numEntries,(N+1)/2);return (_freqValueAtRank(numEntries,N/2)+_freqValueAtRank(numEntries,N/2+1))/2}
+// === Güvenli hesaplanmış-alan ifade değerlendirici (Function()/eval YERİNE) ===
+// İfadeyi BİR KEZ derler → fn(getVal) döner; getVal(sütunIndeksi)=>sayı. Keyfi JS çalıştırmaz.
+// En-uzun-eşleşme tokenizer sütun adı alt-dize çakışmasını (Tutar/Tutar2) ve Türkçe karakteri çözer.
+function _buildCalcEvaluator(expr,headers){
+  const cols=headers.map((h,i)=>({name:h,idx:i})).filter(c=>c.name).sort((a,b)=>b.name.length-a.name.length);
+  const FUNCS={abs:Math.abs,sqrt:Math.sqrt,ln:Math.log,log:Math.log,log10:Math.log10,exp:Math.exp,round:Math.round,floor:Math.floor,ceil:Math.ceil,sign:Math.sign,pow:Math.pow,min:Math.min,max:Math.max};
+  const s=String(expr||'');const toks=[];let i=0;
+  while(i<s.length){
+    const ch=s[i];
+    if(ch===' '||ch==='\t'||ch==='\n'||ch==='\r'){i++;continue}
+    if((ch>='0'&&ch<='9')||ch==='.'){let j=i+1;while(j<s.length&&((s[j]>='0'&&s[j]<='9')||s[j]==='.'))j++;toks.push({t:'num',v:parseFloat(s.slice(i,j))});i=j;continue}
+    if('+-*/%(),'.indexOf(ch)>=0){toks.push({t:'op',v:ch});i++;continue}
+    let matched=null;
+    for(const c of cols){if(s.startsWith(c.name,i)){matched=c;break}}
+    if(matched){toks.push({t:'col',idx:matched.idx});i+=matched.name.length;continue}
+    let j=i;while(j<s.length&&/[A-Za-z_0-9]/.test(s[j]))j++;
+    if(j>i){const id=s.slice(i,j).toLowerCase();if(FUNCS[id]){toks.push({t:'func',v:id});i=j;continue}}
+    throw new Error('Geçersiz ifade yakınında: "'+s.slice(i,i+12)+'"');
+  }
+  let pos=0;
+  const peek=()=>toks[pos],next=()=>toks[pos++];
+  function expect(v){const t=next();if(!t||t.t!=='op'||t.v!==v)throw new Error('"'+v+'" bekleniyordu')}
+  function parseExpr(){let node=parseTerm();while(peek()&&peek().t==='op'&&(peek().v==='+'||peek().v==='-')){const op=next().v;const r=parseTerm();node=mkBin(op,node,r)}return node}
+  function parseTerm(){let node=parseUnary();while(peek()&&peek().t==='op'&&(peek().v==='*'||peek().v==='/'||peek().v==='%')){const op=next().v;const r=parseUnary();node=mkBin(op,node,r)}return node}
+  function parseUnary(){if(peek()&&peek().t==='op'&&peek().v==='-'){next();const r=parseUnary();return n=>-r(n)}if(peek()&&peek().t==='op'&&peek().v==='+'){next();return parseUnary()}return parseAtom()}
+  function parseAtom(){
+    const t=next();if(!t)throw new Error('Beklenmedik ifade sonu');
+    if(t.t==='num'){const v=t.v;return ()=>v}
+    if(t.t==='col'){const idx=t.idx;return n=>n(idx)}
+    if(t.t==='func'){expect('(');const args=[parseExpr()];while(peek()&&peek().t==='op'&&peek().v===','){next();args.push(parseExpr())}expect(')');const fn=FUNCS[t.v];return n=>fn.apply(null,args.map(a=>a(n)))}
+    if(t.t==='op'&&t.v==='('){const e=parseExpr();expect(')');return e}
+    throw new Error('Geçersiz simge');
+  }
+  function mkBin(op,a,b){if(op==='+')return n=>a(n)+b(n);if(op==='-')return n=>a(n)-b(n);if(op==='*')return n=>a(n)*b(n);if(op==='/')return n=>{const d=b(n);return d===0?NaN:a(n)/d};if(op==='%')return n=>{const d=b(n);return d===0?NaN:a(n)%d}}
+  const compiled=parseExpr();
+  if(pos<toks.length)throw new Error('Beklenmedik fazlalık simge');
+  return compiled;
+}
 // === TABLEAU-QUALITY CHART DEFAULTS ===
 (function _initChartDefaults(){
   function _apply(){
@@ -5215,21 +5253,18 @@ function addCalcField(exprOverride){
 }
 
 function computeCalcField(cf){
-  // Parse simple expressions like COL1/COL2*100
+  // Hesaplanmış alan: güvenli ifade değerlendirici ile (Function/eval YOK), bir kez derlenir.
   try{
+    let _calcEval;
+    try{_calcEval=_buildCalcEvaluator(cf.expr,outHeaders)}
+    catch(perr){showError('Hesaplanmış alan ifadesi geçersiz ('+cf.name+'): '+perr.message);return}
     const rows=parseOutputRows(DASH_SAMPLE_LIMIT);
     let sum=0,sumSq=0,count=0,mn=Infinity,mx=-Infinity;
     const freq={};let _fSize=0;const allVals=[];
     for(const row of rows){
       let val;
       try{
-        let e=cf.expr;
-        outHeaders.forEach((h,i)=>{
-          const re=new RegExp('\\b'+h.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','g');
-          const v=parseFloat((row[i]||'0').replace(',','.'));
-          e=e.replace(re,isNaN(v)?'0':String(v));
-        });
-        val=Function('"use strict";return ('+e+')')();
+        val=_calcEval(idx=>{const v=parseTRNumber(row[idx]||'');return isNaN(v)?0:v});
       }catch(err){val=NaN}
       if(!isNaN(val)&&isFinite(val)){
         count++;sum+=val;sumSq+=val*val;
@@ -6576,18 +6611,11 @@ function computeMultiAgg(xCol,yCols,aggType){
     yIndices.forEach((yi,di)=>{
       let num;
       if(yi.calc&&yi.cf){
-        // Evaluate calc field
-        try{
-          let e=yi.cf.expr;
-          outHeaders.forEach((h,hi)=>{
-            const re=new RegExp('\\b'+h.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','g');
-            const v=parseFloat((row[hi]||'0').replace(',','.'));
-            e=e.replace(re,isNaN(v)?'0':String(v));
-          });
-          num=Function('"use strict";return ('+e+')')();
-        }catch(err){num=NaN}
+        // Hesaplanmış alan: güvenli değerlendirici, yi üzerinde BİR KEZ derlenip önbelleğe alınır
+        if(yi._calcEval===undefined){try{yi._calcEval=_buildCalcEvaluator(yi.cf.expr,outHeaders)}catch(e){yi._calcEval=null}}
+        num=yi._calcEval?(()=>{try{return yi._calcEval(idx=>{const v=parseTRNumber(row[idx]||'');return isNaN(v)?0:v})}catch(e){return NaN}})():NaN;
       }else if(yi.idx>=0){
-        num=parseFloat((row[yi.idx]||'').replace(',','.'));
+        num=parseTRNumber(row[yi.idx]||'');
       }
       if(!isNaN(num)&&isFinite(num)){
         const d=g.yData[di];d.sum+=num;d.sumSq+=num*num;d.n++;
