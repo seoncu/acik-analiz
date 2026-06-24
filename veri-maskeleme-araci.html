@@ -4326,22 +4326,23 @@ async function previewJoin(){
     const outRows=[];
     const matchedKeys=new Set();
     const keyRightCols=new Set(validKeys.map(k=>k.rightCol));
+    const _hdrMapping=getJoinHeaderMapping();
     rightRows.forEach(rRow=>{
       const key=rKeyIdxs.map(i=>rRow[i]||'').join('|||');
       if(leftMap.has(key)){
         matchedKeys.add(key);
         for(const lRow of leftMap.get(key)){
-          outRows.push(mergeJoinRow(lRow,rRow,outHeaders,keyRightCols));
+          outRows.push(mergeJoinRow(lRow,rRow,outHeaders,keyRightCols,_hdrMapping));
         }
       }else if(joinType!=='inner'){
-        outRows.push(mergeJoinRow(null,rRow,outHeaders,keyRightCols));
+        outRows.push(mergeJoinRow(null,rRow,outHeaders,keyRightCols,_hdrMapping));
       }
     });
     if(joinType==='full'||joinType==='left'){
       // Add unmatched left rows (not for 'right' or 'inner')
       leftMap.forEach((rows,key)=>{
         if(!matchedKeys.has(key)){
-          rows.forEach(lRow=>outRows.push(mergeJoinRow(lRow,null,outHeaders,keyRightCols)));
+          rows.forEach(lRow=>outRows.push(mergeJoinRow(lRow,null,outHeaders,keyRightCols,_hdrMapping)));
         }
       });
     }
@@ -4407,6 +4408,8 @@ async function executeJoin(){
   const lKeyIdxs=validKeys.map(k=>joinLeftHeaders.indexOf(k.leftCol));
   const rKeyIdxs=validKeys.map(k=>joinRightHeaders.indexOf(k.rightCol));
   const keyRightCols=new Set(validKeys.map(k=>k.rightCol));
+  // Header mapping'i BİR KEZ hesapla — her satırda yeniden kurmak O(n×sütun) yükü yaratıyordu
+  const _hdrMapping=getJoinHeaderMapping();
   // === Bellek güvenlik kontrolleri ===
   // Sol tablo boyut tahmini
   const _estLeftSize=joinLeftFile._isVirtual&&joinedOutput?joinedOutput.rows.length:Math.round(joinLeftFile.size/(outHeaders.length*15));
@@ -4493,7 +4496,7 @@ async function executeJoin(){
         if(leftover.trim()&&!isSeparatorLine(leftover)&&!isFirst){
           const fields=splitLine(leftover,joinRightDelimiter).map(v=>v.trim());
           while(fields.length<joinRightHeaders.length)fields.push('');
-          processJoinRightRow(fields,rKeyIdxs,leftMap,outHeaders,keyRightCols,outRows,matchedKeys);
+          processJoinRightRow(fields,rKeyIdxs,leftMap,outHeaders,keyRightCols,outRows,matchedKeys,_hdrMapping);
           rightRowCount++;
         }
         break;
@@ -4505,7 +4508,7 @@ async function executeJoin(){
         if(isFirst){isFirst=false;continue}
         const fields=splitLine(ln,joinRightDelimiter).map(v=>v.trim());
         while(fields.length<joinRightHeaders.length)fields.push('');
-        processJoinRightRow(fields,rKeyIdxs,leftMap,outHeaders,keyRightCols,outRows,matchedKeys);
+        processJoinRightRow(fields,rKeyIdxs,leftMap,outHeaders,keyRightCols,outRows,matchedKeys,_hdrMapping);
         rightRowCount++;
         if(rightRowCount%10000===0){
           const pct=40+Math.round(rightRowCount/(rightRowCount+10000)*50);
@@ -4524,7 +4527,7 @@ async function executeJoin(){
     if(joinType==='left'||joinType==='full'){
       leftMap.forEach((rows,key)=>{
         if(!matchedKeys.has(key)){
-          rows.forEach(lRow=>outRows.push(mergeJoinRow(lRow,null,outHeaders,keyRightCols)));
+          rows.forEach(lRow=>outRows.push(mergeJoinRow(lRow,null,outHeaders,keyRightCols,_hdrMapping)));
         }
       });
     }
@@ -4646,15 +4649,15 @@ function finishJoinChain(){
   finalizeJoinAndProceed(joinedOutput.headers,joinedOutput.rows);
 }
 
-function processJoinRightRow(fields,rKeyIdxs,leftMap,outHeaders,keyRightCols,outRows,matchedKeys){
+function processJoinRightRow(fields,rKeyIdxs,leftMap,outHeaders,keyRightCols,outRows,matchedKeys,hdrMapping){
   const key=rKeyIdxs.map(i=>fields[i]||'').join('|||');
   if(leftMap.has(key)){
     matchedKeys.add(key);
     for(const lRow of leftMap.get(key)){
-      outRows.push(mergeJoinRow(lRow,fields,outHeaders,keyRightCols));
+      outRows.push(mergeJoinRow(lRow,fields,outHeaders,keyRightCols,hdrMapping));
     }
   }else if(joinType==='full'){
-    outRows.push(mergeJoinRow(null,fields,outHeaders,keyRightCols));
+    outRows.push(mergeJoinRow(null,fields,outHeaders,keyRightCols,hdrMapping));
   }
 }
 
