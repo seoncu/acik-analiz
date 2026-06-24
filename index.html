@@ -1936,6 +1936,7 @@
               <button onclick="exportSQLResultExcel()" style="background:#217346;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer">📊 Excel İndir</button>
             </div>
           </div>
+          <div id="sqlFilterBanner" style="display:none;margin-bottom:10px;padding:8px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #3b82f6;border-radius:8px;font-size:12px;color:#1e40af;line-height:1.6"></div>
           <div id="sqlResultTable" style="overflow-x:auto;max-height:500px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px"></div>
         </div>
 
@@ -2315,11 +2316,19 @@ function _downloadLauncherFile(type){
       'fi',
       '',
       'LOG="/tmp/acikanaliz-motor.log"',
-      'DEPS="--with fastapi --with uvicorn --with scipy --with numpy --with python-multipart"',
+      'REQ="$DIR/server/requirements.txt"',
+      'ENGINE="$DIR/server/engine.py"',
+      'BASEDEPS="--with fastapi --with uvicorn --with scipy --with numpy --with python-multipart"',
       '',
       '_notify "Python Motoru başlatılıyor..."',
-      '# Motoru DOĞRUDAN ana kabukta arka plana al (alt-kabukta değil) ki wait/kill çalışsın',
-      'uv run --python 3.12 --with polars $DEPS "$DIR/server/engine.py" > "$LOG" 2>&1 &',
+      '# requirements.txt varsa onu kullan (engine.py\'nin TAM bağımlılıkları; sürümler sabitse birebir).',
+      '# Python 3.12 SABİT olduğundan "güncel/yanlış Python sürümü" hatası oluşmaz.',
+      '# Motoru DOĞRUDAN ana kabukta arka plana al (alt-kabukta değil) ki wait/kill çalışsın.',
+      'if [ -f "$REQ" ]; then',
+      '    uv run --python 3.12 --with-requirements "$REQ" "$ENGINE" > "$LOG" 2>&1 &',
+      'else',
+      '    uv run --python 3.12 --with polars $BASEDEPS "$ENGINE" > "$LOG" 2>&1 &',
+      'fi',
       'PID=$!',
       '',
       '# Sağlık kontrolü — ilk açılışta Python+kütüphane indirmesi için geniş süre (240sn)',
@@ -2330,7 +2339,7 @@ function _downloadLauncherFile(type){
       '        # Motor öldü — eski işlemci (AVX) sorunu olabilir; uyumlu Polars ile tekrar dene',
       '        if grep -qiE "illegal|avx|polars|instruction|SIGILL" "$LOG" 2>/dev/null; then',
       '            _notify "Eski işlemci algılandı — uyumlu sürümle tekrar deneniyor..."',
-      '            uv run --python 3.12 --with polars-lts-cpu $DEPS "$DIR/server/engine.py" > "$LOG" 2>&1 &',
+      '            uv run --python 3.12 --with polars-lts-cpu $BASEDEPS "$ENGINE" > "$LOG" 2>&1 &',
       '            PID=$!',
       '        else break; fi',
       '    fi',
@@ -2357,7 +2366,8 @@ function _downloadLauncherFile(type){
       'title Acik Analiz - Motor calisiyor (bu pencereyi KAPATMAYIN)',
       'cd /d "%~dp0"',
       'set "PATH=%USERPROFILE%\\.local\\bin;%USERPROFILE%\\.cargo\\bin;%PATH%"',
-      'set "DEPS=--with fastapi --with uvicorn --with scipy --with numpy --with python-multipart"',
+      'set "REQ=%~dp0server\\requirements.txt"',
+      'set "BASEDEPS=--with fastapi --with uvicorn --with scipy --with numpy --with python-multipart"',
       '',
       ':: === uv tabanli + native pencereler: sistemde Python/pip GEREKTIRMEZ ===',
       'echo Hazirlaniyor... Ilk acilis birkac dakika surebilir. Bu pencereyi kapatmayin.',
@@ -2382,12 +2392,17 @@ function _downloadLauncherFile(type){
       ':: Tarayiciyi arka planda gecikmeli ac (motor o ana dek ayaga kalkar; ilk kurulumda yenileyin)',
       'start "" /b powershell -NoProfile -c "Start-Sleep 12; Start-Process \'http://127.0.0.1:8765\'"',
       '',
-      ':: Motoru on planda baslat (polars) — sabit Python 3.12 + izole ortam',
-      'uv run --python 3.12 --with polars %DEPS% "%~dp0server\\engine.py"',
+      ':: Motoru on planda baslat — sabit Python 3.12 + izole ortam.',
+      ':: requirements.txt varsa onu kullan (engine.py nin TAM bagimliliklari; surumler sabitse birebir).',
+      'if exist "%REQ%" (',
+      '    uv run --python 3.12 --with-requirements "%REQ%" "%~dp0server\\engine.py"',
+      ') else (',
+      '    uv run --python 3.12 --with polars %BASEDEPS% "%~dp0server\\engine.py"',
+      ')',
       'if errorlevel 1 (',
       '    :: Motor hata verdi — eski islemci (AVX) olabilir; uyumlu Polars ile tekrar dene',
       '    powershell -NoProfile -c "Add-Type -AssemblyName System.Windows.Forms;[void][System.Windows.Forms.MessageBox]::Show(\'Uyumlu surumle tekrar deneniyor (eski islemci olabilir)...\',\'Acik Analiz\')"',
-      '    uv run --python 3.12 --with polars-lts-cpu %DEPS% "%~dp0server\\engine.py"',
+      '    uv run --python 3.12 --with polars-lts-cpu %BASEDEPS% "%~dp0server\\engine.py"',
       '    if errorlevel 1 (',
       '        powershell -NoProfile -c "Add-Type -AssemblyName System.Windows.Forms;[void][System.Windows.Forms.MessageBox]::Show(\'Python Motoru baslatilamadi. Normal dosyalar icin buna GEREK YOK - Tarayici Modunu kullanabilirsiniz.\',\'Acik Analiz\')"',
       '    )',
@@ -18322,6 +18337,21 @@ async function executeSQLQuery(){
     _sqlResultData=result;
     renderSQLResults(result.columns,result.rows);
     if(resArea)resArea.style.display='block';
+    // Uygulanan filtre/koşul banner'ı — kullanıcı sorgunun gerçekten filtrelendiğini açıkça görsün
+    const _banner=document.getElementById('sqlFilterBanner');
+    if(_banner){
+      const _wM=sql.match(/\bWHERE\b([\s\S]*?)(?:\bGROUP\s+BY\b|\bORDER\s+BY\b|\bLIMIT\b|;|$)/i);
+      const _gM=sql.match(/\bGROUP\s+BY\b([\s\S]*?)(?:\bORDER\s+BY\b|\bLIMIT\b|;|$)/i);
+      const _oM=sql.match(/\bORDER\s+BY\b([\s\S]*?)(?:\bLIMIT\b|;|$)/i);
+      const _lM=sql.match(/\bLIMIT\s+(\d+)/i);
+      const parts=[];
+      if(_wM&&_wM[1].trim())parts.push('<b>🔎 Filtre (WHERE):</b> '+escHtml(_wM[1].trim()));
+      if(_gM&&_gM[1].trim())parts.push('<b>🧮 Gruplama:</b> '+escHtml(_gM[1].trim()));
+      if(_oM&&_oM[1].trim())parts.push('<b>↕ Sıralama:</b> '+escHtml(_oM[1].trim()));
+      if(_lM)parts.push('<b>🔢 Limit:</b> ilk '+_lM[1]+' satır');
+      if(parts.length){_banner.innerHTML=parts.join(' &nbsp;·&nbsp; ');_banner.style.display='block'}
+      else{_banner.innerHTML='<b>ℹ️ Filtre yok</b> — tüm satırlar üzerinde çalıştırıldı (WHERE koşulu eklenmedi).';_banner.style.display='block'}
+    }
     const info=document.getElementById('sqlResultInfo');
     if(info){
       let infoText=result.rows.length+' satır × '+result.columns.length+' sütun döndü';
