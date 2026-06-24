@@ -18326,6 +18326,7 @@ async function executeSQLQuery(){
     if(info){
       let infoText=result.rows.length+' satır × '+result.columns.length+' sütun döndü';
       if(result.totalDataRows)infoText+=' (toplam veri: '+result.totalDataRows+' satır × '+result.totalDataCols+' sütun)';
+      if(!window._BACKEND_ACTIVE&&window._alasqlCapped)infoText+=' — ⚠️ tarayıcı modunda ilk 2.000.000 satır sorgulandı (daha fazlası için Python Motoru)';
       infoText+=' — '+new Date().toLocaleTimeString('tr-TR');
       info.textContent=infoText;
     }
@@ -18353,28 +18354,36 @@ async function executeSQLAlaSQL(sql){
     });
   }
 
-  // Prepare data table
-  if(!window._alasqlTableReady){
-    // Build rows array from rawLines
-    const tableData=[];
+  // Tabloyu İŞLENMİŞ ÇIKTIDAN kur (outHeaders + outputChunks) — rawLines yalnızca ham/önizleme
+  // string dizisidir; eski kod rawLines[i][j] ile satırın karakterlerini hücre sanıyordu (bozuk).
+  // Veri sürümü değişince yeniden kurulur.
+  const _dataVer=(typeof _analysisUIDataVersion!=='undefined')?_analysisUIDataVersion:0;
+  if(!window._alasqlTableReady||window._alasqlTableVersion!==_dataVer){
+    if(!(typeof _hasOutputData==='function'&&_hasOutputData())){
+      throw new Error('Sorgulanacak işlenmiş veri yok. Önce dosyanızı yükleyip 6. adımdan (İşlem) işleyin.');
+    }
     const headerCount=outHeaders.length;
-    for(let i=0;i<rawLines.length;i++){
+    const numericFlags=outHeaders.map(h=>!!(colStats[h]&&colStats[h].isNumeric));
+    const SQL_ROW_CAP=2000000; // bellek güvenliği (AlaSQL tabloyu RAM'de tutar)
+    const tableData=[];
+    let capped=false;
+    streamOutputRows(r=>{
+      if(tableData.length>=SQL_ROW_CAP){capped=true;return}
       const row={};
       for(let j=0;j<headerCount;j++){
-        let val=rawLines[i][j];
-        if(val===undefined||val===null||val==='')row[outHeaders[j]]=null;
-        else{
-          const num=parseFloat(val);
-          row[outHeaders[j]]=(!isNaN(num)&&String(num)===val.trim())?num:val;
-        }
+        const val=r[j];
+        if(val===undefined||val===null||val===''){row[outHeaders[j]]=null;continue}
+        if(numericFlags[j]){const num=parseTRNumber(val);row[outHeaders[j]]=isNaN(num)?val:num}
+        else row[outHeaders[j]]=val;
       }
       tableData.push(row);
-    }
-    // Drop existing table if any
+    });
     try{alasql('DROP TABLE IF EXISTS veri')}catch(e){}
     alasql('CREATE TABLE veri');
     alasql.tables.veri.data=tableData;
     window._alasqlTableReady=true;
+    window._alasqlTableVersion=_dataVer;
+    window._alasqlCapped=capped;
   }
 
   const rows=alasql(sql);
