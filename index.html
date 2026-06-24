@@ -18326,6 +18326,11 @@ async function executeSQLQuery(){
     if(info){
       let infoText=result.rows.length+' satır × '+result.columns.length+' sütun döndü';
       if(result.totalDataRows)infoText+=' (toplam veri: '+result.totalDataRows+' satır × '+result.totalDataCols+' sütun)';
+      // Sorguda LIMIT varsa ve sonuç tam o sayıda ise kullanıcıyı uyar (SQL Oluşturucu varsayılan LIMIT 100 ekler)
+      const _limM=sql.match(/\bLIMIT\s+(\d+)/i);
+      if(_limM&&result.rows.length>=parseInt(_limM[1])){
+        infoText+=' — ⚠️ LIMIT '+_limM[1]+' uygulandı (tüm satırlar için SQL Oluşturucu\'daki "Limit" değerini artırın veya sorgudaki LIMIT satırını silin)';
+      }
       if(!window._BACKEND_ACTIVE&&window._alasqlCapped)infoText+=' — ⚠️ tarayıcı modunda ilk 2.000.000 satır sorgulandı (daha fazlası için Python Motoru)';
       infoText+=' — '+new Date().toLocaleTimeString('tr-TR');
       info.textContent=infoText;
@@ -18433,21 +18438,21 @@ function exportSQLResultCSV(){
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url;a.download='sql_sonuc_'+new Date().toISOString().slice(0,10)+'.csv';
-  a.click();URL.revokeObjectURL(url);
+  // <a> DOM'a eklenmeli + revoke gecikmeli olmalı — yoksa bazı tarayıcılarda indirme hiç tetiklenmez
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},1500);
 }
 
 function exportSQLResultExcel(){
   if(!_sqlResultData||!_sqlResultData.rows.length){showError('Dışa aktarılacak sonuç yok.');return}
-  // Use simple XLSX generation via HTML table export
-  const table=document.querySelector('#sqlResultTable table');
-  if(!table){showError('Tablo bulunamadı.');return}
-  // Use existing exportHTMLTableToExcel if available
-  if(typeof exportHTMLTableToExcel==='function'){
-    exportHTMLTableToExcel('sqlResultTable','sql_sonuc');
-    return;
-  }
-  // Fallback: CSV download
-  exportSQLResultCSV();
+  if(typeof XLSX==='undefined'){showError('XLSX kütüphanesi yüklenemedi (internet bağlantısı gerekebilir).');return}
+  // DOM tablosundan DEĞİL, doğrudan veriden kur: TÜM döndürülen satırlar + gerçek sayısal hücreler
+  const {columns,rows}=_sqlResultData;
+  const aoa=[columns.slice(),...rows.map(r=>r.map(v=>(v===null||v===undefined)?'':v))];
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'SQL Sonuc');
+  XLSX.writeFile(wb,'sql_sonuc_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
 function clearSQLEditor(){
