@@ -639,11 +639,11 @@
       <div id="pythonSetupInfo" style="margin-top:14px;padding:16px 18px;background:linear-gradient(135deg,#fef2f2,#fee2e2);border:2px solid #fca5a5;border-radius:14px">
         <p style="font-size:15px;font-weight:800;color:#991b1b;margin:0">🐍 Python Motorunu Nasıl Başlatırım?</p>
 
-        <!-- Ön Koşul -->
-        <div style="margin-top:14px;padding:12px 14px;background:#fff;border:1.5px solid #fca5a5;border-radius:10px">
-          <p style="font-size:13px;font-weight:700;color:#991b1b;margin:0">Ön Koşul: Python Kurulumu</p>
-          <p style="font-size:12px;color:#7f1d1d;margin:8px 0 0;line-height:1.6">Python kurulu değilse önce kurun: <a href="https://www.python.org/downloads/" target="_blank" style="color:#2563eb;font-weight:700;text-decoration:underline">python.org/downloads</a> → İndir → Kur.</p>
-          <p style="font-size:11px;color:#991b1b;margin:4px 0 0;font-weight:600">⚠️ Windows'ta kurulum sırasında "Add Python to PATH" kutusunu mutlaka işaretleyin!</p>
+        <!-- Ön Koşul: artık Python kurmaya gerek yok (uv otomatik halleder) -->
+        <div style="margin-top:14px;padding:12px 14px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px">
+          <p style="font-size:13px;font-weight:700;color:#166534;margin:0">✅ Python kurmanıza gerek yok!</p>
+          <p style="font-size:12px;color:#14532d;margin:8px 0 0;line-height:1.6">Başlatıcı dosya, gerekli her şeyi (sabit Python 3.12 sürümü + bağımlılıklar) <strong>otomatik ve izole</strong> şekilde kurar — sisteminizdeki hiçbir şeye dokunmaz, sürüm/uyumluluk sorunu yaşanmaz.</p>
+          <p style="font-size:11px;color:#166534;margin:4px 0 0;font-weight:600">ℹ️ Tek gereksinim: <strong>ilk açılışta internet bağlantısı</strong> (bileşenler bir kez indirilir; sonraki açılışlar anında ve çevrimdışı olur).</p>
         </div>
 
         <!-- macOS Talimatı -->
@@ -2286,47 +2286,34 @@ function _downloadLauncherFile(type){
       'echo "╚═══════════════════════════════════════════════╝"',
       'echo ""',
       '',
-      '# Python 3 kontrolü',
-      'if command -v python3 &> /dev/null; then',
-      '    PYTHON=python3',
-      'elif command -v python &> /dev/null; then',
-      '    PYTHON=python',
-      'else',
-      '    echo "❌ Python bulunamadı!"',
-      '    echo ""',
-      '    echo "Python 3 yüklemeniz gerekiyor:"',
-      '    echo "  brew install python3"',
-      '    echo "  veya: https://www.python.org/downloads/"',
-      '    echo ""',
-      '    read -p "Devam etmek için Enter\'a basın..."',
+      '# === uv tabanlı: sistemde Python/pip GEREKTİRMEZ ===',
+      '# uv tek bir ikili dosyadır; sabit Python sürümünü ve bağımlılıkları',
+      '# izole olarak kendisi yönetir. Sürüm farkı / pip çatışması yaşanmaz.',
+      '',
+      '# uv PATH\'te mi? Değilse yaygın kurulum konumlarını ekle',
+      'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"',
+      '',
+      'if ! command -v uv &> /dev/null; then',
+      '    echo "📥 İlk kullanım: uv kuruluyor (~15MB, tek seferlik, yönetici izni gerekmez)..."',
+      '    curl -LsSf https://astral.sh/uv/install.sh | sh',
+      '    export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"',
+      'fi',
+      '',
+      'if ! command -v uv &> /dev/null; then',
+      '    echo "❌ uv kurulamadı. İnternet bağlantınızı kontrol edip tekrar deneyin."',
+      '    echo "   Elle kurulum: https://docs.astral.sh/uv/getting-started/installation/"',
+      '    read -p "Çıkmak için Enter\'a basın..."',
       '    exit 1',
       'fi',
       '',
-      'echo "🐍 Python: $($PYTHON --version)"',
-      '',
-      '# Bağımlılıkları kontrol et ve gerekirse kur',
-      'echo "📦 Bağımlılıklar kontrol ediliyor..."',
-      '$PYTHON -c "import polars, fastapi, uvicorn, scipy, numpy" 2>/dev/null',
-      'if [ $? -ne 0 ]; then',
-      '    echo "📥 İlk kullanım: Bağımlılıklar yükleniyor (bir kez)..."',
-      '    echo ""',
-      '    $PYTHON -m pip install --break-system-packages -q -r "$DIR/server/requirements.txt" 2>/dev/null || \\',
-      '    $PYTHON -m pip install -q -r "$DIR/server/requirements.txt"',
-      '',
-      '    if [ $? -ne 0 ]; then',
-      '        echo "❌ Bağımlılıklar yüklenemedi."',
-      '        echo "Manuel yükleme: pip3 install polars numpy scipy fastapi uvicorn python-multipart"',
-      '        read -p "Devam etmek için Enter\'a basın..."',
-      '        exit 1',
-      '    fi',
-      '    echo "✅ Bağımlılıklar yüklendi!"',
-      'fi',
-      '',
+      'echo "✅ uv hazır: $(uv --version)"',
       'echo ""',
       'echo "🚀 Python Motor başlatılıyor (port 8765)..."',
-      'echo "   Motor durdurmak için: Ctrl+C"',
+      'echo "   İlk açılışta Python 3.12 + bağımlılıklar indirilir (bir kez, biraz sürebilir)."',
+      'echo "   Sonraki açılışlar anında olur. Durdurmak için: Ctrl+C"',
       'echo ""',
-      '$PYTHON "$DIR/server/engine.py"',
+      '# Sabit Python 3.12 + izole ortam; bağımlılıkları requirements.txt\'ten çözer (uv önbelleğe alır)',
+      'uv run --python 3.12 --with-requirements "$DIR/server/requirements.txt" "$DIR/server/engine.py"',
       ''
     ].join('\n');
   }else{
@@ -2344,37 +2331,35 @@ function _downloadLauncherFile(type){
       '',
       'cd /d "%~dp0"',
       '',
-      ':: Python 3 kontrolu',
-      'where python >nul 2>&1',
+      ':: === uv tabanli: sistemde Python/pip GEREKTIRMEZ ===',
+      ':: uv tek bir ikili dosyadir; sabit Python surumunu ve bagimliliklari',
+      ':: izole olarak kendisi yonetir. Surum farki / pip catismasi yasanmaz.',
+      '',
+      ':: uv PATH te mi? Degilse yaygin kurulum konumunu ekle',
+      'set "PATH=%USERPROFILE%\\.local\\bin;%USERPROFILE%\\.cargo\\bin;%PATH%"',
+      'where uv >nul 2>&1',
       'if %errorlevel% neq 0 (',
-      '    echo [HATA] Python bulunamadi!',
-      '    echo Python 3 yukleyin: https://www.python.org/downloads/',
+      '    echo Ilk kullanim: uv kuruluyor ^(~15MB, tek seferlik^)...',
+      '    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"',
+      '    set "PATH=%USERPROFILE%\\.local\\bin;%USERPROFILE%\\.cargo\\bin;%PATH%"',
+      ')',
+      '',
+      'where uv >nul 2>&1',
+      'if %errorlevel% neq 0 (',
+      '    echo [HATA] uv kurulamadi. Internet baglantinizi kontrol edip tekrar deneyin.',
+      '    echo Elle kurulum: https://docs.astral.sh/uv/getting-started/installation/',
       '    pause',
       '    exit /b 1',
       ')',
       '',
-      'for /f "tokens=*" %%i in (\'python --version 2^>^&1\') do echo Python: %%i',
-      '',
-      ':: Bagimliliklari kontrol et',
-      'echo Bagimliliklar kontrol ediliyor...',
-      'python -c "import polars, fastapi, uvicorn, scipy, numpy" 2>nul',
-      'if %errorlevel% neq 0 (',
-      '    echo Ilk kullanim: Bagimliliklar yukleniyor...',
-      '    python -m pip install -q -r "%~dp0server\\requirements.txt"',
-      '    if %errorlevel% neq 0 (',
-      '        echo [HATA] Bagimliliklar yuklenemedi.',
-      '        echo Manuel yukleme: pip install polars numpy scipy fastapi uvicorn python-multipart',
-      '        pause',
-      '        exit /b 1',
-      '    )',
-      '    echo Bagimliliklar yuklendi!',
-      ')',
-      '',
+      'for /f "tokens=*" %%i in (\'uv --version 2^>^&1\') do echo uv hazir: %%i',
       'echo.',
       'echo Python Motor baslatiliyor (port 8765)...',
-      'echo Motor durdurmak icin: Ctrl+C',
+      'echo Ilk acilista Python 3.12 + bagimliliklar indirilir ^(bir kez, biraz surebilir^).',
+      'echo Sonraki acilislar aninda olur. Durdurmak icin: Ctrl+C',
       'echo.',
-      'python "%~dp0server\\engine.py"',
+      ':: Sabit Python 3.12 + izole ortam; bagimliliklari requirements.txt ten cozer',
+      'uv run --python 3.12 --with-requirements "%~dp0server\\requirements.txt" "%~dp0server\\engine.py"',
       'pause',
       ''
     ].join('\r\n');
@@ -3191,7 +3176,7 @@ async function proceedWithFiles(){
     return;
   }
   if(_totalFileSize>=_FORCE_PYTHON_THRESHOLD&&!window._BACKEND_ACTIVE){
-    showError('🚨 '+totalMB+' MB boyutunda veri tespit edildi. Bu boyutta veri tarayıcı modunda stabil çalışmaz.\n\nLütfen önce Python Veri Motoru\'nu başlatın:\n1. Terminal: cd server && python engine.py\n2. Sayfayı yenileyin\n\nKüçük dosyalar için tarayıcı modunu kullanabilirsiniz.');
+    showError('🚨 '+totalMB+' MB boyutunda veri tespit edildi. Bu boyutta veri tarayıcı modunda stabil çalışmaz.\n\nLütfen önce Python Veri Motoru\'nu başlatın:\n1. "AcikAnaliz-Baslat" başlatıcı dosyasını çalıştırın (Python kurmaya gerek yok; gerekli her şeyi otomatik kurar).\n2. Sayfayı yenileyin.\n\nKüçük dosyalar için tarayıcı modunu kullanabilirsiniz.');
     try{_addLog('Devam engellendi: '+totalMB+'MB dosya, Python Motor gerekli','err')}catch(e){}
     return;
   }
