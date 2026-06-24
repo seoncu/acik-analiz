@@ -554,7 +554,7 @@
       <!-- Slogan -->
       <div style="text-align:center;margin-bottom:18px">
         <h2 style="margin:0;font-size:26px;font-weight:900;letter-spacing:-0.5px;background:linear-gradient(90deg,#fff 0%,#93c5fd 50%,#c4b5fd 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.3">Verinin Gücünü Keşfedin — Tamamen Lokalde, Sıfır Veri Kaybıyla</h2>
-        <p style="margin:10px auto 0;font-size:14px;color:#f1f5f9;font-weight:400;max-width:700px;line-height:1.6">Milyarlarca hücreyi güvenle işleyin. Tarayıcı veya Python Veri Motoru ile maskeleme, analiz, birleştirme, ileri istatistik ve yapay zeka destekli raporlamayı tek araçta deneyimleyin.</p>
+        <p style="margin:10px auto 0;font-size:14px;color:#f1f5f9;font-weight:400;max-width:700px;line-height:1.6">Milyonlarca hücreyi tarayıcıda güvenle işleyin. Kurulum gerektirmez — maskeleme, analiz, birleştirme, ileri istatistik, SQL (DuckDB-WASM) ve yapay zeka destekli raporlamayı tek araçta deneyimleyin.</p>
       </div>
       <!-- Feature cards -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px">
@@ -581,7 +581,7 @@
       </div>
       <!-- Bottom info line + signature -->
       <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <p style="margin:0;font-size:10.5px;color:#e2e8f0">🔒 Verileriniz tamamen cihazınızda işlenir (tarayıcı veya yerel Python motor) — hiçbir veri internete gönderilmez.</p>
+        <p style="margin:0;font-size:10.5px;color:#e2e8f0">🔒 Verileriniz tamamen cihazınızda, tarayıcıda işlenir — hiçbir veri internete gönderilmez.</p>
         <p style="margin:0;font-size:9.5px;color:#cbd5e1;font-style:italic">İnsan + AI Agent (Claude) iş birliğiyle geliştirilmiştir &bull; v1.5</p>
       </div>
     </div>
@@ -680,7 +680,7 @@
     <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
       <div style="font-size:48px;margin-bottom:12px">📂</div>
       <p style="font-size:16px;font-weight:600;color:#334155">Dosyalarınızı sürükleyin veya tıklayarak seçin</p>
-      <p class="text-sm text-muted mt-8">.csv, .tsv, .txt, .dat, .xlsx, .xls &bull; Python Motor ile 100 GB+ &bull; Birden fazla dosya seçip birleştirebilirsiniz</p>
+      <p class="text-sm text-muted mt-8">.csv, .tsv, .txt, .dat, .xlsx, .xls &bull; Büyük veride DuckDB-WASM hızlandırması &bull; Birden fazla dosya seçip birleştirebilirsiniz</p>
       <input id="fileInput" type="file" accept=".csv,.tsv,.txt,.dat,.xlsx,.xls" multiple style="display:none"/>
     </div>
     <div id="fileListArea" class="hidden mt-16">
@@ -1590,7 +1590,7 @@
               <h3 style="margin:0 0 4px 0;font-size:16px;color:#4c1d95">🔬 İleri İstatistik Testleri</h3>
               <p style="margin:0;font-size:12px;color:#6b21a8">JASP benzeri akademik istatistik analizleri. Filtreler otomatik uygulanır.</p>
               <p style="margin:4px 0 0 0;font-size:10px;color:#7c3aed;line-height:1.5"><b>Not:</b> İstatistiksel sonuçlarda <b>n</b> (küçük harf) = alt grup gözlem sayısı, <b>N</b> (büyük harf) = toplam popülasyon büyüklüğü anlamındadır (APA7 standardı). UI tablolarında gözlem sayısı <b>n</b> (alt grup) veya <b>N</b> (toplam) olarak gösterilir.</p>
-              <div id="advStatsSamplingBanner" style="display:none;margin-top:6px;padding:6px 10px;background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;font-size:10px;color:#92400e;line-height:1.4">⚠️ <b>Akıllı Örneklem Modu:</b> Python Motor aktif olduğunda ileri istatistik testleri performans optimizasyonu için akıllı örneklem kullanır. Dashboard, Özet İstatistik, Çapraz Tablo, Korelasyon vb. temel analizler <b>tam veri</b> üzerinden hesaplanır.</div>
+              <div id="advStatsSamplingBanner" style="display:none;margin-top:6px;padding:6px 10px;background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;font-size:10px;color:#92400e;line-height:1.4">⚠️ <b>Akıllı Örneklem Modu:</b> Çok büyük veride ileri istatistik testleri performans için akıllı (tabakalı) örneklem kullanabilir. Dashboard, Özet İstatistik, Çapraz Tablo, Korelasyon vb. temel analizler <b>tam veri</b> üzerinden hesaplanır.</div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <button class="btn btn-sm" onclick="advStatsSuggestTests()" style="background:#7c3aed;color:#fff;border:none;font-size:11px" title="Verinizdeki değişkenlere göre hangi testlerin yapılabileceğini öner">🤖 Hangi Test Yapılabilir?</button>
@@ -2214,23 +2214,18 @@ function _checkBigFileWarning(){
   }else if(totalSize<LARGE){
     level='warn';bg='linear-gradient(135deg,#fef3c7,#fde68a)';border='#f59e0b';titleColor='#92400e';bodyColor='#78350f';icon='⚠️';
     title='Büyük Dosya Algılandı';
-    extra='<b>Python Veri Motoru kullanmanızı şiddetle öneriyoruz.</b> Tarayıcı modunda donma/çökme riski yüksektir. 32 GB+ RAM gereklidir.';
+    extra='Tarayıcıda çalışır ama yavaşlayabilir. SQL ve pivot işlemleri <b>DuckDB-WASM</b> ile hızlanır. Mümkünse yalnızca gerekli sütunları kullanın. 8 GB+ RAM önerilir.';
   }else if(totalSize<XLARGE){
     level='danger';bg='linear-gradient(135deg,#fee2e2,#fecaca)';border='#f87171';titleColor='#991b1b';bodyColor='#b91c1c';icon='🚨';
-    title='Çok Büyük Dosya — Python Motor Gerekli';
-    extra='<b>Bu boyutta veri tarayıcı modunda işlenemez.</b> Python Veri Motoru başlatılmalıdır. 64 GB+ RAM önerilir.';
+    title='Çok Büyük Dosya';
+    extra='Bu boyut tarayıcı belleğini zorlayabilir. SQL/pivot, disk-destekli <b>DuckDB-WASM</b> ile daha dayanıklıdır; yine de veriyi parçalara bölmeniz veya gereksiz sütunları çıkarmanız önerilir. 16 GB+ RAM önerilir.';
   }else{
     level='critical';bg='linear-gradient(135deg,#fecdd3,#fda4af)';border='#e11d48';titleColor='#881337';bodyColor='#9f1239';icon='🔴';
     title='Kritik Boyut — '+totalGB+' GB Dosya';
-    extra='<b>Bu dosya yalnızca Python Veri Motoru + yüksek RAM (128 GB+) ile işlenebilir.</b> Tarayıcı modunda kesinlikle çalışmaz. SSD disk önerilir.';
+    extra='<b>Bu boyut tarayıcı sekmesinin bellek sınırını aşabilir ve çökme riski yüksektir.</b> Veriyi daha küçük parçalara bölmeniz veya yalnızca gerekli sütunları içeren bir alt küme kullanmanız şiddetle önerilir.';
   }
 
-  const pyActive=!!window._BACKEND_ACTIVE;
-  const pyNote=pyActive?
-    '<div style="margin-top:8px;padding:6px 10px;background:#ecfdf5;border-radius:8px;font-size:11px;color:#065f46"><b>🟢 Python Motor Aktif</b> — Büyük veri işlemeye hazırsınız.</div>':
-    '<div style="margin-top:8px;padding:6px 10px;background:#1e293b;border-radius:8px;font-size:11px;color:#fbbf24;line-height:1.5"><b>🐍 Python Motor Nasıl Başlatılır:</b><br>'+
-    '1. Terminalde: <code style="background:#334155;padding:1px 4px;border-radius:3px;color:#e2e8f0">cd server && python engine.py</code><br>'+
-    '2. Sayfayı yenileyin — üst barda <span style="color:#34d399">🟢 Python Motor: Aktif</span> rozeti görünecektir.</div>';
+  const pyNote='';
 
   warn.style.display='block';
   warn.innerHTML='<div style="padding:14px 18px;background:'+bg+';border:1.5px solid '+border+';border-radius:14px">'+
@@ -2244,21 +2239,13 @@ function _checkBigFileWarning(){
     (level!=='info'?pyNote:'')+
   '</div>';
 
-  // Disable "Devam Et" button if Python Motor required but not active
+  // "Devam Et" butonu her zaman açık — kullanıcı uyarıyı görüp kendi kararıyla devam eder
   const procBtn=document.getElementById('proceedBtn');
   if(procBtn){
-    if(totalSize>=XLARGE&&!pyActive){
-      // 1 GB+ → block completely in browser mode
-      procBtn.disabled=true;
-      procBtn.style.opacity='0.4';
-      procBtn.style.cursor='not-allowed';
-      procBtn.title='Bu boyut için Python Motor gereklidir. Lütfen önce Python Motor\'u başlatın.';
-    }else{
-      procBtn.disabled=false;
-      procBtn.style.opacity='1';
-      procBtn.style.cursor='pointer';
-      procBtn.title='Seçilen dosyalarla devam et';
-    }
+    procBtn.disabled=false;
+    procBtn.style.opacity='1';
+    procBtn.style.cursor='pointer';
+    procBtn.title='Seçilen dosyalarla devam et';
   }
 }
 function _fmtNum(n){
@@ -8539,7 +8526,7 @@ function renderTopBottomData(){
   if(window._BACKEND_ACTIVE){
     (async ()=>{
       try{
-        area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px"><span class="computing-spinner"></span> Python motorunda hesaplanıyor...</p>';
+        area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px"><span class="computing-spinner"></span> Hesaplanıyor...</p>';
         const result=await window._backendTopBottom(sortVar,count,direction,catVar,catVal,catVar2,catVal2,displayCols);
         if(result&&result.rows){
           return renderTopBottomDataJS(area,sortVar,count,direction,catVar,catVal,catVar2,catVal2,displayCols,result.rows,result.total);
@@ -8706,7 +8693,7 @@ function renderTopBottomGroupData(){
   if(window._BACKEND_ACTIVE){
     (async ()=>{
       try{
-        area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px"><span class="computing-spinner"></span> Python motorunda hesaplanıyor...</p>';
+        area.innerHTML='<p class="text-sm text-muted" style="text-align:center;padding:40px"><span class="computing-spinner"></span> Hesaplanıyor...</p>';
         const numCols=outHeaders.filter(h=>colStats[h]&&colStats[h].isNumeric);
         const _grpT0=performance.now();
         const result=await window._backendGroupAnalysis(indepVar,subVar,numCols,metric,direction,20,_tbFcCol);
@@ -13056,25 +13043,14 @@ function processQuestion(q){
     const isActive=!!window._BACKEND_ACTIVE;
     const totalCells=(totalRows||0)*(outHeaders||[]).length;
     let msg='';
-    if(isActive){
-      msg='🐍 <b>Python Motor Durumu: AKTİF</b><br><br>';
-      msg+='• <b>Motor:</b> FastAPI + Polars (Rust tabanlı)<br>';
-      msg+='• <b>Durum:</b> <span style="color:#16a34a;font-weight:700">Bağlı ve çalışıyor</span><br>';
-      msg+='• <b>Avantaj:</b> 500M+ hücreye kadar ölçeklenebilir hesaplama<br>';
-      msg+='• <b>Toplam hücre:</b> '+totalCells.toLocaleString('tr-TR')+'<br><br>';
-      msg+='Python motor aktif olduğunda tüm temel metrikler (sayı, toplam, ortalama, medyan vb.) <b>tüm veriler</b> üzerinden hesaplanır. İleri istatistik testlerinde de örnekleme sınırı kaldırılmıştır.<br><br>';
-      msg+='💡 Motor bağlantısını kesmek için Terminal\'i kapatmanız yeterlidir.';
-    }else{
-      msg='🌐 <b>Çalışma Modu: Tarayıcı</b><br><br>';
-      msg+='• <b>Motor:</b> JavaScript (tarayıcı içi)<br>';
-      msg+='• <b>Durum:</b> Python motor bağlı değil<br>';
-      msg+='• <b>Toplam hücre:</b> '+totalCells.toLocaleString('tr-TR')+'<br><br>';
-      if(totalCells>100000000){
-        msg+='⚠️ <b>Uyarı:</b> 100M+ hücre ile tarayıcı modunda çalışıyorsunuz. Performans sorunları yaşayabilirsiniz. Python motorunu başlatmanız önerilir.<br><br>';
-      }
-      msg+='<b>Temel metrikler</b> (sayı, toplam, ortalama, medyan, min, maks) her zaman <b>tüm veriler</b> üzerinden hesaplanır — tarayıcı modunda da.<br>';
-      msg+='<b>İleri istatistik testlerinde</b> büyük veri setlerinde (100M+ hücre) tabakalı örnekleme uygulanabilir. Örnekleme aktif olduğunda sarı uyarı banner\'ı gösterilir.<br><br>';
-      msg+='🐍 Python motorunu başlatmak için Adım 0\'daki talimatlara bakabilirsiniz.';
+    msg='🌐 <b>Çalışma Modu: Tarayıcı (kurulum yok)</b><br><br>';
+    msg+='• <b>Motor:</b> JavaScript + büyük veri için <b>DuckDB-WASM</b> (SQL & pivot)<br>';
+    msg+='• <b>Toplam hücre:</b> '+totalCells.toLocaleString('tr-TR')+'<br><br>';
+    msg+='<b>Temel metrikler</b> (sayı, toplam, ortalama, medyan, min, maks) her zaman <b>tüm veriler</b> üzerinden hesaplanır.<br>';
+    msg+='<b>SQL ve pivot</b> sorguları tarayıcı içi <b>DuckDB-WASM</b> (kolonsal, disk-destekli OPFS) ile yüz milyonlarca satıra kadar verimli çalışır.<br>';
+    msg+='<b>İleri istatistik</b> testlerinde çok büyük veride tabakalı örnekleme uygulanabilir (uygulandığında sarı uyarı banner\'ı gösterilir).<br><br>';
+    if(totalCells>200000000){
+      msg+='⚠️ '+totalCells.toLocaleString('tr-TR')+' hücre çok büyük — sekme belleğini zorlayabilir; veriyi parçalara bölmeniz önerilir.';
     }
     return msg;
   }
@@ -13512,7 +13488,7 @@ function processQuestion(q){
       '• "Merge Join" — Birleştirme modları<br>'+
       '• "İleri istatistik" — Test önerileri<br>'+
       '• "Kısaltmalar" — PDF\'deki kısaltma açıklamaları<br>'+
-      '• "Python motor" — Motor durumu ve büyük veri bilgisi<br>'+
+      '• "motor" / "büyük veri" — Çalışma modu ve büyük veri bilgisi<br>'+
       '• Sütun adı yazın — O sütunun detayı';
   }
 
@@ -15239,7 +15215,7 @@ function _renderBackendTestResult(testId,r){
   const _p=v=>v!=null?parseFloat(v).toFixed(4):'—';
   const _n=v=>v!=null?parseFloat(v).toFixed(2):'—';
   const _sigBadge=p=>{const pv=parseFloat(p);if(isNaN(pv))return'';return pv<0.001?'<span style="color:#dc2626;font-weight:700">p < 0.001 ***</span>':pv<0.01?'<span style="color:#dc2626;font-weight:600">p < 0.01 **</span>':pv<0.05?'<span style="color:#f59e0b;font-weight:600">p < 0.05 *</span>':'<span style="color:#16a34a">p ≥ 0.05 (anlamsız)</span>'};
-  const _fullDataBadge='<div style="margin:8px 0;padding:6px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;font-size:11px;color:#166534;text-align:center">✅ <b>Python Motor</b> ile TÜM veri kullanılarak hesaplandı'+(r.sampled?' (tabakalı örnekleme: '+r.sample_info+')':'')+' — '+(r.elapsed?r.elapsed+'s':'')+' </div>';
+  const _fullDataBadge='<div style="margin:8px 0;padding:6px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;font-size:11px;color:#166534;text-align:center">✅ <b>TÜM veri</b> kullanılarak hesaplandı'+(r.sampled?' (tabakalı örnekleme: '+r.sample_info+')':'')+' — '+(r.elapsed?r.elapsed+'s':'')+' </div>';
   try{
     // === T-TEST ===
     if(testId==='ttest'){
@@ -15397,7 +15373,7 @@ async function advStatsRun(testId){
   if(totalRows>500000){_showBusy('İstatistik testi hesaplanıyor...')}
   // Büyük veri uyarısı
   if(totalRows>1000000){
-    resTable.innerHTML='<div style="text-align:center;padding:20px;color:#2563eb;font-weight:600"><span style="font-size:20px">⏳</span> Python Motor ile TÜM veri hesaplanıyor, lütfen bekleyin... <span style="font-size:11px;opacity:0.7">('+totalRows.toLocaleString('tr-TR')+' satır)</span></div>';
+    resTable.innerHTML='<div style="text-align:center;padding:20px;color:#2563eb;font-weight:600"><span style="font-size:20px">⏳</span> TÜM veri hesaplanıyor, lütfen bekleyin... <span style="font-size:11px;opacity:0.7">('+totalRows.toLocaleString('tr-TR')+' satır)</span></div>';
   }
   const _testStart=Date.now();
   // === BACKEND: Try statistical test from backend first (TÜM VERİ ile) ===
@@ -16559,7 +16535,7 @@ async function advStatsRun(testId){
   // İşlem süresi bilgisi
   const _testElapsed=((Date.now()-_testStart)/1000).toFixed(1);
   if(parseFloat(_testElapsed)>2){html+='<div style="margin-top:6px;font-size:10px;color:#94a3b8;text-align:right">İşlem süresi: '+_testElapsed+' sn</div>'}
-  // Örnekleme uyarı notu — Python Motor aktifken şeffaf uyarı
+  // Örnekleme uyarı notu — çok büyük veride şeffaf uyarı
   if(window._BACKEND_ACTIVE && window._processedByBackend){
     html='<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#92400e;display:flex;align-items:center;gap:8px">'+
       '<span style="font-size:14px">⚠️</span>'+
@@ -18047,6 +18023,15 @@ async function _ensureDuckLoaded(){
   _duckDB=new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(),worker);
   await _duckDB.instantiate(bundle.mainModule,bundle.pthreadWorker);
   URL.revokeObjectURL(wurl);
+  // OPFS (tarayıcı özel disk alanı) ile destekle → RAM'i aşan veride diske taşma (spilling).
+  // Desteklenmezse bellek-içi DuckDB kullanılır (güvenli düşüş).
+  window._duckStorage='bellek';
+  try{
+    if(duckdb.DuckDBAccessMode){
+      await _duckDB.open({path:'opfs://acikanaliz.duckdb',accessMode:duckdb.DuckDBAccessMode.READ_WRITE});
+      window._duckStorage='disk (OPFS)';
+    }
+  }catch(e){console.warn('[SQL] OPFS kullanılamadı, bellek-içi DuckDB:',e&&e.message);window._duckStorage='bellek';}
   _duckConn=await _duckDB.connect();
   return _duckConn;
 }
@@ -18068,6 +18053,8 @@ async function _duckBuildTable(conn){
   // Numerik kolonları cast'le (Türkçe virgül-ondalık → nokta); diğerleri metin kalır
   const casts=outHeaders.map(h=>{const q='"'+String(h).replace(/"/g,'""')+'"';return (colStats[h]&&colStats[h].isNumeric)?('TRY_CAST(REPLACE('+q+", ',', '.') AS DOUBLE) AS "+q):q;}).join(', ');
   await conn.query('CREATE VIEW veri AS SELECT '+casts+' FROM _veri_raw');
+  // İçe aktarma bitti — CSV buffer'ını bellekten boşalt (tablo artık DuckDB depolamasında/diskte)
+  try{await _duckDB.dropFile('veri.csv')}catch(e){}
   _duckTableVer=dv;
 }
 async function _duckRun(conn,sql){
@@ -18085,7 +18072,7 @@ async function _duckRun(conn,sql){
     if(capped)break;
   }
   if(!columns)columns=['(boş)'];
-  window._sqlEngineName='DuckDB-WASM';window._sqlDisplayCapped=capped;window._alasqlCapped=false;
+  window._sqlEngineName='DuckDB-WASM'+(window._duckStorage?' · '+window._duckStorage:'');window._sqlDisplayCapped=capped;window._alasqlCapped=false;
   return {columns,rows};
 }
 async function executeSQLEngine(sql){
@@ -18498,7 +18485,7 @@ function pivotUpdatePreview(){
     const aggUpper=aggLabel.toUpperCase()==='MEAN'?'AVG':aggLabel.toUpperCase();
     sql='-- Çapraz Tablo (Pivot): "'+rowDim+'" × "'+colDim+'"\n';
     sql+='-- Metrik: '+aggUpper+'("'+vf.col+'")\n';
-    sql+='-- Backend Polars pivot kullanılacak\n';
+    sql+='-- Çapraz tablo (pivot) — tarayıcı içi DuckDB-WASM/AlaSQL ile hesaplanır\n';
     sql+='SELECT "'+rowDim+'",\n';
     sql+='  PIVOT "'+colDim+'" → '+aggUpper+'("'+vf.col+'")\n';
     sql+='FROM veri';
@@ -18611,17 +18598,10 @@ async function pivotExecute(){
         result={columns:data.columns,rows:data.rows,mode:data.mode};
       }catch(backendErr){
         console.warn('[PIVOT] Backend error:',backendErr.message);
-        // calcFields varsa AlaSQL desteklemez, hatayı doğrudan göster
-        if(calcFields&&calcFields.length>0){
-          throw new Error('Backend hesaplama hatası: '+backendErr.message+' (Hesaplanmış alanlar Python backend gerektirir)');
-        }
         result=await pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderBy,orderDir,calcFields);
       }
     }else{
-      // Backend yoksa calcFields için uyar
-      if(calcFields&&calcFields.length>0&&valueFields.length===0){
-        throw new Error('Hesaplanmış alanlar Python backend gerektirir. Lütfen sunucuyu başlatın.');
-      }
+      // Hesaplanmış alanlar dahil tarayıcı içi motorla (DuckDB-WASM → AlaSQL) hesaplanır
       result=await pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderBy,orderDir,calcFields);
     }
 
@@ -19010,7 +18990,7 @@ function exportPivotExcel(){
 
     <div class="glossary-section">
       <h4>🔢 Adım Navigasyonu (Üst Bar)</h4>
-      <div class="glossary-item"><span class="gl-tag">1</span> <b>Dosya Yükle:</b> CSV, TSV, TXT veya DAT dosyalarını sürükle-bırak veya tıklayarak yükleyin. Python Motor ile 100 GB+ desteklenir.</div>
+      <div class="glossary-item"><span class="gl-tag">1</span> <b>Dosya Yükle:</b> CSV, TSV, TXT veya DAT dosyalarını sürükle-bırak veya tıklayarak yükleyin. Büyük veri, tarayıcı içi DuckDB-WASM ile hızlandırılır (kurulum yok).</div>
       <div class="glossary-item"><span class="gl-tag">2</span> <b>Mod Seç:</b> Birden fazla dosya yüklendiğinde 3 mod sunulur: Yatay Birleştirme (MERGE — satır ekleme), Dikey Birleştirme (JOIN — sütun ekleme) veya Merge+Join (ikisi birden).</div>
       <div class="glossary-item"><span class="gl-tag">3</span> <b>Birleştir:</b> JOIN modunda ortak anahtar(lar) ve JOIN tipi (INNER/LEFT/FULL) belirlenir. Çoklu anahtar desteklenir (ör: TCKN + Dönem).</div>
       <div class="glossary-item"><span class="gl-tag">4</span> <b>Ayırıcı:</b> Sütun ayırıcı karakter seçilir (virgül, TAB, noktalı virgül vb.). Otomatik algılama desteği vardır.</div>
