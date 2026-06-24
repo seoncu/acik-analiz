@@ -440,7 +440,8 @@
     .step-nav{font-size:12px}
   }
   </style>
-<!-- Python backend kaldırıldı — uygulama tamamen tarayıcıda çalışır (kurulum gerektirmez) -->
+<!-- Motor köprüsü: SADECE yerel motor altında (127.0.0.1) aktifleşir; canlı/HTTPS sitede uykudadır -->
+<script defer src="server/api-bridge.js"></script>
 </head>
 <body>
 <a href="#mainContent" class="skip-link">İçeriğe atla</a>
@@ -605,6 +606,19 @@
       </div>
       <p style="font-size:12.5px;color:#475569;margin:10px 0 0;line-height:1.6">Excel/CSV dosyanızı yükleyip maskeleme, grafik, SQL ve istatistik analizlerini doğrudan kullanabilirsiniz. Python, sunucu veya başka bir program kurmanıza <strong>gerek yoktur</strong>.</p>
     </div>
+
+    <!-- OPSİYONEL: Büyük veri için masaüstü motoru (varsayılan KAPALI) -->
+    <details style="margin-bottom:24px;border:1.5px solid #c4b5fd;border-radius:14px;background:linear-gradient(135deg,#f5f3ff,#ede9fe);overflow:hidden">
+      <summary style="padding:14px 18px;cursor:pointer;font-size:14px;font-weight:800;color:#5b21b6;list-style:none;display:flex;align-items:center;gap:8px">🚀 Çok büyük veri (yüz milyonlarca satır) için masaüstü motoru <span style="font-size:11px;font-weight:600;color:#7c3aed;background:#ede9fe;padding:2px 8px;border-radius:8px">opsiyonel — tıklayıp aç</span></summary>
+      <div style="padding:0 18px 16px;font-size:12.5px;color:#4c1d95;line-height:1.7">
+        <p style="margin:0 0 8px">Normal kullanım için <b>gerekmez</b> — tarayıcı modu on milyonlarca hücreye kadar yeterlidir. Ama <b>milyarlarca hücre</b> (örn. 100M satır × 20 sütun) işleyecekseniz, native DuckDB motorunu çalıştırabilirsiniz: kurulum çilesi yok, <b>uv</b> her şeyi otomatik halleder ve her açılışta en güncel sürümü indirir.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">
+          <a href="https://raw.githubusercontent.com/seoncu/acik-analiz/main/server/AcikAnaliz-Baslat.command" download style="flex:1;min-width:180px;display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fff;border:1.5px solid #c4b5fd;border-radius:10px;text-decoration:none;color:#5b21b6;font-weight:700;font-size:12px">🍎 <div><div>AcikAnaliz-Baslat.command</div><div style="font-size:10px;color:#64748b;font-weight:400">macOS — çift tıkla (ilk seferde sağ tık → Aç)</div></div></a>
+          <a href="https://raw.githubusercontent.com/seoncu/acik-analiz/main/server/AcikAnaliz-Baslat.bat" download style="flex:1;min-width:180px;display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fff;border:1.5px solid #c4b5fd;border-radius:10px;text-decoration:none;color:#5b21b6;font-weight:700;font-size:12px">🪟 <div><div>AcikAnaliz-Baslat.bat</div><div style="font-size:10px;color:#64748b;font-weight:400">Windows — çift tıkla (SmartScreen → Yine de çalıştır)</div></div></a>
+        </div>
+        <p style="margin:6px 0 0;font-size:11.5px;color:#6d28d9"><b>Nasıl çalışır:</b> İndir → çift tıkla → motor açılır ve tarayıcıyı <code>http://127.0.0.1:8765</code> adresinde otomatik açar → sağ altta <b>🟢 Motor aktif</b> rozeti görünür. İlk açılışta internet gerekir; gerekli her şey (Python 3.12 + kütüphaneler) otomatik kurulur.</p>
+      </div>
+    </details>
 
     <!-- Sistem Gereksinimleri Tablosu -->
     <div style="margin-top:20px">
