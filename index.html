@@ -12334,6 +12334,9 @@ function dbDelete(key){
   }));
 }
 
+// Tarayıcı depolama kotası hatası mı?
+function _isQuotaErr(e){return !!e&&(e.name==='QuotaExceededError'||e.code===22||e.code===1014||/quota|exceeded/i.test(e.message||''))}
+
 async function saveSession(){
   const noteEl=document.getElementById('xlsxNote');
   try{
@@ -12358,16 +12361,15 @@ async function saveSession(){
     // Save colStats to IndexedDB (can be large with freq maps)
     await dbPut('colStats',colStats);
 
-    // Save outputChunks to IndexedDB (large data)
-    // Join into single string to reduce overhead
-    const dataBlob=outputChunks.join('');
-    await dbPut('outputData',dataBlob);
+    // outputChunks'ı dizi olarak sakla — dev join('') bellek sıçramasını önler
+    await dbPut('outputData',outputChunks.slice());
 
     noteEl.textContent='Oturum kaydedildi! Sayfayı yenileseniz bile devam edebilirsiniz.';
     noteEl.style.color='#10b981';
     if(typeof markWorkSaved==='function')markWorkSaved();
   }catch(e){
-    noteEl.textContent='Kayıt hatası: '+e.message;noteEl.style.color='#dc2626';
+    noteEl.textContent=_isQuotaErr(e)?'Depolama kotası doldu — veri tarayıcıya sığmayacak kadar büyük. Bunun yerine "Farklı Kaydet" ile dosyaya aktarın.':('Kayıt hatası: '+e.message);
+    noteEl.style.color='#dc2626';
   }
 }
 
@@ -12393,15 +12395,18 @@ async function _autoSaveSession(){
     localStorage.setItem('vma_meta',JSON.stringify(meta));
     // colStats kaydet
     await dbPut('colStats',colStats);
-    // outputChunks kaydet (büyük veri için chunk'ları birleştirmeden)
-    const dataBlob=outputChunks.join('');
-    await dbPut('outputData',dataBlob);
+    // outputChunks'ı dizi olarak kaydet (dev join('') bellek sıçramasını önler)
+    await dbPut('outputData',outputChunks.slice());
     if(typeof markWorkSaved==='function')markWorkSaved();
     console.log('[AUTO-SAVE] Oturum otomatik kaydedildi ('+_formatCells(totalRows)+' satır)');
     showSuccess('Oturum otomatik kaydedildi');
   }catch(e){
     console.warn('[AUTO-SAVE] Otomatik kayıt başarısız:',e.message);
-    // Sessizce başarısız ol — kullanıcıyı rahatsız etme
+    // Quota dolduysa kullanıcıyı bir kez uyar — yoksa "kaydedildi" sanıp veri kaybeder
+    if(_isQuotaErr(e)&&!window._autoSaveQuotaWarned){
+      window._autoSaveQuotaWarned=true;
+      showError('⚠️ Otomatik kayıt yapılamıyor: tarayıcı depolama kotası yetersiz (veri çok büyük). Çalışmanız KAYDEDİLMİYOR — "Farklı Kaydet" ile dosyaya aktarın.');
+    }
   }
 }
 
@@ -12693,14 +12698,14 @@ async function restoreSession(){
     const savedStats=await dbGet('colStats');
     if(savedStats)colStats=savedStats;
 
-    // Restore outputChunks from IndexedDB
+    // Restore outputChunks from IndexedDB — dizi (yeni) veya string (eski oturum)
     const dataBlob=await dbGet('outputData');
     if(dataBlob){
-      outputChunks=[dataBlob];
+      outputChunks=Array.isArray(dataBlob)?dataBlob.slice():[dataBlob];
     }
 
     // CRITICAL: Validate restored outputData
-    const _rdLen=(dataBlob||'').trim().length;
+    const _rdLen=Array.isArray(dataBlob)?dataBlob.reduce((a,c)=>a+(c?c.length:0),0):(dataBlob||'').trim().length;
     if(_rdLen<10&&totalRows>0){
       console.warn('Session restore: outputData boş/hasarlı ('+_rdLen+' bytes, totalRows='+totalRows+'). Hesaplama sekmeleri çalışmayacak.');
       setTimeout(()=>{
