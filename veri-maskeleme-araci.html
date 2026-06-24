@@ -603,11 +603,11 @@
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
             <span style="font-size:32px">🌐</span>
             <div>
-              <p style="font-size:15px;font-weight:700;color:#1e40af;margin:0">Tarayıcı Modu</p>
-              <p style="font-size:11px;color:#3b82f6;margin:2px 0 0;font-weight:600">Kurulum gerektirmez — hemen başlayın</p>
+              <p style="font-size:15px;font-weight:700;color:#1e40af;margin:0">Tarayıcı Modu <span style="font-size:10px;background:#16a34a;color:#fff;padding:1px 7px;border-radius:8px;vertical-align:middle">ÇOĞU KULLANICI İÇİN</span></p>
+              <p style="font-size:11px;color:#3b82f6;margin:2px 0 0;font-weight:600">Kurulum YOK — sadece sayfayı açın, başlayın</p>
             </div>
           </div>
-          <p style="font-size:12px;color:#475569;margin:0;line-height:1.6">Küçük ve orta ölçekli verisetleri için idealdir. Tüm işlemler tarayıcınızda yapılır, veri cihazınızdan çıkmaz.</p>
+          <p style="font-size:12px;color:#475569;margin:0;line-height:1.6">Normal Excel/CSV dosyaları için bu mod yeterlidir — <strong>hiçbir şey kurmanıza gerek yok</strong>. Tüm işlemler tarayıcınızda yapılır, veri cihazınızdan çıkmaz. Python motoru yalnızca olağanüstü büyük veri için gereklidir.</p>
           <div style="margin-top:12px;padding:8px 12px;background:rgba(59,130,246,0.08);border-radius:10px">
             <p style="font-size:12px;color:#1e40af;margin:0;font-weight:600">Önerilen: 100 milyon hücreye kadar</p>
             <p style="font-size:10.5px;color:#64748b;margin:4px 0 0">Örn: 1M satır × 8 sütun = 8M hücre ✓</p>
@@ -635,9 +635,11 @@
           <button id="btnReconnectPython" onclick="(async function(){var b=document.getElementById('btnReconnectPython');b.disabled=true;b.textContent='Bağlanıyor...';try{var r=await fetch('http://127.0.0.1:8765/api/health',{signal:AbortSignal.timeout(3000)});if(r.ok){var d=await r.json();if(d.status==='ok'){window._BACKEND_ACTIVE=true;window._BACKEND_INFO=d;if(typeof window._updateEngineModeUI==='function')window._updateEngineModeUI();b.textContent='✓ Bağlandı!';b.style.background='#059669';setTimeout(function(){b.textContent='🔄 Yeniden Bağlan';b.style.background='#f59e0b';b.disabled=false},2000);return}}b.textContent='✗ Bağlanamadı';b.style.background='#dc2626';setTimeout(function(){b.textContent='🔄 Yeniden Bağlan';b.style.background='#f59e0b';b.disabled=false},2000)}catch(e){b.textContent='✗ Motor bulunamadı';b.style.background='#dc2626';setTimeout(function(){b.textContent='🔄 Yeniden Bağlan';b.style.background='#f59e0b';b.disabled=false},2000)}})()" style="margin-top:8px;width:100%;padding:8px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🔄 Yeniden Bağlan</button>
         </div>
       </div>
-      <!-- Python kurulum açıklaması -->
-      <div id="pythonSetupInfo" style="margin-top:14px;padding:16px 18px;background:linear-gradient(135deg,#fef2f2,#fee2e2);border:2px solid #fca5a5;border-radius:14px">
-        <p style="font-size:15px;font-weight:800;color:#991b1b;margin:0">🐍 Python Motorunu Nasıl Başlatırım?</p>
+      <!-- Python kurulum açıklaması — VARSAYILAN KAPALI (sıradan kullanıcı görmek zorunda değil) -->
+      <details id="pythonSetupInfo" style="margin-top:14px;padding:0;background:linear-gradient(135deg,#fef2f2,#fee2e2);border:2px solid #fca5a5;border-radius:14px;overflow:hidden">
+        <summary style="padding:14px 18px;cursor:pointer;font-size:14px;font-weight:800;color:#991b1b;list-style:none;display:flex;align-items:center;gap:8px">🐍 Python Veri Motoru kurulumu <span style="font-size:11px;font-weight:600;color:#b45309;background:#fef3c7;padding:2px 8px;border-radius:8px">yalnızca çok büyük veri için — açmak için tıklayın</span></summary>
+        <div style="padding:0 18px 16px">
+        <p style="font-size:13px;font-weight:700;color:#991b1b;margin:0 0 4px">Nasıl başlatırım?</p>
 
         <!-- Ön Koşul: artık Python kurmaya gerek yok (uv otomatik halleder) -->
         <div style="margin-top:14px;padding:12px 14px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px">
@@ -704,7 +706,8 @@
             <p style="margin:3px 0 0">→ Tarayıcınız otomatik açılır. Sayfanın sağ alt köşesinde <span style="background:#059669;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">🟢 Python Motor Aktif</span> rozeti görünür.</p>
           </div>
         </div>
-      </div>
+        </div>
+      </details>
     </div>
 
     <!-- Sistem Gereksinimleri Tablosu -->
