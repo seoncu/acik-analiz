@@ -17984,10 +17984,10 @@ async function executeSQLQuery(){
         result={columns:data.columns||[],rows:data.rows||[],totalDataRows:data.totalDataRows||0,totalDataCols:data.totalDataCols||0};
       }catch(backendErr){
         console.warn('[SQL] Backend error, trying AlaSQL:',backendErr.message);
-        result=await executeSQLAlaSQL(sql);
+        result=await executeSQLEngine(sql);
       }
     } else {
-      result=await executeSQLAlaSQL(sql);
+      result=await executeSQLEngine(sql);
     }
 
     _sqlResultData=result;
@@ -18017,7 +18017,9 @@ async function executeSQLQuery(){
       if(_limM&&result.rows.length>=parseInt(_limM[1])){
         infoText+=' — ⚠️ LIMIT '+_limM[1]+' uygulandı (tüm satırlar için SQL Oluşturucu\'daki "Limit" değerini artırın veya sorgudaki LIMIT satırını silin)';
       }
-      if(!window._BACKEND_ACTIVE&&window._alasqlCapped)infoText+=' — ⚠️ tarayıcı modunda ilk 2.000.000 satır sorgulandı (daha fazlası için Python Motoru)';
+      if(window._sqlDisplayCapped)infoText+=' — ⚠️ ilk 100.000 sonuç satırı gösteriliyor (özetlemek için GROUP BY veya LIMIT kullanın)';
+      else if(window._alasqlCapped)infoText+=' — ⚠️ ilk 2.000.000 satır işlendi';
+      if(window._sqlEngineName)infoText+=' · ⚙️ '+window._sqlEngineName;
       infoText+=' — '+new Date().toLocaleTimeString('tr-TR');
       info.textContent=infoText;
     }
@@ -18030,6 +18032,78 @@ async function executeSQLQuery(){
   }finally{
     _hideBusy();
   }
+}
+
+// === DuckDB-WASM — tarayıcı içi büyük-veri SQL motoru (kurulum yok, kolonsal/streaming) ===
+let _duckMod=null,_duckDB=null,_duckConn=null,_duckTableVer=-1,_duckDead=false;
+async function _ensureDuckLoaded(){
+  if(_duckConn)return _duckConn;
+  if(!_duckMod)_duckMod=await import('https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.0/+esm');
+  const duckdb=_duckMod;
+  const bundle=await duckdb.selectBundle(duckdb.getJsDelivrBundles());
+  // Çapraz-köken Worker engelini aşmak için blob importScripts kalıbı (resmi öneri)
+  const wurl=URL.createObjectURL(new Blob(['importScripts("'+bundle.mainWorker+'");'],{type:'text/javascript'}));
+  const worker=new Worker(wurl);
+  _duckDB=new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(),worker);
+  await _duckDB.instantiate(bundle.mainModule,bundle.pthreadWorker);
+  URL.revokeObjectURL(wurl);
+  _duckConn=await _duckDB.connect();
+  return _duckConn;
+}
+async function _duckBuildTable(conn){
+  const dv=(typeof _analysisUIDataVersion!=='undefined')?_analysisUIDataVersion:0;
+  if(_duckTableVer===dv)return;
+  if(!(typeof _hasOutputData==='function'&&_hasOutputData()))throw new Error('Sorgulanacak işlenmiş veri yok. Önce dosyanızı yükleyip 6. adımdan (İşlem) işleyin.');
+  const outDelim=(document.getElementById('outputFormat')&&document.getElementById('outputFormat').value==='tsv')?'\t':',';
+  const delimLit=outDelim==='\t'?'\\t':',';
+  // outputChunks (CSV metni parçaları) → Blob → ikili buffer; tek dev JS string oluşturmaz (bellek dostu)
+  const blob=new Blob(outputChunks,{type:'text/csv'});
+  const buf=new Uint8Array(await blob.arrayBuffer());
+  try{await _duckDB.dropFile('veri.csv')}catch(e){}
+  await _duckDB.registerFileBuffer('veri.csv',buf);
+  await conn.query('DROP VIEW IF EXISTS veri');
+  await conn.query('DROP TABLE IF EXISTS _veri_raw');
+  // Tüm sütunlar VARCHAR olarak okunur (yerel-bağımsız), sonra numerikler cast'lenir
+  await conn.query("CREATE TABLE _veri_raw AS SELECT * FROM read_csv('veri.csv', header=true, all_varchar=true, delim='"+delimLit+"', quote='\"', escape='\"', sample_size=-1, ignore_errors=true)");
+  // Numerik kolonları cast'le (Türkçe virgül-ondalık → nokta); diğerleri metin kalır
+  const casts=outHeaders.map(h=>{const q='"'+String(h).replace(/"/g,'""')+'"';return (colStats[h]&&colStats[h].isNumeric)?('TRY_CAST(REPLACE('+q+", ',', '.') AS DOUBLE) AS "+q):q;}).join(', ');
+  await conn.query('CREATE VIEW veri AS SELECT '+casts+' FROM _veri_raw');
+  _duckTableVer=dv;
+}
+async function _duckRun(conn,sql){
+  const DISPLAY_CAP=100000; // tarayıcıda gösterim/dışa aktarım için makul tavan
+  const reader=await conn.send(sql);
+  let columns=null;const rows=[];let capped=false;
+  for await(const batch of reader){
+    if(!columns)columns=batch.schema.fields.map(f=>f.name);
+    const n=batch.numRows;
+    for(let i=0;i<n;i++){
+      if(rows.length>=DISPLAY_CAP){capped=true;break}
+      const row=batch.get(i);
+      rows.push(columns.map(c=>{let v=row[c];if(typeof v==='bigint')v=Number(v);return (v===undefined?null:v)}));
+    }
+    if(capped)break;
+  }
+  if(!columns)columns=['(boş)'];
+  window._sqlEngineName='DuckDB-WASM';window._sqlDisplayCapped=capped;window._alasqlCapped=false;
+  return {columns,rows};
+}
+async function executeSQLEngine(sql){
+  // DuckDB SAF HIZLANDIRICIDIR: herhangi bir noktada sorun olursa sessizce AlaSQL'e düşer.
+  // Böylece normal kullanıcı asla etkilenmez, sistem kırılmaz.
+  if(!_duckDead){
+    try{
+      const conn=await _ensureDuckLoaded();
+      await _duckBuildTable(conn);
+      return await _duckRun(conn,sql);
+    }catch(e){
+      console.warn('[SQL] DuckDB başarısız → AlaSQL yedeğine geçiliyor:',e&&e.message);
+      // Yükleme/altyapı hatasıysa bir daha deneme (her sorguda CDN denemesin)
+      if(/import|Worker|instantiate|wasm|fetch|network|bundle|module/i.test((e&&e.message)||''))_duckDead=true;
+    }
+  }
+  window._sqlEngineName='Tarayıcı (AlaSQL)';
+  return await executeSQLAlaSQL(sql);
 }
 
 async function executeSQLAlaSQL(sql){
@@ -18595,7 +18669,7 @@ async function pivotFallbackAlaSQL(rowDim,colDims,valueFields,whereClause,orderB
     sql+=' ORDER BY '+oc+' '+orderDir;
   }
 
-  const result=await executeSQLAlaSQL(sql);
+  const result=await executeSQLEngine(sql);
   result.mode='groupby';
 
   // Genel n toplamı ve/veya genel metrik
