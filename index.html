@@ -14458,15 +14458,33 @@ function _normalizeLocName(name){
   return n;
 }
 
+// needle, hay içinde TAM KELİME olarak geçiyor mu? (alt-dize yanlış eşleşmelerini önler: "van" ⊄ "ervan")
+function _wordContains(hay,needle){
+  if(!needle||needle.length<3)return false;
+  let from=0,idx;
+  while((idx=hay.indexOf(needle,from))>=0){
+    const before=idx===0?' ':hay[idx-1];
+    const after=(idx+needle.length>=hay.length)?' ':hay[idx+needle.length];
+    if(!/[a-zçğıöşü0-9]/.test(before)&&!/[a-zçğıöşü0-9]/.test(after))return true;
+    from=idx+1;
+  }
+  return false;
+}
 function _geocode(name){
   const n=_normalizeLocName(name);
   if(!n)return null;
   if(_geoDb[n])return _geoDb[n];
-  // Try partial match
+  // Kısmi eşleşme: yalnızca yeterince uzun + kelime sınırı; en uzun (en spesifik) anahtarı seç.
+  // Eski "key.includes(n)||n.includes(key)" ilk rastgele eşleşmeyi döndürüp yanlış pin üretiyordu.
+  if(n.length<4)return null;
+  let best=null,bestLen=0;
   for(const key in _geoDb){
-    if(key.includes(n)||n.includes(key))return _geoDb[key];
+    if(key.length<4)continue;
+    if(_wordContains(n,key)||_wordContains(key,n)){
+      if(key.length>bestLen){bestLen=key.length;best=_geoDb[key]}
+    }
   }
-  return null;
+  return best;
 }
 
 function _getMapColor(val,min,max){
@@ -14703,11 +14721,12 @@ function verifyMapAddresses(){
       const norm=_normalizeLocName(loc);
       let canCorrect=false;
       for(const[wrong,right]of Object.entries(_geoCorrections)){
-        if(norm===wrong||norm.includes(wrong)){canCorrect=true;break}
+        if(norm===wrong||_wordContains(norm,wrong)){canCorrect=true;break}
       }
-      // Also check partial match
-      const keys=Object.keys(_geoDb);
-      for(const k of keys){if(k.includes(norm)||norm.includes(k)){canCorrect=true;break}}
+      // Kelime-sınırı kısmi eşleşme (en az 4 karakter) — _geocode ile aynı kural, yanlış-pozitif yok
+      if(!canCorrect&&norm.length>=4){
+        for(const k in _geoDb){if(k.length>=4&&(_wordContains(norm,k)||_wordContains(k,norm))){canCorrect=true;break}}
+      }
       if(canCorrect)correctable.push(loc); else notFound.push(loc);
     }
   });
