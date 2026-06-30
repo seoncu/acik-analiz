@@ -41,9 +41,13 @@ set-filters, sql-pivot, sample, download-processed — hepsi çalışıyor.
 (baştaki sıfır + hassasiyet bozulmuyor); col_stats'ta isNumeric=False.
 Ayrılmış kelime sütun adı (`"not"`) tırnaklı çalışıyor; hatalı SQL temiz 400 veriyor.
 
-## ⚠️ KALAN: TARAYICI ENTEGRASYONU (browser ile test edilmedi)
-Motor uçları çalışıyor; ama api-bridge.js ↔ frontend akışı gerçek tarayıcıda
-denenmeli. Gerçek veriyle test ederken kontrol edilecekler:
+## ✅ TARAYICI ENTEGRASYONU TEST EDİLDİ (gerçek headless Chromium / Playwright)
+Motor sayfayı sundu → api-bridge.js aktifleşti (BACKEND_ACTIVE=true, 🟢 rozet) →
+`_backendProcess/_backendAggregate/_backendSetFilters` gerçek tarayıcıda çalıştı.
+Telefon `05551000224` ve TCKN `10000000224` tarayıcıda da birebir korundu; ad
+maskelendi (K**4). Uçtan uca akış doğrulandı.
+
+İlk gerçek-veri denemesinde yine de göz atılacaklar (ortama bağlı olabilir):
 - `/api/health` 200 dönüyor mu, rozet görünüyor mu?
 - Dosya yükle → işle: `/api/process` col_stats/sample doğru mu? (Adım 6)
 - Dashboard grafikleri `/api/aggregate` ile geliyor mu?
