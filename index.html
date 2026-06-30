@@ -2272,7 +2272,20 @@ function _checkBigFileWarning(){
     extra='<b>Bu boyut tarayıcı sekmesinin bellek sınırını aşabilir ve çökme riski yüksektir.</b> Veriyi daha küçük parçalara bölmeniz veya yalnızca gerekli sütunları içeren bir alt küme kullanmanız şiddetle önerilir.';
   }
 
-  const pyNote='';
+  // Motor aktifse "hazır" notu; değilse büyük dosyada masaüstü motorunu öner (indir linkleri)
+  var pyNote='';
+  if(window._BACKEND_ACTIVE){
+    pyNote='<div style="margin-top:10px;padding:8px 12px;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:10px;font-size:11.5px;color:#065f46"><b>🟢 Masaüstü motoru aktif</b> — bu boyut native DuckDB ile (disk-destekli) işlenecek; sorun yok.</div>';
+  }else{
+    pyNote='<div style="margin-top:10px;padding:10px 12px;background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1px solid #c4b5fd;border-radius:10px;font-size:11.5px;color:#4c1d95;line-height:1.6">'+
+      '<b>💡 Bu boyutta masaüstü motoru önerilir.</b> Tarayıcı, çok büyük veride yavaşlar/çökebilir. Native DuckDB motoru milyarlarca hücreyi diske-streaming ile işler — <b>kurulum çilesi yok</b>, çift tıkla çalışır.'+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">'+
+        '<a href="https://raw.githubusercontent.com/seoncu/acik-analiz/main/server/AcikAnaliz-Baslat.command" download style="padding:6px 12px;background:#fff;border:1px solid #c4b5fd;border-radius:8px;text-decoration:none;color:#5b21b6;font-weight:700;font-size:11px">🍎 macOS başlatıcı</a>'+
+        '<a href="https://raw.githubusercontent.com/seoncu/acik-analiz/main/server/AcikAnaliz-Baslat.bat" download style="padding:6px 12px;background:#fff;border:1px solid #c4b5fd;border-radius:8px;text-decoration:none;color:#5b21b6;font-weight:700;font-size:11px">🪟 Windows başlatıcı</a>'+
+      '</div>'+
+      '<div style="margin-top:6px;font-size:10.5px;color:#6d28d9">İndir → çift tıkla → bu sayfa <code>127.0.0.1:8765</code>\'te açılır → sağ altta 🟢 rozet → tekrar yükleyin. (Tarayıcıda devam da edebilirsiniz.)</div>'+
+    '</div>';
+  }
 
   warn.style.display='block';
   warn.innerHTML='<div style="padding:14px 18px;background:'+bg+';border:1.5px solid '+border+';border-radius:14px">'+
