@@ -25,9 +25,25 @@ Sonraki açılışlar hızlı; her açılışta GitHub'dan en güncel sürüm ç
   aktif**; canlı HTTPS sitede uykuda (tarayıcı-only deneyimi etkilenmez).
 - `requirements.txt` — sabit sürümler.
 
-## ⚠️ TEST DURUMU (geliştirici notu)
-Bu motor uçtan uca **henüz test edilmedi** (sunucu+tarayıcı+gerçek veri gerekir).
-Python/JS sözdizimi doğrulandı. Gerçek veriyle test ederken kontrol edilecekler:
+## ✅ KAPASİTE (ölçüldü, 2 GB RAM sınırıyla → diske taşma)
+| Veri | Üret | Maskele | İstatistik | Agregasyon | Disk |
+|---|---|---|---|---|---|
+| 10M×20 (0.2B hücre) | 7.5s | 2.4s | 0.8s | 0.02s | 2.1 GB |
+| 50M×20 (1.0B hücre) | 35s | 9.7s | 3.0s | 0.17s | 12.4 GB |
+| **100M×20 (2.0B hücre)** | 72s | 24s | 9s | 0.43s | 33 GB |
+
+→ 2 milyar hücre, sadece 2 GB RAM ile işlendi (disk-bound). Native motor hedefi karşılıyor.
+
+## ✅ MOTOR UÇLARI TEST EDİLDİ (FastAPI TestClient + gerçek CSV)
+health, process (col_stats + maskeleme), sql, aggregate (filtreli/filtresiz),
+set-filters, sql-pivot, sample, download-processed — hepsi çalışıyor.
+**Telefon/TCKN doğrulandı:** `05551000000` ve `10000000000` SQL'de birebir korunuyor
+(baştaki sıfır + hassasiyet bozulmuyor); col_stats'ta isNumeric=False.
+Ayrılmış kelime sütun adı (`"not"`) tırnaklı çalışıyor; hatalı SQL temiz 400 veriyor.
+
+## ⚠️ KALAN: TARAYICI ENTEGRASYONU (browser ile test edilmedi)
+Motor uçları çalışıyor; ama api-bridge.js ↔ frontend akışı gerçek tarayıcıda
+denenmeli. Gerçek veriyle test ederken kontrol edilecekler:
 - `/api/health` 200 dönüyor mu, rozet görünüyor mu?
 - Dosya yükle → işle: `/api/process` col_stats/sample doğru mu? (Adım 6)
 - Dashboard grafikleri `/api/aggregate` ile geliyor mu?
