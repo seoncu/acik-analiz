@@ -71,19 +71,25 @@ def mask_expr(col: str, mode: str) -> str:
 
 
 def detect_numeric(table: str, cols):
-    """Her sütun için sayısal mı tespit (boş-olmayanların >%80'i sayıya çevrilebiliyorsa)."""
+    """Her sütun için sayısal mı tespit.
+    KİMLİK/kod sütunlarını (telefon, TCKN, ID) HARİÇ tutar — yoksa DOUBLE'a cast'lenince
+    baştaki sıfır kaybolur, 11+ hanede hassasiyet bozulur (…0000), binlik ayraç eklenir.
+    """
     out = {}
     for c in cols:
         cc = q(c)
+        cv = "CAST(" + cc + " AS VARCHAR)"
         row = con.execute(
             "SELECT "
-            "count(*) FILTER (WHERE " + cc + " IS NOT NULL AND CAST(" + cc + " AS VARCHAR)<>'') AS ne, "
-            "count(*) FILTER (WHERE TRY_CAST(replace(CAST(" + cc + " AS VARCHAR),',','.') AS DOUBLE) IS NOT NULL "
-            "AND CAST(" + cc + " AS VARCHAR)<>'') AS num "
+            "count(*) FILTER (WHERE " + cc + " IS NOT NULL AND " + cv + "<>'') AS ne, "
+            "count(*) FILTER (WHERE TRY_CAST(replace(" + cv + ",',','.') AS DOUBLE) IS NOT NULL "
+            "AND " + cv + "<>'') AS num, "
+            # kimlik-benzeri: '+' ile başlar, baştaki sıfır+rakam, ya da 11+ haneli saf rakam
+            "count(*) FILTER (WHERE regexp_matches(" + cv + ", '^(\\+|0[0-9]|[0-9]{11,}$)')) AS ident "
             "FROM " + table
         ).fetchone()
-        ne, num = (row[0] or 0), (row[1] or 0)
-        out[c] = (ne > 0 and num / ne >= 0.8)
+        ne, num, ident = (row[0] or 0), (row[1] or 0), (row[2] or 0)
+        out[c] = (ne > 0 and num / ne >= 0.8 and ident == 0)
     return out
 
 

@@ -2031,6 +2031,17 @@ function parseTRNumber(v){
   // sadece nokta varsa olduğu gibi bırak (ondalık nokta varsayımı)
   return parseFloat(s);
 }
+// Değer KİMLİK/kod gibi mi? (telefon, TCKN, ID) → sayısal SAYILMAMALI.
+// Sayıya çevrilirse baştaki sıfır kaybolur, 11+ hanede hassasiyet bozulur (…0000), binlik ayraç eklenir.
+function _isIdentifierLike(v){
+  if(v==null)return false;
+  const t=String(v).trim();
+  if(t.length<2)return false;
+  if(t.charCodeAt(0)===43)return true;     // '+' ile başlıyor → telefon (+90...)
+  if(/^0\d/.test(t))return true;           // baştaki sıfır + rakam → 0555, 007 (kod/telefon)
+  if(/^\d{11,}$/.test(t))return true;      // 11+ hane saf rakam → TCKN/telefon/ID
+  return false;
+}
 // === İstatistik tutarlılığı: örneklem (n-1) std + interpolasyonlu medyan ===
 // Tüm sekmeler aynı tanımı kullanmalı. Örneklem std (n-1) akademik/APA standardı ve
 // backend (pandas/polars ddof=1) ile tutarlıdır.
@@ -3672,7 +3683,7 @@ function processAndCollect(fields,outDelim,batch,MAX_FREQ,sourceFileIdx){
     st.count++;
     if(!val||!val.trim()){st.empty++}else{
       const num=parseTRNumber(val);
-      if(!isNaN(num)&&isFinite(num)){st.numCount++;st.sum+=num;st.sumSq+=num*num;if(num<st.min)st.min=num;if(num>st.max)st.max=num}
+      if(!isNaN(num)&&isFinite(num)&&!_isIdentifierLike(val)){st.numCount++;st.sum+=num;st.sumSq+=num*num;if(num<st.min)st.min=num;if(num>st.max)st.max=num}
       else st.isNumeric=false;
       if(val in st.freq){st.freq[val]++}else if(st._freqSize<MAX_FREQ){st.freq[val]=1;st._freqSize++;if(st._freqSize===_FREQ_SOFT_CAP&&typeof _FREQ_SOFT_CAP!=='undefined')console.warn('⚠️ Sütun "'+outHeaders[oi]+'" freq haritası '+_FREQ_SOFT_CAP.toLocaleString()+' benzersiz değere ulaştı — yüksek bellek kullanımı olabilir')}
       if(st._useHLL){st._uniqSet.add(val)}else{if(st._uniqSet.size<_UNIQSET_LIM)st._uniqSet.add(val)}
