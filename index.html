@@ -439,6 +439,25 @@
     .btn{padding:11px 18px}
     .step-nav{font-size:12px}
   }
+  /* === HOVER & GÖRSEL CİLA === */
+  .card{transition:box-shadow .2s, transform .12s}
+  .card:hover{box-shadow:var(--shadow-md)}
+  .btn-primary:hover,.btn-success:hover,.btn-danger:hover,.btn-purple:hover,.btn-orange:hover{box-shadow:var(--shadow-md);filter:brightness(1.03)}
+  .tab-btn{transition:background .18s,color .18s,box-shadow .18s,transform .1s}
+  .tab-btn:hover{transform:translateY(-1px)}
+  .chart-box{transition:box-shadow .2s,border-color .2s,transform .12s}
+  .chart-box:hover{box-shadow:var(--shadow-md);border-color:#c7d2fe;transform:translateY(-2px)}
+  .kpi-card{transition:box-shadow .2s,transform .12s}
+  .kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+  .stat-card,.stat-detail-card{transition:box-shadow .18s,transform .1s}
+  .stat-card:hover,.stat-detail-card:hover{box-shadow:var(--shadow-sm);transform:translateY(-1px)}
+  /* Sonuç/veri tablolarında satır vurgusu */
+  #sqlResultTable tbody tr:hover td,#pivotResultTable tbody tr:hover td,#crosstabResultArea tbody tr:hover td{background:#eff6ff !important}
+  /* Bağlantı/etkileşim ipucu imleci */
+  .step-nav-item:hover{background:#eff6ff}
+  /* Modül rehberi şeridi yumuşak giriş */
+  #tabHelpBanner{animation:fadeInHelp .25s ease}
+  @keyframes fadeInHelp{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
   </style>
 <!-- Motor köprüsü: SADECE yerel motor altında (127.0.0.1) aktifleşir; canlı/HTTPS sitede uykudadır -->
 <script defer src="server/api-bridge.js"></script>
@@ -1121,6 +1140,9 @@
         <button class="tab-btn tab-btn-special tab-btn-adv" data-tab="advstats" onclick="switchAnalysisTab('advstats',this)" title="JASP benzeri ileri istatistik testleri">🔬 İleri İstatistik</button>
         <button class="tab-btn tab-btn-special" data-tab="sql" onclick="switchAnalysisTab('sql',this)" title="SQL sorgusu ile veri analizi">🗃️ SQL Sorgusu</button>
       </div>
+
+      <!-- Bağlamsal modül rehberi — aktif sekmeye göre güncellenir (switchAnalysisTab) -->
+      <div id="tabHelpBanner" style="margin-bottom:14px;padding:10px 14px;background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;border-left:4px solid #3b82f6;border-radius:10px;font-size:12.5px;color:#1e3a5f;line-height:1.6"><b>📊 Dashboard.</b> Verinizi grafik ve KPI kartlarıyla görselleştirir. <b>Nasıl:</b> Grafik türü + X (kırılım) + Y (ölçü) + toplama seçin; "Grafik Ekle" deyin. Aşağıdaki filtreler tüm grafiklere uygulanır.</div>
 
       <!-- GLOBAL FILTER BAR — always visible -->
       <div class="global-filter-bar" id="globalFilterBar">
@@ -4499,6 +4521,22 @@ function switchAnalysisTab(tab,btn){
   if(btn)btn.classList.add('active');
   const map={dashboard:'tabDashboard',quickview:'tabQuickview',topbottom:'tabTopBottom',summary:'tabSummary',stats:'tabStats',correlation:'tabCorrelation',crosstab:'tabCrosstab',mapview:'tabMapView',advstats:'tabAdvStats',sql:'tabSQL'};
   document.getElementById(map[tab]).classList.remove('hidden');
+  // Bağlamsal rehber: bu modül ne işe yarar + nasıl kullanılır
+  try{
+    const _help={
+      dashboard:'<b>📊 Dashboard.</b> Verinizi grafik ve KPI kartlarıyla görselleştirir. <b>Nasıl:</b> Grafik türü + X (kırılım) + Y (ölçü) + toplama (sayı/ortalama/toplam…) seçin; "Grafik Ekle" deyin. Aşağıdaki filtreler tüm grafiklere uygulanır.',
+      quickview:'<b>👁️ Hızlı Bakış.</b> Her değişkenin tipi, doluluk, benzersiz sayısı ve temel istatistiklerini tek tabloda özetler. <b>Nasıl:</b> Sekme açılır açılmaz otomatik dolar; verinizi tanımak için ilk durak.',
+      topbottom:'<b>🏆 Kritik Listeler.</b> Bir ölçüye göre en yüksek/en düşük kayıtları listeler (opsiyonel grup kırılımıyla). <b>Nasıl:</b> Bağımlı değişken + yön (üst/alt) + adet seçin; isterseniz bir kategoriye göre kırın.',
+      summary:'<b>📋 Özet İstatistik.</b> Kategorik ve sayısal değişkenler için ortalama, medyan, std, çeyrekler vb. <b>Nasıl:</b> Bir kategorik kırılım ve sayısal değişken(ler) seçin; grup bazlı özet tablo oluşur.',
+      stats:'<b>📈 Frekans Dağılımı.</b> Seçili sütun için frekans tablosu, histogram ve detaylı istatistikler. <b>Nasıl:</b> Bir sütun seçin; sayısalsa histogram + çeyrekler, kategorikse frekans/yüzde gösterilir.',
+      crosstab:'<b>📑 Çapraz Tablo.</b> İki kategorik değişkenin kesişiminde sayım/yüzde/ortalama. <b>Nasıl:</b> Satır ve sütun değişkeni seçin; isterseniz bir değer sütunu + toplama türü ekleyin.',
+      mapview:'<b>🗺️ Harita.</b> Konum (il/şehir/ülke) içeren sütunu haritada görselleştirir. <b>Nasıl:</b> Konum değişkeni + (opsiyonel) metrik + toplama seçin. Tanınmayan konumlar için "Konum Düzelt" kullanın.',
+      advstats:'<b>🔬 İleri İstatistik.</b> t-testi, ANOVA, Mann-Whitney, Ki-kare, korelasyon, regresyon, faktör analizi (JASP benzeri). <b>Nasıl:</b> Test seçin, değişkenleri atayın, "Analiz Et" deyin; p-değeri ve etki büyüklüğü raporlanır.',
+      sql:'<b>🗃️ SQL Sorgusu.</b> Veriyi <code>veri</code> tablosu olarak SQL ile sorgular (büyük veride DuckDB-WASM hızlandırması). <b>Nasıl:</b> Oluşturucu ile tıklayarak kurun veya editöre yazın; <code>SELECT * FROM veri LIMIT 10</code> ile başlayın. Sonuç üstünde uygulanan filtre/limit gösterilir.'
+    };
+    const _hb=document.getElementById('tabHelpBanner');
+    if(_hb){const t=_help[tab];if(t){_hb.innerHTML=t;_hb.style.display='block'}else{_hb.style.display='none'}}
+  }catch(e){}
   // PERFORMANCE: debounce heavy tab content rendering to prevent rapid-switch lag
   if(_tabSwitchTimer){clearTimeout(_tabSwitchTimer);_tabSwitchTimer=null}
   _tabSwitchTimer=setTimeout(()=>{
