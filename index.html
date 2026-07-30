@@ -16648,7 +16648,7 @@ function _buildTestExplanation(testId, resultData){
   else if(testId==='anova'){
     html+='<p style="margin:0 0 8px"><strong>F İstatistiği ('+resultData.F.toFixed(4)+'):</strong> Gruplar arası varyans / grup içi varyans oranı. F&gt;1 ise gruplar farklı olabilir. Yüksek F değerleri gruplar arası farka işaret eder.</p>';
     html+='<p style="margin:0 0 8px"><strong>p Değeri ('+(resultData.p<0.001?'&lt;0.001':resultData.p.toFixed(4))+'):</strong> '+(resultData.p<0.05?'<b style="color:#16a34a">&lt;0.05 — Grup ortalamaları arasında <b>anlamlı fark</b> vardır.</b>':'<b style="color:#dc2626">≥0.05 — Grup ortalamaları arasında <b>anlamlı fark</b> yoktur.</b>')+'</p>';
-    html+='<p style="margin:0 0 8px"><strong>η² (Eta-kare, '+resultData.etaSq.toFixed(3)+'):</strong> Etki büyüklüğü (varyansın açıklanan oranı). &lt;0.01 <b>Çok Küçük</b>, 0.01–0.06 <b>Orta</b>, &gt;0.14 <b>Büyük</b>. Mevcut: <b>'+(resultData.etaSq<0.01?'Çok Küçük':resultData.etaSq<0.06?'Orta':'Büyük')+'</b>.</p>';
+    html+='<p style="margin:0 0 8px"><strong>η² (Eta-kare, '+resultData.etaSq.toFixed(3)+'):</strong> Etki büyüklüğü (varyansın açıklanan oranı). &lt;0.01 <b>İhmal edilebilir</b>, 0.01–0.06 <b>Küçük</b>, 0.06–0.14 <b>Orta</b>, &gt;0.14 <b>Büyük</b>. Mevcut: <b>'+(resultData.etaSq<0.01?'İhmal edilebilir':resultData.etaSq<0.06?'Küçük':resultData.etaSq<0.14?'Orta':'Büyük')+'</b>.</p>';
     html+='<p style="margin:0"><strong>Yorum:</strong> '+resultData.groups.length+' grup karşılaştırılmıştır (df='+resultData.dfB+'/'+resultData.dfW+'). '+( resultData.p<0.05?'Fark istatistiksel olarak anlamlıdır — hangi gruplar farklı olduğunu belirlemek için post-hoc test (Tukey HSD) yapabilirsiniz.':'Gruplar arasında anlamlı fark yoktur.')+'</p>';
   }
   else if(testId==='chisquare'){
@@ -16674,7 +16674,7 @@ function _buildTestExplanation(testId, resultData){
   else if(testId==='kruskalwallis'){
     html+='<p style="margin:0 0 8px"><strong>Kruskal-Wallis H ('+resultData.H.toFixed(4)+'):</strong> Non-parametrik ANOVA. Chi-kare dağılımına yaklaşır (df='+resultData.df+'). Yüksek H = gruplar <b>daha farklı</b>.</p>';
     html+='<p style="margin:0 0 8px"><strong>p Değeri ('+(resultData.p<0.001?'&lt;0.001':resultData.p.toFixed(4))+'):</strong> '+(resultData.p<0.05?'<b style="color:#16a34a">&lt;0.05 — '+resultData.groups.length+' grup arasında <b>anlamlı fark</b> vardır.</b>':'<b style="color:#dc2626">≥0.05 — Gruplar arasında <b>anlamlı fark yoktur</b>.</b>')+'</p>';
-    html+='<p style="margin:0 0 8px"><strong>η² (Eta-kare, '+resultData.etaSq.toFixed(3)+'):</strong> Etki büyüklüğü. &lt;0.01 <b>Çok Küçük</b>, 0.01–0.06 <b>Orta</b>, &gt;0.14 <b>Büyük</b>. Mevcut: <b>'+(resultData.etaSq<0.01?'Çok Küçük':resultData.etaSq<0.06?'Orta':'Büyük')+'</b>.</p>';
+    html+='<p style="margin:0 0 8px"><strong>η² (Eta-kare, '+resultData.etaSq.toFixed(3)+'):</strong> Etki büyüklüğü. &lt;0.01 <b>İhmal edilebilir</b>, 0.01–0.06 <b>Küçük</b>, 0.06–0.14 <b>Orta</b>, &gt;0.14 <b>Büyük</b>. Mevcut: <b>'+(resultData.etaSq<0.01?'İhmal edilebilir':resultData.etaSq<0.06?'Küçük':resultData.etaSq<0.14?'Orta':'Büyük')+'</b>.</p>';
     html+='<p style="margin:0"><strong>Yorum:</strong> Non-parametrik test, normal dağılım varsayımı gerekli <b>değildir</b>. '+resultData.groups.length+' grup (N='+resultData.N+') karşılaştırılmıştır. Normal dağılmayan veriler için tercih edilir.</p>';
   }
   else if(testId==='pairedttest'){
